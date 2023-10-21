@@ -1,31 +1,38 @@
 [workspace]
+resolver = "2"
 members=[
     "resonanse_common",
     "resonanse_backend",
     "resonanse_bot",
 ]
 
-[package]
+[workspace.package]
 name = "resonanse"
 version = "0.1.0"
 edition = "2021"
 readme = "README.md"
 license-file = "LICENSE"
 
+#[dependencies]
+#tokio = { version = "1", features = ["full"] }
+#
+#resonanse_bot = { path = "resonanse_bot" }
+#resonanse_backend = { path = "resonanse_backend" }
+
 #[lib]
 #name = "resonanse_common"
 #path = "resonanse_common/src/lib.rs"
 
-[[bin]]
-name = "resonanse_bot"
-path = "resonanse_bot/src/main.rs"
-
-[[bin]]
-name = "resonanse_backend"
-path = "resonanse_backend/src/main.rs"
+#[[bin]]
+#name = "resonanse_bot"
+#path = "resonanse_bot/src/main.rs"
+#
+#[[bin]]
+#name = "resonanse_backend"
+#path = "resonanse_backend/src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 #
-#[dependencies]
+
 ##web_service = { path="web_service" }
 #axum = "0.6"
 #fpga_hps_programmator = { version="0.1.0", path="fpga_hps_programmator" }
