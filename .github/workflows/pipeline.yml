@@ -1,0 +1,98 @@
+name: Resonanse repository pipeline
+run-name: Resonanse repository pipeline
+on: [ push ]
+# todo add build docker-image after MR to master
+
+env:
+  TEST_PATH: "./test_data/path"
+
+jobs:
+  code-syntax-checking:
+    name: Code syntax checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Rust build & toolchain cache
+        uses: actions/cache@v3
+        with:
+          key: rust-build-cache
+          path: |
+            # build cache
+            ~/.cargo
+            ./target
+            # rustup cache
+            ~/.rustup/toolchains
+            ~/.rustup/update-hashes
+            ~/.rustup/settings.toml
+
+      - name: Install rustup and toolchain
+        run: |
+          curl --proto '=https' --tlsv1.3 https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+          rustup target add arm-unknown-linux-gnueabihf
+          rustup toolchain install stable-arm-unknown-linux-gnueabihf
+          rustup component add clippy
+
+       # tests, fmt check, clippy
+      - name: Rustfmt checks
+        run: cargo fmt --check
+      - name: Clippy checks
+        run: cargo clippy --release -- --D warnings
+
+  repository-tests:
+    name: Running repository tests
+    runs-on: ubuntu-latest
+    needs: code-syntax-checking
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Rust build & toolchain cache
+        uses: actions/cache@v3
+        with:
+          key: rust-build-cache
+          path: |
+            # build cache
+            ~/.cargo
+            ./target
+            # rustup cache
+            ~/.rustup/toolchains
+            ~/.rustup/update-hashes
+            ~/.rustup/settings.toml
+
+      - name: Tests
+        run: cargo test
+
+#  push-resonanse-tg-bot:
+#    name: Build docker image & Push
+#    runs-on: ubuntu-latest
+#    needs: repository-tests
+#    steps:
+#      - name: Check out repository code
+#        uses: actions/checkout@v3
+#
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v2
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#
+#      - name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v2
+#
+#      - name: Build and push
+#        uses: docker/build-push-action@v4
+#        with:
+#          context: .
+#          file: ./Dockerfile
+#          push: true
+#          tags: ${{ secrets.DOCKERHUB_USERNAME }}/resonanse_bot:latest
+
+#  send-deploy-hook:
+#    name: Deploy Hook
+#    runs-on: ubuntu-latest
+#    needs: push-image-to-docker-hub
+#    steps:
+#      - name: Send post request
+#        run: curl -X POST http://176.124.211.84:5000/deploy_hook
