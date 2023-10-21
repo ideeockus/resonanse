@@ -1,6 +1,6 @@
 use crate::commands::Command;
 use crate::handlers::*;
-use crate::State;
+use crate::states::*;
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dispatching::{dialogue, UpdateHandler};
 use teloxide::prelude::*;
@@ -16,17 +16,14 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
     let message_handler = Update::filter_message()
         // todo: add logging middleware
         .branch(command_handler)
-        .branch(case![State::Start].endpoint(handle_start_state))
-        .branch(case![State::WaitProcessPicture { settings }].endpoint(handle_base_action))
-        .branch(case![State::WaitPalettePicture { settings }].endpoint(handle_palette_image))
-        .branch(case![State::ViewSettings { settings }].endpoint(view_settings))
+        .branch(case![BaseState::Start].endpoint(handle_start_state))
         .branch(dptree::endpoint(invalid_state));
 
     let callback_query_handler = Update::filter_callback_query()
-        .branch(case![State::WaitProcessPicture { settings }].endpoint(handle_process_mode))
+        .branch(case![BaseState::GetEventList { page_size, list_page }].endpoint(handle_page_callback))
         .branch(dptree::endpoint(invalid_state_callback));
 
-    dialogue::enter::<Update, InMemStorage<State>, State, _>()
+    dialogue::enter::<Update, InMemStorage<BaseState>, BaseState, _>()
         .branch(message_handler)
         .branch(callback_query_handler)
 }

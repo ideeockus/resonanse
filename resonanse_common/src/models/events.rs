@@ -1,4 +1,6 @@
+use std::path::PathBuf;
 use chrono::{DateTime, TimeZone, Utc};
+use uuid::Uuid;
 
 pub enum EventType {
     OfflineMeetup,
@@ -11,12 +13,18 @@ pub struct Location {
     longitude: f64,
 }
 
-// pub enum EventSubject {
-//     Business,
-//     Social,
-//     Sport,
-//
-// }
+pub enum EventSubject {
+    Business,
+    Social,
+    Sport,
+    Charity,
+    Education,
+    Professional,
+    Acquaintance,
+    Culture,
+    Interests,
+    Other,
+}
 
 // todo translation
 const EVENT_SUBJECTS: &[&str] = &[
@@ -34,10 +42,14 @@ const EVENT_SUBJECTS: &[&str] = &[
 
 pub struct BaseEvent<Tz: TimeZone = Utc> {
     id: u64,
-    name: String,
+    is_private: bool,
+    is_commercial: bool,
+    title: String,
     description: String, // markdown (?)
-    date: DateTime<Tz>,
+    subject: EventSubject,
+    datetime: DateTime<Tz>,
+    location: Location,
     creator_id: u64,
     event_type: EventType,
-    location: Location,
+    picture: Uuid,
 }

@@ -1531,6 +1531,7 @@ dependencies = [
 name = "resonanse_bot"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "env_logger",
  "log",
  "resonanse_common",

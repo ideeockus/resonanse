@@ -3,6 +3,8 @@ mod handlers;
 mod keyboards;
 mod user_settings;
 mod commands;
+mod states;
+mod actions;
 
 use dispatch::schema;
 use env_logger;
@@ -11,7 +13,6 @@ use log::{info, LevelFilter};
 use teloxide::dptree;
 use teloxide::prelude::*;
 use user_settings::UserSettings;
-// use teloxide::dispatching::dialogue::Stor;
 
 #[tokio::main]
 async fn main() {
@@ -21,15 +22,6 @@ async fn main() {
         .init();
 
     run_polling()
-}
-
-#[derive(Clone, Default)]
-pub enum State {
-    #[default]
-    Start,
-    WaitProcessPicture {
-        settings: UserSettings,
-    },
 }
 
 pub async fn run_polling() {
