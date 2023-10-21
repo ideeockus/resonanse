@@ -1,16 +1,31 @@
+[workspace]
+members=[
+    "resonanse_common",
+    "resonanse_backend",
+    "resonanse_bot",
+]
+
 [package]
-name = "resonanse_backend"
+name = "resonanse"
 version = "0.1.0"
 edition = "2021"
+readme = "README.md"
+license-file = "LICENSE"
 
+[lib]
+name = "resonanse_common"
+path = "resonanse_common/src/lib.rs"
+
+[[bin]]
+name = "resonanse_bot"
+path = "resonanse_bot/src/main.rs"
+
+[[bin]]
+name = "resonanse_backend"
+path = "resonanse_backend/src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-tokio = { version = "1", features = ["full"] }
-chrono = "0.4.31"
-uuid = "1.4.1"
-tower = "0.4.13"
-axum = "0.6.20"
-sqlx = "0.7.2"
-jwt = "0.16.0"
-#tracing = "0.1.39"
+#
+#[dependencies]
+##web_service = { path="web_service" }
+#axum = "0.6"
+#fpga_hps_programmator = { version="0.1.0", path="fpga_hps_programmator" }

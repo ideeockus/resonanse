@@ -1,3 +1,1 @@
-mod events;
 mod accounts;
-
