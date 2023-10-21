@@ -1102,14 +1102,19 @@ dependencies = [
  "axum",
  "chrono",
  "jwt",
+ "resonanse_common",
  "tokio",
  "tower",
+ "tracing",
  "uuid",
 ]
 
 [[package]]
 name = "resonanse_bot"
 version = "0.1.0"
+dependencies = [
+ "resonanse_common",
+]
 
 [[package]]
 name = "resonanse_common"

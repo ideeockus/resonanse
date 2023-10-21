@@ -12,9 +12,9 @@ edition = "2021"
 readme = "README.md"
 license-file = "LICENSE"
 
-[lib]
-name = "resonanse_common"
-path = "resonanse_common/src/lib.rs"
+#[lib]
+#name = "resonanse_common"
+#path = "resonanse_common/src/lib.rs"
 
 [[bin]]
 name = "resonanse_bot"
