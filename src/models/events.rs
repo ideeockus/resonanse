@@ -1,3 +1,5 @@
+use chrono::Utc;
+
 pub enum EventType {
     OfflineMeetup,
     OneToOne,
@@ -9,7 +11,7 @@ pub struct Location {
     longitude: f64,
 }
 
-pub struct BaseEvent<Tz> {
+pub struct BaseEvent<Tz=Utc> {
     id: u64,
     name: String,
     description: String,  // markdown (?)
