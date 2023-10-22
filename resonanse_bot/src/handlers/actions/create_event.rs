@@ -6,13 +6,14 @@ use teloxide::Bot;
 use teloxide::payloads::SendMessage;
 use teloxide::prelude::*;
 use teloxide::requests::JsonRequest;
-use teloxide::types::{InputFile, ParseMode, PhotoSize};
+use teloxide::types::{InlineKeyboardMarkup, InputFile, ParseMode, PhotoSize, ReplyMarkup};
 use teloxide::utils::markdown;
 use resonanse_common::models::{BaseEvent, EventSubject, Location};
 use crate::errors::BotHandlerError;
 use crate::handlers::{HandlerResult, log_request, MyDialogue};
 use crate::handlers::utils::download_file_by_id;
-use crate::keyboards::get_inline_kb_choose_subject;
+use crate::keyboards;
+use crate::keyboards::{get_inline_kb_choose_subject, get_inline_kb_edit_new_event};
 use crate::states::{BaseState, CreateEventState};
 use crate::utils::get_tg_downloads_dir;
 
@@ -51,7 +52,7 @@ impl TgTextFormatter for BaseEvent {
     fn format(&self) -> String {
         let msg_text = format!(
             r#"
-**{}**
+_{}_
 {}
 
 Тематика: *{}*
@@ -62,6 +63,7 @@ impl TgTextFormatter for BaseEvent {
             markdown::escape(&self.description),
             markdown::escape(&self.subject.to_string()),
             markdown::escape(&self.datetime.format(DEFAULT_DATETIME_FORMAT).to_string()),
+            // markdown::escape(&self.location.get_yandex_map_link_to()),
         );
 
         msg_text
@@ -100,6 +102,7 @@ pub async fn handle_create_event_state_message(bot: Bot, dialogue: MyDialogue, (
         CreateEventState::Geo => handle_event_geo(bot, dialogue, msg, filling_event).await,
         // CreateEventState::Subject => handle_event_subject,
         CreateEventState::Picture => handle_event_picture(bot, dialogue, msg, filling_event).await,
+        // CreateEventState::Finalisation => handle_event_finalisation(bot, dialogue, msg, filling_event).await,
         _ => {
             warn!("Unhandled handle_create_event_state: {:?}", create_event_state);
             bot.send_message(
@@ -125,14 +128,15 @@ pub async fn handle_create_event_state_callback(bot: Bot, dialogue: MyDialogue, 
     log_request(format!("handle_create_event_state_callback {:?}", create_event_state), &msg);
 
 
-    let handler = match create_event_state {
+    match create_event_state {
         // CreateEventState::Name => handle_event_name,
         // CreateEventState::Publicity => (),
         // CreateEventState::Description => handle_event_description,,
         // CreateEventState::Datetime => handle_event_datetime,
         // CreateEventState::Geo => handle_event_geo,
-        CreateEventState::Subject => handle_event_subject,
+        CreateEventState::Subject => handle_event_subject(bot, dialogue, filling_event, q).await,
         // CreateEventState::Picture => handle_event_picture,
+        CreateEventState::Finalisation => handle_event_finalisation_callback(bot, dialogue, filling_event, q).await,
         _ => {
             warn!("Unhandled handle_create_event_state_callback: {:?}", create_event_state);
             bot.send_message(
@@ -141,9 +145,7 @@ pub async fn handle_create_event_state_callback(bot: Bot, dialogue: MyDialogue, 
             ).await?;
             return Err(Box::try_from(BotHandlerError::UnknownHandler).unwrap());
         }
-    };
-
-    handler(bot, dialogue, filling_event, q).await
+    }
 }
 
 pub async fn handle_event_name(bot: Bot, dialogue: MyDialogue, msg: Message, mut filling_event: FillingEvent) -> HandlerResult {
@@ -224,7 +226,7 @@ pub async fn handle_event_datetime(bot: Bot, dialogue: MyDialogue, msg: Message,
         Ok(v) => v,
         Err(err) => {
             warn!("handle_event_datetime: parse date error {}", err);
-            return Err(Box::new(err))
+            return Err(Box::new(err));
         }
     };
 
@@ -349,12 +351,82 @@ pub async fn handle_event_picture(bot: Bot, dialogue: MyDialogue, msg: Message, 
         .await?;
 
     let mut message = bot.send_photo(msg.chat.id, InputFile::file(local_file_path));
-    let event_text_representation = BaseEvent::from(filling_event).format();
+    let event_text_representation = BaseEvent::from(filling_event.clone()).format();
     let message_text = format!("Готово, проверьте заполненные данные:\n {}", event_text_representation);
     message.caption = Some(message_text);
-
     message.parse_mode = Some(ParseMode::MarkdownV2);
+    message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_edit_new_event(!filling_event.is_private, filling_event.geo_position.map(|geo| geo.get_yandex_map_link_to()))));
     message.await?;
+
+    Ok(())
+}
+
+
+pub async fn handle_event_finalisation_callback(
+    bot: Bot,
+    dialogue: MyDialogue,
+    mut filling_event: FillingEvent,
+    q: CallbackQuery,
+) -> HandlerResult {
+    bot.answer_callback_query(q.id.clone()).await?;
+    let msg = match q.message {
+        None => {
+            warn!("No callback data for callback {}", q.id);
+            return Ok(());
+        }
+        Some(v) => v,
+    };
+
+    match q.data.as_deref() {
+        Some(keyboards::EDIT_PUBLICITY_TRUE_CALLBACK) => {
+            filling_event.is_private = false;
+            // update_reply_kb().await;
+        }
+        Some(keyboards::EDIT_PUBLICITY_FALSE_CALLBACK) => {
+            filling_event.is_private = true;
+            // update_reply_kb().await;
+        }
+        Some(keyboards::REFILL_EVENT_AGAIN_CALLBACK) => {
+            bot.delete_message(msg.chat.id, msg.id).await?;
+            dialogue
+                .update(BaseState::CreateEvent {
+                    state: CreateEventState::Name,
+                    filling_event: FillingEvent::new(),
+                })
+                .await?;
+            bot.send_message(msg.chat.id, "Хорошо, вы можете заполнить данные заново. Введите название").await?;
+            return Ok(());
+        }
+        Some(keyboards::CREATE_EVENT_CALLBACK) => {
+            bot.delete_message(msg.chat.id, msg.id).await?;
+            dialogue
+                .update(BaseState::Idle)
+                .await?;
+
+            if filling_event.is_private {
+                bot.send_message(msg.chat.id, "Событие создано. Оно будет доступно только по вашей ссылке: <тут ссылка>").await?;
+            } else {
+                bot.send_message(msg.chat.id, "Событие опубликовано. Также вы можете поделиться им по ссылке: <тут ссылка>").await?;
+            }
+            return Ok(());
+        }
+        _ => {
+            bot.send_message(
+                msg.chat.id,
+                "Unknown callback finalisation action",
+            ).await?;
+            return Ok(());
+        }
+    }
+
+    {
+        // update message anyway
+        let mut edit_reply_markup = bot.edit_message_reply_markup(
+            msg.chat.id, msg.id,
+        );
+        edit_reply_markup.reply_markup = Some(get_inline_kb_edit_new_event(!filling_event.is_private, filling_event.geo_position.map(|geo| geo.get_yandex_map_link_to())));
+        edit_reply_markup.await?;
+    }
 
     Ok(())
 }

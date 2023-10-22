@@ -24,6 +24,12 @@ pub struct Location {
     pub longitude: f64,
 }
 
+impl Location {
+    pub fn get_yandex_map_link_to(&self) -> String {
+        format!("https://yandex.ru/maps/?pt={},{}&z=15", self.longitude, self.latitude)
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum EventSubject {
     Business,
