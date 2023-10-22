@@ -18,9 +18,9 @@ type MyDialogue = Dialogue<BaseState, InMemStorage<BaseState>>;
 type HandlerResult = Result<(), Box<dyn std::error::Error + Send + Sync>>;
 
 fn log_request<S>(log_text: S, msg: &Message)
-    where S: Into<&str>
+    where S: ToString
 {
-    log::debug!("{}", log_text.into());
+    log::debug!("{}", log_text.to_string());
     match msg.from() {
         None => {
             log::debug!("message from unknown user");

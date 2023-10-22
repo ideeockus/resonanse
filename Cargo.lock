@@ -1601,11 +1601,13 @@ name = "resonanse_bot"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "chrono-tz",
  "env_logger",
  "log",
  "resonanse_common",
  "teloxide",
  "tokio",
+ "uuid",
 ]
 
 [[package]]

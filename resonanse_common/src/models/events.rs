@@ -9,6 +9,13 @@ pub enum EventType {
     OfflineMeetup,
     OneToOne,
     Online,
+    Unknown,
+}
+
+impl Default for EventType {
+    fn default() -> Self {
+        Self::Unknown
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
