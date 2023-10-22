@@ -52,7 +52,7 @@ impl TgTextFormatter for BaseEvent {
     fn format(&self) -> String {
         let msg_text = format!(
             r#"
-_{}_
+**{}**
 {}
 
 Тематика: *{}*

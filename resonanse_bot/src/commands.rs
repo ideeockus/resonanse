@@ -2,7 +2,7 @@ use teloxide::utils::command::BotCommands;
 
 #[derive(BotCommands, Clone)]
 #[command(
-    rename_rule = "lowercase",
+    rename_rule = "snake_case",
     description = "These commands are supported:"
 )]
 pub enum Command {
