@@ -15,12 +15,13 @@ mod keyboards;
 mod user_settings;
 mod commands;
 mod states;
-mod actions;
+mod errors;
+mod utils;
 
 #[tokio::main]
 async fn main() {
     Builder::new()
-        .filter_level(LevelFilter::Trace)
+        .filter_level(LevelFilter::Debug)
         .format_timestamp(Some(TimestampPrecision::Nanos))
         .init();
 

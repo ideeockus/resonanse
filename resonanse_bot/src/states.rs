@@ -1,11 +1,11 @@
-use crate::actions::FillingEvent;
+use crate::handlers::FillingEvent;
 
 #[derive(Clone, Default)]
 pub enum BaseState {
     #[default]
     Start,
     Idle,
-    CreateEventState {
+    CreateEvent {
         state: CreateEventState,
         filling_event: FillingEvent,
     },
@@ -25,4 +25,5 @@ pub enum CreateEventState {
     Geo,
     Subject,
     Picture,
+    Finalisation,
 }

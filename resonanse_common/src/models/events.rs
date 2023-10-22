@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use chrono_tz::Tz;
 use uuid::Uuid;
 
 #[derive(Clone, Copy, Debug)]
@@ -12,8 +13,8 @@ pub enum EventType {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Location {
-    latitude: f64,
-    longitude: f64,
+    pub latitude: f64,
+    pub longitude: f64,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -71,6 +72,23 @@ impl From<EventSubject> for String {
     }
 }
 
+impl From<&str> for EventSubject {
+    fn from(value: &str) -> Self {
+        match value {
+            "Бизнес" => EventSubject::Business,
+            "Спорт" => EventSubject::Social,
+            "Благотворительность" => EventSubject::Sport,
+            "Развлечения" => EventSubject::Charity,
+            "Образование" => EventSubject::Education,
+            "Профессиональное" => EventSubject::Professional,
+            "Знакомства" => EventSubject::Acquaintance,
+            "Культура" => EventSubject::Culture,
+            "Интересы" => EventSubject::Interests,
+            _ => EventSubject::Other,
+        }
+    }
+}
+
 // todo translation
 const EVENT_SUBJECTS: &[&str] = &[
     "Бизнес",
@@ -86,17 +104,18 @@ const EVENT_SUBJECTS: &[&str] = &[
 ];
 
 #[derive(Clone, Debug)]
-pub struct BaseEvent<Tz: TimeZone = Utc> {
-    id: u64,
-    is_private: bool,
-    is_commercial: bool,
-    title: String,
-    description: String,
+pub struct BaseEvent {
+    pub id: u64,
+    pub is_private: bool,
+    pub is_commercial: bool,
+    pub title: String,
+    pub description: String,
     // markdown (?)
-    subject: EventSubject,
-    datetime: DateTime<Tz>,
-    location: Location,
-    creator_id: u64,
-    event_type: EventType,
-    picture: Uuid,
+    pub subject: EventSubject,
+    pub datetime: NaiveDateTime,
+    pub timezone: chrono_tz::Tz,
+    pub location: Location,
+    pub creator_id: u64,
+    pub event_type: EventType,
+    pub picture: Uuid,
 }

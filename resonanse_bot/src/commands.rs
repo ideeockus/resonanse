@@ -8,4 +8,10 @@ use teloxide::utils::command::BotCommands;
 pub enum Command {
     #[command(description = "Помогите")]
     Help,
+    #[command(description = "Создать")]
+    CreateEvent,
+    #[command(description = "Список")]
+    GetEvents,
+    #[command(description = "Обратная связь")]
+    SendFeedback,
 }
