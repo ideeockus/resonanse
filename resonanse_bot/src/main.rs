@@ -1,3 +1,14 @@
+use env_logger;
+use env_logger::{Builder, TimestampPrecision};
+use log::{info, LevelFilter};
+use teloxide::dispatching::dialogue::InMemStorage;
+use teloxide::dptree;
+use teloxide::prelude::*;
+
+use dispatch::schema;
+
+use crate::states::BaseState;
+
 mod dispatch;
 mod handlers;
 mod keyboards;
@@ -6,14 +17,6 @@ mod commands;
 mod states;
 mod actions;
 
-use dispatch::schema;
-use env_logger;
-use env_logger::{Builder, TimestampPrecision};
-use log::{info, LevelFilter};
-use teloxide::dptree;
-use teloxide::prelude::*;
-use user_settings::UserSettings;
-
 #[tokio::main]
 async fn main() {
     Builder::new()
@@ -21,7 +24,7 @@ async fn main() {
         .format_timestamp(Some(TimestampPrecision::Nanos))
         .init();
 
-    run_polling()
+    run_polling().await;
 }
 
 pub async fn run_polling() {
@@ -31,7 +34,7 @@ pub async fn run_polling() {
 
     let update_handler = schema();
     let mut dispatcher = Dispatcher::builder(bot, update_handler)
-        .dependencies(dptree::deps![InMemStorage::<State>::new()])
+        .dependencies(dptree::deps![InMemStorage::<BaseState>::new()])
         .enable_ctrlc_handler()
         .build();
 

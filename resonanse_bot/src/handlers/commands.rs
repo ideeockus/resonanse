@@ -1,7 +1,7 @@
 use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::ParseMode;
-use crate::handlers::HandlerResult;
+use crate::handlers::{HandlerResult, log_request};
 
 const BOT_HELP_TEXT_MD: &str = "Помощ";
 

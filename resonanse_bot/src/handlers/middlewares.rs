@@ -1,4 +1,3 @@
-use teloxide::handlers::HandlerResult;
 use teloxide::prelude::Message;
 use crate::handlers::HandlerResult;
 

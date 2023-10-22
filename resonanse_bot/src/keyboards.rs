@@ -3,11 +3,11 @@ use resonanse_common::models::EventSubject;
 
 
 macro_rules! kb_button {
-    ($s:ident) => {
+    ($s:expr) => {
         InlineKeyboardButton::new(
                 $s,
                 InlineKeyboardButtonKind::CallbackData($s.to_string()),
-            ),
+            )
     };
 }
 
@@ -33,24 +33,29 @@ pub fn get_inline_kb_choose_subject() -> ReplyMarkup {
     //     ],
     // ];
 
+    // InlineKeyboardButton::new(
+    //             "",
+    //             InlineKeyboardButtonKind::CallbackData($s.to_string()),
+    //         ),
+
 
     let buttons = [
-        [
+        vec![
             kb_button!(EventSubject::Social),
             kb_button!(EventSubject::Acquaintance),
             kb_button!(EventSubject::Charity),
         ],
-        [
+        vec![
             kb_button!(EventSubject::Culture),
             kb_button!(EventSubject::Business),
             kb_button!(EventSubject::Education),
         ],
-        [
+        vec![
             kb_button!(EventSubject::Professional),
             kb_button!(EventSubject::Sport),
             kb_button!(EventSubject::Interests),
         ],
-        [
+        vec![
             kb_button!(EventSubject::Other),
         ],
     ];
