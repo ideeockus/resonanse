@@ -1,4 +1,7 @@
 pub mod models;
+mod configuration;
+mod repository;
+mod file_storage;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right

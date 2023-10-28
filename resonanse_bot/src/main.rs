@@ -7,6 +7,7 @@ use teloxide::dptree;
 use teloxide::prelude::*;
 
 use dispatch::schema;
+use crate::config::{RESONANSE_BOT_TOKEN, RESONANSE_MANAGEMENT_BOT_TOKEN};
 
 use crate::states::BaseState;
 
@@ -18,12 +19,8 @@ mod commands;
 mod states;
 mod errors;
 mod utils;
-
-
-const RESONANSE_BOT_TOKEN: &str = "RESONANSE_BOT_TOKEN";
-const RESONANSE_MANAGEMENT_BOT_TOKEN: &str = "RESONANSE_MANAGEMENT_BOT_TOKEN";
-const RESONANSE_EVENT_LIMIT: &str = "RESONANSE_EVENT_LIMIT";
-const MANAGER_TG_IDS: &str = "MANAGER_TG_IDS";
+mod management;
+mod config;
 
 
 static MANAGER_BOT: OnceLock<Bot> = OnceLock::new();

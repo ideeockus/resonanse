@@ -23,7 +23,6 @@ pub struct Location {
     pub latitude: f64,
     pub longitude: f64,
     pub title: Option<String>,
-    pub address: Option<String>,
 }
 
 impl Location {
@@ -32,7 +31,6 @@ impl Location {
             latitude,
             longitude,
             title: None,
-            address: None,
         }
     }
 
@@ -142,4 +140,5 @@ pub struct BaseEvent {
     pub creator_id: u64,
     pub event_type: EventType,
     pub picture: Uuid,
+    pub creation_time: NaiveDateTime,
 }

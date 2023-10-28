@@ -308,7 +308,6 @@ pub async fn handle_event_geo(bot: Bot, dialogue: MyDialogue, msg: Message, mut 
             latitude: venue.location.latitude,
             longitude: venue.location.longitude,
             title: Some(venue.title),
-            address: Some(venue.address),
         },
         _ => {
             reject_user_answer!(bot, msg.chat.id, "No location provided");
