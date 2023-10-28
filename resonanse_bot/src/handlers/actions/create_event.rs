@@ -1,23 +1,27 @@
 use std::fmt::format;
 use std::fs::File;
 use chrono::{DateTime, NaiveDateTime, ParseResult};
-use log::warn;
+use log::{debug, warn};
 use teloxide::Bot;
 use teloxide::payloads::SendMessage;
 use teloxide::prelude::*;
 use teloxide::requests::JsonRequest;
-use teloxide::types::{InlineKeyboardMarkup, InputFile, ParseMode, PhotoSize, ReplyMarkup};
+use teloxide::types::{InlineKeyboardMarkup, InputFile, MediaKind, MediaLocation, MediaVenue, MessageCommon, ParseMode, PhotoSize, ReplyMarkup, Venue};
+use teloxide::types::MessageKind::Common;
 use teloxide::utils::markdown;
 use resonanse_common::models::{BaseEvent, EventSubject, Location};
 use crate::errors::BotHandlerError;
 use crate::handlers::{HandlerResult, log_request, MyDialogue};
 use crate::handlers::utils::download_file_by_id;
-use crate::keyboards;
+use crate::{keyboards, MANAGER_BOT};
 use crate::keyboards::{get_inline_kb_choose_subject, get_inline_kb_edit_new_event};
 use crate::states::{BaseState, CreateEventState};
-use crate::utils::get_tg_downloads_dir;
+use crate::utils::{get_tg_downloads_dir, repr_user_as_str};
 
 const DEFAULT_DATETIME_FORMAT: &str = "%d.%m.%Y %H:%M";
+const DATETIME_FORMAT_1: &str = "%d/%m/%Y %H:%M";
+const DATETIME_FORMAT_2: &str = "%d.%m.%Y %H.%M";
+const DATETIME_FORMAT_3: &str = "%d-%m-%Y %H:%M";
 
 #[derive(Clone, Default)]
 pub struct FillingEvent {
@@ -81,11 +85,26 @@ impl From<FillingEvent> for BaseEvent {
             subject: value.subject.unwrap_or(EventSubject::Other),
             datetime: value.datetime.unwrap_or(chrono::Local::now().naive_local()),
             timezone: chrono_tz::Tz::Europe__Moscow,
-            location: value.geo_position.unwrap_or(Location { latitude: 0.0, longitude: 0.0 }),
+            location: value.geo_position.unwrap_or_else(|| {
+                warn!("cannot set event for BaseEvent from FillingEvent");
+                Location::from_ll(0.0, 0.0)
+            }),
             creator_id: 0,
             event_type: Default::default(),
             picture: Default::default(),
         }
+    }
+}
+
+
+macro_rules! reject_user_answer {
+    ($bot: ident, $chat_id: expr, $text:expr) => {
+        $bot.send_message(
+            $chat_id,
+            $text,
+        ).await?;
+        // debug!("rejected user ({}) answer: {}", repr_user_as_str($msg.from()), $text);
+        return Ok(());
     }
 }
 
@@ -151,11 +170,14 @@ pub async fn handle_create_event_state_callback(bot: Bot, dialogue: MyDialogue, 
 pub async fn handle_event_name(bot: Bot, dialogue: MyDialogue, msg: Message, mut filling_event: FillingEvent) -> HandlerResult {
     let event_name = match msg.text() {
         None => {
-            bot.send_message(
-                msg.chat.id,
-                "No name provided",
-            ).await?;
-            return Ok(());
+            // bot.send_message(
+            //     msg.chat.id,
+            //     "No name provided",
+            // ).await?;
+            // return Ok(());
+            reject_user_answer!(bot, msg.chat.id, "No name provided");
+            // debug!("rejected user ({}) answer: {}", repr_user_as_str(msg.from()), $text);
+            // msg.from()
         }
         Some(v) => v,
     };
@@ -181,11 +203,12 @@ pub async fn handle_event_name(bot: Bot, dialogue: MyDialogue, msg: Message, mut
 pub async fn handle_event_description(bot: Bot, dialogue: MyDialogue, msg: Message, mut filling_event: FillingEvent) -> HandlerResult {
     let event_description = match msg.text() {
         None => {
-            bot.send_message(
-                msg.chat.id,
-                "No description provided",
-            ).await?;
-            return Ok(());
+            reject_user_answer!(bot, msg.chat.id, "No description provided");
+            // bot.send_message(
+            //     msg.chat.id,
+            //     "No description provided",
+            // ).await?;
+            // return Ok(());
         }
         Some(v) => v,
     };
@@ -213,19 +236,28 @@ pub async fn handle_event_description(bot: Bot, dialogue: MyDialogue, msg: Messa
 pub async fn handle_event_datetime(bot: Bot, dialogue: MyDialogue, msg: Message, mut filling_event: FillingEvent) -> HandlerResult {
     let event_dt = match msg.text() {
         None => {
-            bot.send_message(
-                msg.chat.id,
-                "No datetime provided",
-            ).await?;
-            return Ok(());
+            reject_user_answer!(bot, msg.chat.id, "No datetime provided");
+            // bot.send_message(
+            //     msg.chat.id,
+            //     "No datetime provided",
+            // ).await?;
+            // return Ok(());
         }
         Some(v) => v,
     };
 
-    let event_dt = match NaiveDateTime::parse_from_str(event_dt, DEFAULT_DATETIME_FORMAT) {
+    let event_dt = match NaiveDateTime::parse_from_str(event_dt, DEFAULT_DATETIME_FORMAT)
+        .or(NaiveDateTime::parse_from_str(event_dt, DATETIME_FORMAT_1))
+        .or(NaiveDateTime::parse_from_str(event_dt, DATETIME_FORMAT_2))
+        .or(NaiveDateTime::parse_from_str(event_dt, DATETIME_FORMAT_3))
+    {
         Ok(v) => v,
         Err(err) => {
             warn!("handle_event_datetime: parse date error {}", err);
+            bot.send_message(
+                msg.chat.id,
+                "Дата и время не распознаны",
+            ).await?;
             return Err(Box::new(err));
         }
     };
@@ -249,18 +281,54 @@ pub async fn handle_event_datetime(bot: Bot, dialogue: MyDialogue, msg: Message,
 }
 
 pub async fn handle_event_geo(bot: Bot, dialogue: MyDialogue, msg: Message, mut filling_event: FillingEvent) -> HandlerResult {
-    let event_location = match msg.location() {
-        None => {
-            bot.send_message(
-                msg.chat.id,
-                "No location provided",
-            ).await?;
-            return Ok(());
+    // let event_location = match msg.location() {
+    //     None => {
+    //         debug!("provided msg: {:?}", msg);
+    //         debug!("rejected user ({})", repr_user_as_str(msg.from()));
+    //         reject_user_answer!(bot, msg.chat.id, "No location provided");
+    //         // bot.send_message(
+    //         //     msg.chat.id,
+    //         //     "",
+    //         // ).await?;
+    //         // return Ok(());
+    //     }
+    //     Some(v) => v,
+    // };
+
+    debug!("provided msg: {:?}", msg);
+    let location = match msg.kind {
+        Common(MessageCommon {
+                   media_kind: MediaKind::Location(MediaLocation { location, .. }),
+                   ..
+               }) => Location::from_ll(location.latitude, location.longitude),
+        Common(MessageCommon {
+                   media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
+                   ..
+               }) => Location {
+            latitude: venue.location.latitude,
+            longitude: venue.location.longitude,
+            title: Some(venue.title),
+            address: Some(venue.address),
+        },
+        _ => {
+            reject_user_answer!(bot, msg.chat.id, "No location provided");
         }
-        Some(v) => v,
     };
 
-    filling_event.geo_position = Some(Location { latitude: event_location.latitude, longitude: event_location.longitude });
+    // let event_location = match msg.location() {
+    //     None => {
+    //         debug!("rejected user ({})", repr_user_as_str(msg.from()));
+    //         reject_user_answer!(bot, msg.chat.id, "No location provided");
+    //         // bot.send_message(
+    //         //     msg.chat.id,
+    //         //     "",
+    //         // ).await?;
+    //         // return Ok(());
+    //     }
+    //     Some(v) => v,
+    // };
+
+    filling_event.geo_position = Some(location);
 
     dialogue
         .update(BaseState::CreateEvent {
@@ -288,11 +356,12 @@ pub async fn handle_event_subject(
     bot.answer_callback_query(q.id).await?;
     let event_subject = match q.data.as_ref() {
         None => {
-            bot.send_message(
-                q.from.id,
-                "No subject provided",
-            ).await?;
-            return Ok(());
+            reject_user_answer!(bot, q.from.id, "No subject provided");
+            // bot.send_message(
+            //     q.from.id,
+            //     "No subject provided",
+            // ).await?;
+            // return Ok(());
         }
         Some(v) => EventSubject::from(v.as_ref()),
     };
@@ -325,11 +394,12 @@ pub async fn handle_event_subject(
 pub async fn handle_event_picture(bot: Bot, dialogue: MyDialogue, msg: Message, mut filling_event: FillingEvent) -> HandlerResult {
     let event_photo_file_id = match msg.photo().and_then(|p| p.last()) {
         None => {
-            bot.send_message(
-                msg.chat.id,
-                "No photo provided",
-            ).await?;
-            return Ok(());
+            reject_user_answer!(bot, msg.chat.id, "No photo provided");
+            // bot.send_message(
+            //     msg.chat.id,
+            //     "No photo provided",
+            // ).await?;
+            // return Ok(());
         }
         Some(v) => {
             v.file.id.clone()
@@ -408,6 +478,10 @@ pub async fn handle_event_finalisation_callback(
             } else {
                 bot.send_message(msg.chat.id, "Событие опубликовано. Также вы можете поделиться им по ссылке: <тут ссылка>").await?;
             }
+
+            let manager_bot = MANAGER_BOT.get().unwrap();
+            // todo publish (channel & database)
+
             return Ok(());
         }
         _ => {

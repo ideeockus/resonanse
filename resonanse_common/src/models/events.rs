@@ -18,13 +18,24 @@ impl Default for EventType {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Location {
     pub latitude: f64,
     pub longitude: f64,
+    pub title: Option<String>,
+    pub address: Option<String>,
 }
 
 impl Location {
+    pub fn from_ll(latitude: f64, longitude: f64) -> Self {
+        Self {
+            latitude,
+            longitude,
+            title: None,
+            address: None,
+        }
+    }
+
     pub fn get_yandex_map_link_to(&self) -> String {
         format!("https://yandex.ru/maps/?pt={},{}&z=15", self.longitude, self.latitude)
     }
