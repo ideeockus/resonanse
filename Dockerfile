@@ -2,7 +2,7 @@ FROM debian:bookworm as builder
 LABEL authors="radmirkus"
 
 RUN apt update
-RUN apt install -y curl pkg-config ca-certificates
+RUN apt install -y curl pkg-config build-essential ca-certificates libssl-dev
 
 # install rust & rust components
 RUN curl --proto '=https' --tlsv1.3 https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable

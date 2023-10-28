@@ -2,6 +2,7 @@ use crate::handlers::*;
 use log::debug;
 use teloxide::Bot;
 use crate::states::BaseState;
+use crate::utils::repr_user_as_str;
 
 const HELLO_MSG: &str = r#"
 Привет!
@@ -36,6 +37,7 @@ pub async fn invalid_state_callback(bot: Bot, q: CallbackQuery) -> HandlerResult
 
 pub async fn invalid_state(bot: Bot, msg: Message) -> HandlerResult {
     log_request("got message, but state invalid", &msg);
+    debug!("unhandled message from {}: {:?}", repr_user_as_str(msg.from()), msg);
 
     bot.send_message(
         msg.chat.id,

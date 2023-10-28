@@ -10,6 +10,8 @@ use teloxide::types::{InlineKeyboardMarkup, InputFile, MediaKind, MediaLocation,
 use teloxide::types::MessageKind::Common;
 use teloxide::utils::markdown;
 use resonanse_common::models::{BaseEvent, EventSubject, Location};
+use resonanse_common::repository;
+use resonanse_common::repository::CreateBaseEvent;
 use crate::errors::BotHandlerError;
 use crate::handlers::{HandlerResult, log_request, MyDialogue};
 use crate::handlers::utils::download_file_by_id;
@@ -52,7 +54,7 @@ trait TgTextFormatter {
     fn format(&self) -> String;
 }
 
-impl TgTextFormatter for BaseEvent {
+impl TgTextFormatter for CreateBaseEvent {
     fn format(&self) -> String {
         let msg_text = format!(
             r#"
@@ -74,17 +76,17 @@ impl TgTextFormatter for BaseEvent {
     }
 }
 
-impl From<FillingEvent> for BaseEvent {
+impl From<FillingEvent> for CreateBaseEvent {
     fn from(value: FillingEvent) -> Self {
-        BaseEvent {
-            id: 0,
+        CreateBaseEvent {
+            // id: 0,
             is_private: false,
             is_commercial: false,
             title: value.title.unwrap_or("No title".to_string()),
             description: value.description.unwrap_or("No description".to_string()),
             subject: value.subject.unwrap_or(EventSubject::Other),
             datetime: value.datetime.unwrap_or(chrono::Local::now().naive_local()),
-            timezone: chrono_tz::Tz::Europe__Moscow,
+            // timezone: chrono_tz::Tz::Europe__Moscow,
             location: value.geo_position.unwrap_or_else(|| {
                 warn!("cannot set event for BaseEvent from FillingEvent");
                 Location::from_ll(0.0, 0.0)
@@ -92,6 +94,7 @@ impl From<FillingEvent> for BaseEvent {
             creator_id: 0,
             event_type: Default::default(),
             picture: Default::default(),
+            // creation_time: Default::default(),
         }
     }
 }
@@ -420,7 +423,7 @@ pub async fn handle_event_picture(bot: Bot, dialogue: MyDialogue, msg: Message, 
         .await?;
 
     let mut message = bot.send_photo(msg.chat.id, InputFile::file(local_file_path));
-    let event_text_representation = BaseEvent::from(filling_event.clone()).format();
+    let event_text_representation = CreateBaseEvent::from(filling_event.clone()).format();
     let message_text = format!("Готово, проверьте заполненные данные:\n {}", event_text_representation);
     message.caption = Some(message_text);
     message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -479,6 +482,11 @@ pub async fn handle_event_finalisation_callback(
             }
 
             let manager_bot = MANAGER_BOT.get().unwrap();
+
+            let create_base_event = CreateBaseEvent::from(filling_event);
+            let events_rep = repository::EventsRepository::new().await;
+            events_rep.create_event(create_base_event).await?;
+
             // todo publish (channel & database)
 
             return Ok(());

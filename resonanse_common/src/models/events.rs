@@ -2,14 +2,19 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use chrono_tz::Tz;
+use sqlx::{Postgres, Type};
 use uuid::Uuid;
+// use serde_repr::{Serialize_repr, Deserialize_repr};
 
-#[derive(Clone, Copy, Debug)]
+
+#[derive(Clone, Copy, Debug, sqlx::Type)]
+#[repr(i32)]
 pub enum EventType {
-    OfflineMeetup,
-    OneToOne,
-    Online,
-    Unknown,
+    Unknown = 0,
+    OfflineMeetup = 1,
+    OneToOne = 2,
+    Online = 3,
+
 }
 
 impl Default for EventType {
@@ -39,18 +44,19 @@ impl Location {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, sqlx::Type)]
+#[repr(i32)]
 pub enum EventSubject {
-    Business,
-    Social,
-    Sport,
-    Charity,
-    Education,
-    Professional,
-    Acquaintance,
-    Culture,
-    Interests,
-    Other,
+    Other = 0,
+    Social = 1,
+    Sport = 2,
+    Charity = 3,
+    Education = 4,
+    Professional = 5,
+    Acquaintance = 6,
+    Culture = 7,
+    Interests = 8,
+    Business = 9,
 }
 
 // impl ToString for EventSubject {
@@ -127,7 +133,7 @@ const EVENT_SUBJECTS: &[&str] = &[
 
 #[derive(Clone, Debug)]
 pub struct BaseEvent {
-    pub id: u64,
+    pub id: Uuid,
     pub is_private: bool,
     pub is_commercial: bool,
     pub title: String,
@@ -135,10 +141,10 @@ pub struct BaseEvent {
     // markdown (?)
     pub subject: EventSubject,
     pub datetime: NaiveDateTime,
-    pub timezone: chrono_tz::Tz,
+    // pub timezone: chrono_tz::Tz,
     pub location: Location,
-    pub creator_id: u64,
+    pub creator_id: i64,
     pub event_type: EventType,
-    pub picture: Uuid,
+    pub picture: Option<Uuid>,
     pub creation_time: NaiveDateTime,
 }

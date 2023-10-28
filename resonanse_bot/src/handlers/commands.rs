@@ -37,7 +37,17 @@ pub async fn create_event_command(bot: Bot, dialogue: MyDialogue, msg: Message) 
 pub async fn get_events_command(bot: Bot, msg: Message) -> HandlerResult {
     log_request("got get_events command", &msg);
 
-    let mut message = bot.send_message(msg.chat.id, "dev 123");
+    let mut message = bot.send_message(msg.chat.id, "This feature unsupported");
+    message.parse_mode = Some(ParseMode::MarkdownV2);
+    message.await?;
+
+    Ok(())
+}
+
+pub async fn send_feedback_command(bot: Bot, msg: Message) -> HandlerResult {
+    log_request("got send_feedback_command command", &msg);
+
+    let mut message = bot.send_message(msg.chat.id, " ");
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 

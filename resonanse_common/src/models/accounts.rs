@@ -10,7 +10,7 @@ pub struct UserData {
     interests: Option<String>,
 
     language: Option<String>,
-    age: Option<u32>,
+    age: Option<i16>,
     education: Option<String>,
 
     hobby: Option<String>,
@@ -24,7 +24,7 @@ pub struct UserData {
 
 pub struct UserTgData {
     username: Option<String>,
-    id: Option<u64>,
+    id: Option<i64>,
 }
 
 pub struct UserContactData {
@@ -38,17 +38,20 @@ pub struct AuthData {
     password_hash: String,
 }
 
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, sqlx::Type)]
 pub enum ResoAccountType {
-    Standard,
-    Premium,
-    Bad, // reduced ?
-    Banned
+    Standard = 0,
+    Bad = 1, // reduced ?
+    Banned = 2,
+    Premium = 3,
 }
 
 pub struct BaseAccount {
-    id: u64,
+    id: i64,
     username: String,
     user_data: UserData,
     contact_data: UserContactData,
     auth_data: AuthData,
+    user_type: ResoAccountType,
 }

@@ -1,6 +1,6 @@
 create table user_accounts (
     -- base data
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     username varchar(255) NOT NULL,
 
     -- user data
@@ -13,7 +13,7 @@ create table user_accounts (
     goals varchar(255),
     interests varchar(255),
     language varchar(255),
-    age int,
+    age SMALLINT,
     education varchar(255),
 
     hobby varchar(255),
@@ -27,9 +27,13 @@ create table user_accounts (
     -- contacts data
     email varchar(255),
     phone varchar(255),
-    telegram varchar(255),
+    tg_username varchar(255),
+    tg_user_id BIGINT,
     instagram varchar(255),
 
     -- auth data
-    password_hash varchar(1023)
+    password_hash varchar(1023),
+
+    -- other
+    user_type INT NOT NULL
 );

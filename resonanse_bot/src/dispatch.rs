@@ -14,6 +14,7 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
         .branch(case![Command::Help].endpoint(help_command))
         .branch(case![Command::CreateEvent].endpoint(create_event_command))
         .branch(case![Command::GetEvents].endpoint(get_events_command))
+        .branch(case![Command::SendFeedback].endpoint(send_feedback_command))
     ;
 
     let message_handler = Update::filter_message()

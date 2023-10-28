@@ -6,7 +6,7 @@ use teloxide::utils::command::BotCommands;
     description = "These commands are supported:"
 )]
 pub enum Command {
-    #[command(description = "Помогите")]
+    #[command(description = "Описание")]
     Help,
     #[command(description = "Создать")]
     CreateEvent,
