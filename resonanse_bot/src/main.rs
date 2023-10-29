@@ -9,7 +9,7 @@ use teloxide::prelude::*;
 
 use dispatch::schema;
 use resonanse_common::repository::{AccountsRepository, EventsRepository};
-use crate::config::{POSTGRES_DB_URL, RESONANSE_BOT_TOKEN, RESONANSE_MANAGEMENT_BOT_TOKEN};
+use crate::config::{check_all_mandatory_envs_is_ok, POSTGRES_DB_URL, RESONANSE_BOT_TOKEN, RESONANSE_MANAGEMENT_BOT_TOKEN};
 
 use crate::states::BaseState;
 
@@ -40,6 +40,8 @@ async fn main() {
         .filter_level(LevelFilter::Debug)
         .format_timestamp(Some(TimestampPrecision::Nanos))
         .init();
+
+    check_all_mandatory_envs_is_ok();
 
     let conn_url = std::env::var(POSTGRES_DB_URL).unwrap();
     let pool = resonanse_common::PgPool::connect(&conn_url).await.unwrap();

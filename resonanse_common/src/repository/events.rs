@@ -15,7 +15,7 @@ pub struct CreateBaseEvent {
     pub location: Location,
     pub creator_id: i64,
     pub event_type: EventType,
-    pub picture: Uuid,
+    pub picture: Option<Uuid>,
 }
 
 #[derive(Debug)]

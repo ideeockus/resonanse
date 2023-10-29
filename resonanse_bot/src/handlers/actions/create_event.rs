@@ -9,6 +9,8 @@ use teloxide::requests::JsonRequest;
 use teloxide::types::{InlineKeyboardMarkup, InputFile, MediaKind, MediaLocation, MediaVenue, MessageCommon, ParseMode, PhotoSize, ReplyMarkup, Venue};
 use teloxide::types::MessageKind::Common;
 use teloxide::utils::markdown;
+use uuid::Uuid;
+use resonanse_common::file_storage::get_event_images_path;
 use resonanse_common::models::{BaseEvent, EventSubject, Location};
 use resonanse_common::repository;
 use resonanse_common::repository::CreateBaseEvent;
@@ -19,7 +21,7 @@ use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY, keyboards, MANAGER_BOT};
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::keyboards::{get_inline_kb_choose_subject, get_inline_kb_edit_new_event};
 use crate::states::{BaseState, CreateEventState};
-use crate::utils::{get_tg_downloads_dir, repr_user_as_str};
+use crate::utils::{build_event_deep_link, get_tg_downloads_dir, repr_user_as_str};
 
 const DEFAULT_DATETIME_FORMAT: &str = "%d.%m.%Y %H:%M";
 const DATETIME_FORMAT_1: &str = "%d/%m/%Y %H:%M";
@@ -34,7 +36,7 @@ pub struct FillingEvent {
     description: Option<String>,
     datetime: Option<chrono::NaiveDateTime>,
     geo_position: Option<Location>,
-    photo: Option<String>,
+    photo: Option<Uuid>,
     creator_id: i64,
 }
 
@@ -96,7 +98,7 @@ impl From<FillingEvent> for CreateBaseEvent {
             }),
             creator_id: value.creator_id,
             event_type: Default::default(),
-            picture: Default::default(),
+            picture: value.photo,
             // creation_time: Default::default(),
         }
     }
@@ -411,8 +413,8 @@ pub async fn handle_event_picture(bot: Bot, dialogue: MyDialogue, msg: Message, 
         }
     };
 
-    let local_file_uuid = uuid::Uuid::new_v4().to_string();
-    let local_file_path = get_tg_downloads_dir().join(&local_file_uuid);
+    let local_file_uuid = Uuid::new_v4();
+    let local_file_path = get_event_images_path().join(&local_file_uuid.to_string());
 
     download_file_by_id(&bot, &event_photo_file_id, &local_file_path).await?;
 
@@ -478,13 +480,7 @@ pub async fn handle_event_finalisation_callback(
                 .update(BaseState::Idle)
                 .await?;
 
-            let tg_user = msg.from().ok_or("Cannot get user")?;
-
-            if filling_event.is_private {
-                bot.send_message(msg.chat.id, "Событие создано. Оно будет доступно только по вашей ссылке: <тут ссылка>").await?;
-            } else {
-                bot.send_message(msg.chat.id, "Событие опубликовано. Также вы можете поделиться им по ссылке: <тут ссылка>").await?;
-            }
+            let tg_user = q.from;
 
             let manager_bot = MANAGER_BOT.get()
                 .ok_or("Cannot get manager bot")?;
@@ -494,17 +490,40 @@ pub async fn handle_event_finalisation_callback(
             //     .get_account_id_by_tg_user_id(tg_user_id.0 as i64)
             //     .await?;
 
-            let user_account = fill_base_account_from_teloxide_user(tg_user);
+            let user_account = fill_base_account_from_teloxide_user(&tg_user);
             let account = ACCOUNTS_REPOSITORY.get()
                 .ok_or("Cannot get accounts repository")?
                 .create_user_by_tg_user_id(user_account)
                 .await?;
 
-            let mut create_base_event = CreateBaseEvent::from(filling_event);
+            let mut create_base_event = CreateBaseEvent::from(
+                filling_event.clone()
+            );
             create_base_event.creator_id = account.id;
             let created_event = EVENTS_REPOSITORY.get()
                 .ok_or("Cannot get events repository")?
                 .create_event(create_base_event).await?;
+
+            let tg_event_deep_link = build_event_deep_link(
+                created_event.picture.unwrap_or_default()
+            );
+            if filling_event.is_private {
+                bot.send_message(
+                    msg.chat.id,
+                    format!(
+                        "Событие создано. Оно будет доступно только по вашей ссылке: {}",
+                        tg_event_deep_link
+                    )
+                ).await?;
+            } else {
+                 bot.send_message(
+                    msg.chat.id,
+                    format!(
+                        "Событие опубликовано. Также вы можете поделиться им по ссылке: {}",
+                        tg_event_deep_link
+                    )
+                ).await?;
+            }
 
             // todo publish (channel & database)
             debug!("created event {:?}", created_event);
