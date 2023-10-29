@@ -1,7 +1,7 @@
 create table user_accounts (
     -- base data
     id BIGSERIAL PRIMARY KEY,
-    username varchar(255) NOT NULL,
+    username varchar(255) UNIQUE,
 
     -- user data
     first_name varchar(255) NOT NULL,

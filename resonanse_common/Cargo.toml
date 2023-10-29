@@ -12,3 +12,4 @@ sqlx = { version = "0.7", features = ["macros", "postgres", "runtime-tokio", "ti
 chrono = "0.4"
 chrono-tz = "0.8"
 uuid = "1.4"
+log = "0.4"

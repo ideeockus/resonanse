@@ -7,3 +7,4 @@ pub const RESONANSE_EVENT_PUBLICATION_LIMIT_RANGE: &str = "RESONANSE_EVENT_PUBLI
 
 // user ids that able to manage service
 pub const MANAGER_TG_IDS: &str = "MANAGER_TG_IDS";
+pub const POSTGRES_DB_URL: &str = "POSTGRES_DB_URL";

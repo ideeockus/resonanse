@@ -1,3 +1,5 @@
+pub use sqlx::PgPool;
+
 pub mod models;
 pub mod repository;
 pub mod file_storage;

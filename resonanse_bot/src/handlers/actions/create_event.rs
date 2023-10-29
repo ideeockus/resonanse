@@ -15,7 +15,8 @@ use resonanse_common::repository::CreateBaseEvent;
 use crate::errors::BotHandlerError;
 use crate::handlers::{HandlerResult, log_request, MyDialogue};
 use crate::handlers::utils::download_file_by_id;
-use crate::{keyboards, MANAGER_BOT};
+use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY, keyboards, MANAGER_BOT};
+use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::keyboards::{get_inline_kb_choose_subject, get_inline_kb_edit_new_event};
 use crate::states::{BaseState, CreateEventState};
 use crate::utils::{get_tg_downloads_dir, repr_user_as_str};
@@ -34,6 +35,7 @@ pub struct FillingEvent {
     datetime: Option<chrono::NaiveDateTime>,
     geo_position: Option<Location>,
     photo: Option<String>,
+    creator_id: i64,
 }
 
 impl FillingEvent {
@@ -46,6 +48,7 @@ impl FillingEvent {
             datetime: None,
             geo_position: None,
             photo: None,
+            creator_id: 0,
         }
     }
 }
@@ -91,7 +94,7 @@ impl From<FillingEvent> for CreateBaseEvent {
                 warn!("cannot set event for BaseEvent from FillingEvent");
                 Location::from_ll(0.0, 0.0)
             }),
-            creator_id: 0,
+            creator_id: value.creator_id,
             event_type: Default::default(),
             picture: Default::default(),
             // creation_time: Default::default(),
@@ -475,19 +478,36 @@ pub async fn handle_event_finalisation_callback(
                 .update(BaseState::Idle)
                 .await?;
 
+            let tg_user = msg.from().ok_or("Cannot get user")?;
+
             if filling_event.is_private {
                 bot.send_message(msg.chat.id, "Событие создано. Оно будет доступно только по вашей ссылке: <тут ссылка>").await?;
             } else {
                 bot.send_message(msg.chat.id, "Событие опубликовано. Также вы можете поделиться им по ссылке: <тут ссылка>").await?;
             }
 
-            let manager_bot = MANAGER_BOT.get().unwrap();
+            let manager_bot = MANAGER_BOT.get()
+                .ok_or("Cannot get manager bot")?;
 
-            let create_base_event = CreateBaseEvent::from(filling_event);
-            let events_rep = repository::EventsRepository::new().await;
-            events_rep.create_event(create_base_event).await?;
+            // let creator_id = ACCOUNTS_REPOSITORY.get()
+            //     .ok_or("Cannot get accounts repository")?
+            //     .get_account_id_by_tg_user_id(tg_user_id.0 as i64)
+            //     .await?;
+
+            let user_account = fill_base_account_from_teloxide_user(tg_user);
+            let account = ACCOUNTS_REPOSITORY.get()
+                .ok_or("Cannot get accounts repository")?
+                .create_user_by_tg_user_id(user_account)
+                .await?;
+
+            let mut create_base_event = CreateBaseEvent::from(filling_event);
+            create_base_event.creator_id = account.id;
+            let created_event = EVENTS_REPOSITORY.get()
+                .ok_or("Cannot get events repository")?
+                .create_event(create_base_event).await?;
 
             // todo publish (channel & database)
+            debug!("created event {:?}", created_event);
 
             return Ok(());
         }

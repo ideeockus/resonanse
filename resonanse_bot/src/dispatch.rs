@@ -10,8 +10,8 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
 
     let command_handler = teloxide::filter_command::<Command, _>()
         // .branch(case![Command::Help].endpoint(help))
-        // .branch(case![Command::Start].endpoint(start));
-        .branch(case![Command::Help].endpoint(help_command))
+        .branch(case![Command::Start].endpoint(start_command))
+        .branch(case![Command::About].endpoint(about_command))
         .branch(case![Command::CreateEvent].endpoint(create_event_command))
         .branch(case![Command::GetEvents].endpoint(get_events_command))
         .branch(case![Command::SendFeedback].endpoint(send_feedback_command))

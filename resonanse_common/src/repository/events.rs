@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-use sqlx::{PgPool, query, query_as, Result};
+use sqlx::{PgPool, query, Result};
 use uuid::Uuid;
 use crate::configuration::POSTGRES_DB_URL;
 use crate::models::{BaseEvent, EventSubject, EventType, Location};
@@ -18,20 +18,22 @@ pub struct CreateBaseEvent {
     pub picture: Uuid,
 }
 
+#[derive(Debug)]
 pub struct EventsRepository {
     db_pool: PgPool,
 }
 
 impl EventsRepository {
     // todo call new in OnceCell
-    pub async fn new() -> Self {
-        let conn_url = std::env::var(POSTGRES_DB_URL).unwrap();
-        let pool = sqlx::PgPool::connect(&conn_url).await.unwrap();
+    pub fn new(pool: PgPool) -> Self {
+        // let conn_url = std::env::var(POSTGRES_DB_URL).unwrap();
+        // let pool = sqlx::PgPool::connect(&conn_url).await.unwrap();
 
         Self {
             db_pool: pool,
         }
     }
+
     pub async fn create_event(&self, event: CreateBaseEvent) -> Result<BaseEvent> {
         // query_as!(BaseEvent,
         //     r#"insert into resonanse_events
