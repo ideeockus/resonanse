@@ -38,7 +38,7 @@ pub fn build_event_deep_link(event_uuid: Uuid) -> String {
         .as_deref()
         .unwrap_or("resonanse_bot");
 
-    build_deep_link_with_param(bot_username, &event_uuid.to_string())
+    build_deep_link_with_param(bot_username, &format!("event_{}", &event_uuid.to_string()))
 }
 
 pub fn build_deep_link_with_param(bot_username: &str, param: &str) -> String {

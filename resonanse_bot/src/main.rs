@@ -24,6 +24,7 @@ mod utils;
 mod management;
 mod config;
 mod data_translators;
+mod high_logics;
 
 
 static MANAGER_BOT: OnceLock<Bot> = OnceLock::new();

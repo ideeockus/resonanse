@@ -21,6 +21,11 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
         // todo: add logging middleware
         .branch(command_handler)
         .branch(case![BaseState::Start].endpoint(handle_start_state))
+        .branch(case![BaseState::SendFeedback].endpoint(handle_send_feedback))
+        // .branch(case![BaseState::GetEventList {
+        //     page_size,
+        //     page_num,
+        // }].endpoint(handle_get_events))
 
         .branch(case![BaseState::CreateEvent {
             state,

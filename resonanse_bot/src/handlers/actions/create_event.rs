@@ -10,7 +10,7 @@ use teloxide::types::{InlineKeyboardMarkup, InputFile, MediaKind, MediaLocation,
 use teloxide::types::MessageKind::Common;
 use teloxide::utils::markdown;
 use uuid::Uuid;
-use resonanse_common::file_storage::get_event_images_path;
+use resonanse_common::file_storage::{get_event_image_path_by_uuid, get_event_images_path};
 use resonanse_common::models::{BaseEvent, EventSubject, Location};
 use resonanse_common::repository;
 use resonanse_common::repository::CreateBaseEvent;
@@ -18,12 +18,13 @@ use crate::errors::BotHandlerError;
 use crate::handlers::{HandlerResult, log_request, MyDialogue};
 use crate::handlers::utils::download_file_by_id;
 use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY, keyboards, MANAGER_BOT};
+use crate::config::DEFAULT_DATETIME_FORMAT;
 use crate::data_translators::fill_base_account_from_teloxide_user;
+use crate::high_logics::publish_event;
 use crate::keyboards::{get_inline_kb_choose_subject, get_inline_kb_edit_new_event};
 use crate::states::{BaseState, CreateEventState};
 use crate::utils::{build_event_deep_link, get_tg_downloads_dir, repr_user_as_str};
 
-const DEFAULT_DATETIME_FORMAT: &str = "%d.%m.%Y %H:%M";
 const DATETIME_FORMAT_1: &str = "%d/%m/%Y %H:%M";
 const DATETIME_FORMAT_2: &str = "%d.%m.%Y %H.%M";
 const DATETIME_FORMAT_3: &str = "%d-%m-%Y %H:%M";
@@ -36,7 +37,7 @@ pub struct FillingEvent {
     description: Option<String>,
     datetime: Option<chrono::NaiveDateTime>,
     geo_position: Option<Location>,
-    photo: Option<Uuid>,
+    picture: Option<Uuid>,
     creator_id: i64,
 }
 
@@ -49,13 +50,13 @@ impl FillingEvent {
             description: None,
             datetime: None,
             geo_position: None,
-            photo: None,
+            picture: None,
             creator_id: 0,
         }
     }
 }
 
-trait TgTextFormatter {
+pub trait TgTextFormatter {
     fn format(&self) -> String;
 }
 
@@ -63,11 +64,11 @@ impl TgTextFormatter for CreateBaseEvent {
     fn format(&self) -> String {
         let msg_text = format!(
             r#"
-**{}**
+*{}*
 {}
 
-Тематика: *{}*
-Дата: *{}*
+Тематика: _{}_
+Дата: _{}_
 "#
             ,
             markdown::escape(&self.title),
@@ -98,7 +99,7 @@ impl From<FillingEvent> for CreateBaseEvent {
             }),
             creator_id: value.creator_id,
             event_type: Default::default(),
-            picture: value.photo,
+            picture: value.picture,
             // creation_time: Default::default(),
         }
     }
@@ -414,11 +415,12 @@ pub async fn handle_event_picture(bot: Bot, dialogue: MyDialogue, msg: Message, 
     };
 
     let local_file_uuid = Uuid::new_v4();
-    let local_file_path = get_event_images_path().join(&local_file_uuid.to_string());
+    // let local_file_path = get_event_images_path().join(&local_file_uuid.to_string());
+    let local_file_path = get_event_image_path_by_uuid(local_file_uuid);
 
     download_file_by_id(&bot, &event_photo_file_id, &local_file_path).await?;
 
-    filling_event.photo = Some(local_file_uuid);
+    filling_event.picture = Some(local_file_uuid);
 
     dialogue
         .update(BaseState::CreateEvent {
@@ -482,30 +484,10 @@ pub async fn handle_event_finalisation_callback(
 
             let tg_user = q.from;
 
-            let manager_bot = MANAGER_BOT.get()
-                .ok_or("Cannot get manager bot")?;
-
-            // let creator_id = ACCOUNTS_REPOSITORY.get()
-            //     .ok_or("Cannot get accounts repository")?
-            //     .get_account_id_by_tg_user_id(tg_user_id.0 as i64)
-            //     .await?;
-
-            let user_account = fill_base_account_from_teloxide_user(&tg_user);
-            let account = ACCOUNTS_REPOSITORY.get()
-                .ok_or("Cannot get accounts repository")?
-                .create_user_by_tg_user_id(user_account)
-                .await?;
-
-            let mut create_base_event = CreateBaseEvent::from(
-                filling_event.clone()
-            );
-            create_base_event.creator_id = account.id;
-            let created_event = EVENTS_REPOSITORY.get()
-                .ok_or("Cannot get events repository")?
-                .create_event(create_base_event).await?;
+            let created_event= publish_event(filling_event.clone(), &tg_user).await?;
 
             let tg_event_deep_link = build_event_deep_link(
-                created_event.picture.unwrap_or_default()
+                created_event.id
             );
             if filling_event.is_private {
                 bot.send_message(
@@ -524,9 +506,6 @@ pub async fn handle_event_finalisation_callback(
                     )
                 ).await?;
             }
-
-            // todo publish (channel & database)
-            debug!("created event {:?}", created_event);
 
             return Ok(());
         }

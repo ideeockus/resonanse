@@ -2,7 +2,8 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use chrono_tz::Tz;
-use sqlx::{Postgres, Type};
+use sqlx::{FromRow, Postgres, Row, Type};
+use sqlx::postgres::PgRow;
 use uuid::Uuid;
 // use serde_repr::{Serialize_repr, Deserialize_repr};
 
@@ -147,4 +148,29 @@ pub struct BaseEvent {
     pub event_type: EventType,
     pub picture: Option<Uuid>,
     pub creation_time: NaiveDateTime,
+}
+
+impl FromRow<'_, PgRow> for BaseEvent {
+    fn from_row(row: &PgRow) -> Result<Self, sqlx::error::Error> {
+        Ok(
+            Self {
+                id: row.try_get::<_, &str>("id")?,
+                is_private: row.try_get::<_, &str>("is_private")?,
+                is_commercial: row.try_get::<_, &str>("is_commercial")?,
+                title: row.try_get::<_, &str>("title")?,
+                description: row.try_get::<_, &str>("description")?,
+                subject: row.try_get::<_, &str>("subject")?,
+                datetime: row.try_get::<_, &str>("datetime")?,
+                location: Location {
+                    latitude: row.try_get::<_, &str>("location_latitude")?,
+                    longitude: row.try_get::<_, &str>("location_longitude")?,
+                    title: row.try_get::<_, &str>("location_title")?,
+                },
+                creator_id: row.try_get::<_, &str>("creator_id")?,
+                event_type: row.try_get::<_, &str>("event_type")?,
+                picture: row.try_get::<_, &str>("picture")?,
+                creation_time: row.try_get::<_, &str>("creation_time")?,
+            }
+        )
+    }
 }

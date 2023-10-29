@@ -13,6 +13,7 @@ pub enum BaseState {
         page_size: usize,
         list_page: usize,
     },
+    SendFeedback,
 }
 
 #[derive(Clone, Debug, Default)]

@@ -95,3 +95,19 @@ pub fn get_inline_kb_edit_new_event(is_public: bool, map_link: Option<String>) -
     // ReplyMarkup::InlineKeyboard(keyboard)
     keyboard
 }
+
+pub fn get_inline_kb_event_message(map_link: Option<String>) -> InlineKeyboardMarkup {
+    let mut buttons = vec![];
+
+    if let Some(map_link) = map_link {
+        let map_link_btn = InlineKeyboardButton::new(
+            "Карта",
+            InlineKeyboardButtonKind::Url(map_link.parse().unwrap()),
+        );
+
+        buttons.push(vec![map_link_btn]);
+    }
+
+    let keyboard = InlineKeyboardMarkup::new(buttons);
+    keyboard
+}

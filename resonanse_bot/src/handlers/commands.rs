@@ -1,9 +1,13 @@
+use std::str::FromStr;
 use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::ParseMode;
+use teloxide::utils::command::parse_command;
+use uuid::Uuid;
 use crate::ACCOUNTS_REPOSITORY;
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::handlers::{FillingEvent, HandlerResult, log_request, MyDialogue};
+use crate::high_logics::send_event_post;
 use crate::states::{BaseState, CreateEventState};
 
 const BOT_HELP_TEXT_MD: &str = "Помощ";
@@ -11,6 +15,19 @@ const CREATE_EVENT_TEXT_MD: &str = "Введите название событи
 
 pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
     log_request("got start_command", &msg);
+
+    if let Some(command_text) = msg.text() {
+        if let Some((command, params)) = parse_command(command_text, "") {
+            if let Some(first_param) = params.first() {
+                if let Some(event_uuid) = first_param.strip_prefix("event_") {
+                    if let Ok(event_uuid) = Uuid::from_str(event_uuid) {
+                        send_event_post(&bot, msg.chat.id, event_uuid).await?;
+                        return Ok(())
+                    }
+                }
+            }
+        }
+    }
 
     let mut message = bot.send_message(msg.chat.id, "Начальное сообщение");
     message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -44,8 +61,6 @@ pub async fn create_event_command(bot: Bot, dialogue: MyDialogue, msg: Message) 
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
-    let creator_user_id = msg.from().ok_or("Cannot get user from message")?.id;
-
     dialogue.update(
         BaseState::CreateEvent {
             state: CreateEventState::Name,
@@ -66,12 +81,16 @@ pub async fn get_events_command(bot: Bot, msg: Message) -> HandlerResult {
     Ok(())
 }
 
-pub async fn send_feedback_command(bot: Bot, msg: Message) -> HandlerResult {
+pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     log_request("got send_feedback_command command", &msg);
 
-    let mut message = bot.send_message(msg.chat.id, " ");
+    let mut message = bot.send_message(msg.chat.id, "Введите отзыв, предложение или другую полезную обратную связь");
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
+
+    dialogue.update(
+        BaseState::SendFeedback
+    ).await?;
 
     Ok(())
 }
