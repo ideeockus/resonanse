@@ -1,10 +1,12 @@
+use std::error::Error;
 use std::str::FromStr;
 use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::ParseMode;
 use teloxide::utils::command::parse_command;
+use teloxide::utils::markdown;
 use uuid::Uuid;
-use crate::ACCOUNTS_REPOSITORY;
+use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY};
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::handlers::{FillingEvent, HandlerResult, log_request, MyDialogue};
 use crate::high_logics::send_event_post;
@@ -71,10 +73,23 @@ pub async fn create_event_command(bot: Bot, dialogue: MyDialogue, msg: Message) 
     Ok(())
 }
 
-pub async fn get_events_command(bot: Bot, msg: Message) -> HandlerResult {
+pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     log_request("got get_events command", &msg);
 
-    let mut message = bot.send_message(msg.chat.id, "This feature unsupported");
+    const DEFAULT_PAGE_SIZE: i64 = 10;
+
+    let (page, page_size) = (0i64, DEFAULT_PAGE_SIZE);
+
+    dialogue.update(
+        BaseState::GetEventList {
+            page_size,
+            page_num: page,
+        }
+    ).await?;
+
+    let msg_text = get_choose_event_text(page, page_size).await?;
+
+    let mut message = bot.send_message(msg.chat.id, msg_text);
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
@@ -93,4 +108,24 @@ pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message)
     ).await?;
 
     Ok(())
+}
+
+// todo message fillers
+pub async fn get_choose_event_text(page: i64, page_size: i64) -> Result<String, Box<dyn Error + Send + Sync>> {
+    let events = EVENTS_REPOSITORY.get()
+        .ok_or("Cannot get events repository")?
+        .get_public_events(page, page_size)
+        .await?;
+
+    let mut event_i = 0;
+    let msg_text = format!(
+        "Выбери интересное событие и нажми на его идентификатор\n\n{}",
+        events.iter().map(|event| {
+            event_i += 1;
+            format!("{} /event_{}", event.title, event_i)
+
+        }).collect::<Vec<String>>().join("\n")
+    );
+
+    Ok(markdown::escape(&msg_text))
 }

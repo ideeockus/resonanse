@@ -1,4 +1,4 @@
-use teloxide::utils::command::BotCommands;
+use teloxide::utils::command::{BotCommands, ParseError};
 
 #[derive(BotCommands, Clone)]
 #[command(
@@ -16,4 +16,7 @@ pub enum Command {
     GetEvents,
     #[command(description = "Обратная связь")]
     SendFeedback,
+    // #[command(description = "Выбор события", parse_with = accept_two_digits)]
+    // Event{event_num: i64},
 }
+

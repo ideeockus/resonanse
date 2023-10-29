@@ -10,8 +10,8 @@ pub enum BaseState {
         filling_event: FillingEvent,
     },
     GetEventList {
-        page_size: usize,
-        list_page: usize,
+        page_size: i64,
+        page_num: i64,
     },
     SendFeedback,
 }

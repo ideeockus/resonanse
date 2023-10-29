@@ -87,7 +87,8 @@ pub fn get_inline_kb_edit_new_event(is_public: bool, map_link: Option<String>) -
     }
 
     buttons.extend([
-        vec![edit_publicity_btn, refill_again_btn],
+        // vec![edit_publicity_btn, refill_again_btn],  // todo fix this button
+        vec![refill_again_btn],
         vec![publish_btn],
     ]);
 
