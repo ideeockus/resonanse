@@ -55,8 +55,8 @@ pub async fn publish_event<I>(new_event: I, creator_tg_user: &teloxide::types::U
                 ChatId(tg_channel_to_post),
                 created_event.clone(),
             ) {
-                EventPostMessageReques::WithPoster(f) => f.await?,
-                EventPostMessageReques::Text(f) => f.await?,
+                EventPostMessageRequest::WithPoster(f) => f.await?,
+                EventPostMessageRequest::Text(f) => f.await?,
             };
         }
     }
@@ -72,14 +72,14 @@ pub async fn send_event_post(bot: &Bot, chat_id: ChatId, event_uuid: Uuid) -> Re
         .await?;
 
     match prepare_event_msg_with_base_event(bot, chat_id, created_event) {
-        EventPostMessageReques::WithPoster(f) => f.await?,
-        EventPostMessageReques::Text(f) => f.await?,
+        EventPostMessageRequest::WithPoster(f) => f.await?,
+        EventPostMessageRequest::Text(f) => f.await?,
     };
 
     Ok(())
 }
 
-enum EventPostMessageReques {
+enum EventPostMessageRequest {
     WithPoster(MultipartRequest<SendPhoto>),
     Text(JsonRequest<SendMessage>),
 }
@@ -88,7 +88,7 @@ fn prepare_event_msg_with_base_event(
     bot: &Bot,
     chat_id: ChatId,
     base_event: BaseEvent,
-) -> EventPostMessageReques {
+) -> EventPostMessageRequest {
     let msg_text = format!(
         r#"
 *{}*
@@ -96,12 +96,17 @@ fn prepare_event_msg_with_base_event(
 
 Тематика: _{}_
 Дата: _{}_
+{}
 "#
         ,
         markdown::escape(&base_event.title),
         markdown::escape(&base_event.description),
         markdown::escape(&base_event.subject.to_string()),
         markdown::escape(&base_event.datetime.format(DEFAULT_DATETIME_FORMAT).to_string()),
+        match base_event.location.title.as_deref() {
+            None => "".to_string(),
+            Some(location_title) => format!("Место: _{}_", markdown::escape(location_title)),
+        }
         // markdown::escape(&self.location.get_yandex_map_link_to()),
     );
 
@@ -115,7 +120,7 @@ fn prepare_event_msg_with_base_event(
                 Some(base_event.location.get_yandex_map_link_to())
             )));
 
-            EventPostMessageReques::WithPoster(msg)
+            EventPostMessageRequest::WithPoster(msg)
         }
         None => {
             let mut msg = bot.send_message(
@@ -123,7 +128,7 @@ fn prepare_event_msg_with_base_event(
                 msg_text
             );
 
-            EventPostMessageReques::Text(msg)
+            EventPostMessageRequest::Text(msg)
         }
     }
 }

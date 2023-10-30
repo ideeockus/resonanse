@@ -109,6 +109,10 @@ impl EventsRepository {
             .collect::<Vec<_>>();
         // let filter_params = filters_vec.iter().map(|f| f.to_string()).collect::<Vec<_>>().join("");
 
+        if filters_vec.is_empty() {
+            return Ok(Vec::new());
+        }
+
         let filter_params_len = filters_vec.len();
         let filter_params = (1..=filter_params_len).map(|i| format!("${}", i)).collect::<Vec<String>>().join(", ");
         // let filter_params = format!("$1{}", ", $".repeat(filters_vec.len() - 1));
