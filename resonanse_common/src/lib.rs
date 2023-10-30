@@ -1,4 +1,5 @@
 pub use sqlx::PgPool;
+pub use models::EventSubjectFilter;
 
 pub mod models;
 pub mod repository;

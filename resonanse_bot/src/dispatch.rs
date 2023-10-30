@@ -25,6 +25,7 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
         .branch(case![BaseState::GetEventList {
             page_size,
             page_num,
+            events_filter,
         }].endpoint(handle_get_events))
 
         .branch(case![BaseState::CreateEvent {
@@ -38,7 +39,11 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
             state,
             filling_event,
         }].endpoint(handle_create_event_state_callback))
-        .branch(case![BaseState::GetEventList { page_size, page_num }].endpoint(handle_page_callback))
+        .branch(case![BaseState::GetEventList {
+            page_size,
+            page_num,
+            events_filter,
+        }].endpoint(handle_get_events_callback))
         .branch(dptree::endpoint(invalid_state_callback));
 
     dialogue::enter::<Update, InMemStorage<BaseState>, BaseState, _>()

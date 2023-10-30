@@ -1,11 +1,10 @@
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::path::PathBuf;
-use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
-use chrono_tz::Tz;
-use sqlx::{FromRow, Postgres, Row, Type};
+
+use chrono::NaiveDateTime;
+use sqlx::{FromRow, Row, Type};
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
-// use serde_repr::{Serialize_repr, Deserialize_repr};
 
 
 #[derive(Clone, Copy, Debug, sqlx::Type)]
@@ -45,7 +44,7 @@ impl Location {
     }
 }
 
-#[derive(Clone, Copy, Debug, sqlx::Type)]
+#[derive(Clone, Copy, Debug, sqlx::Type, Eq, Hash, PartialEq)]
 #[repr(i32)]
 pub enum EventSubject {
     Other = 0,
@@ -54,39 +53,22 @@ pub enum EventSubject {
     Charity = 3,
     Education = 4,
     Professional = 5,
-    Acquaintance = 6,
+    Entertainments = 6,
     Culture = 7,
     Interests = 8,
     Business = 9,
 }
 
-// impl ToString for EventSubject {
-//     fn to_string(&self) -> String {
-//         match self {
-//             EventSubject::Business => "Бизнес",
-//             EventSubject::Social => "Спорт",
-//             EventSubject::Sport => "Благотворительность",
-//             EventSubject::Charity => "Развлечения",
-//             EventSubject::Education => "Образование",
-//             EventSubject::Professional => "Профессиональное",
-//             EventSubject::Acquaintance => "Знакомства",
-//             EventSubject::Culture => "Культура",
-//             EventSubject::Interests => "Интересы",
-//             EventSubject::Other => "Другое",
-//         }.to_string()
-//     }
-// }
-
 impl Display for EventSubject {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             EventSubject::Business => "Бизнес",
-            EventSubject::Social => "Спорт",
-            EventSubject::Sport => "Благотворительность",
-            EventSubject::Charity => "Развлечения",
+            EventSubject::Social => "Знакомства",
+            EventSubject::Sport => "Спорт",
+            EventSubject::Charity => "Добро",
             EventSubject::Education => "Образование",
-            EventSubject::Professional => "Профессиональное",
-            EventSubject::Acquaintance => "Знакомства",
+            EventSubject::Professional => "Профессия",
+            EventSubject::Entertainments => "Развлечения",
             EventSubject::Culture => "Культура",
             EventSubject::Interests => "Интересы",
             EventSubject::Other => "Другое",
@@ -105,15 +87,44 @@ impl From<&str> for EventSubject {
     fn from(value: &str) -> Self {
         match value {
             "Бизнес" => EventSubject::Business,
-            "Спорт" => EventSubject::Social,
-            "Благотворительность" => EventSubject::Sport,
-            "Развлечения" => EventSubject::Charity,
+            "Знакомства" => EventSubject::Social,
+            "Спорт" => EventSubject::Sport,
+            "Добро" => EventSubject::Charity,
             "Образование" => EventSubject::Education,
-            "Профессиональное" => EventSubject::Professional,
-            "Знакомства" => EventSubject::Acquaintance,
+            "Профессия" => EventSubject::Professional,
+            "Развлечения" => EventSubject::Entertainments,
             "Культура" => EventSubject::Culture,
             "Интересы" => EventSubject::Interests,
             _ => EventSubject::Other,
+        }
+    }
+}
+
+// pub struct EventSubjectFilter(Vec<(EventSubject, bool)>);
+#[derive(Clone)]
+pub struct EventSubjectFilter(pub HashMap<EventSubject, bool>);
+
+impl EventSubjectFilter {
+    pub fn new() -> Self {
+        Self(
+            HashMap::from([
+                (EventSubject::Business, true),
+                (EventSubject::Social, true),
+                (EventSubject::Sport, true),
+                (EventSubject::Charity, true),
+                (EventSubject::Education, true),
+                (EventSubject::Professional, true),
+                (EventSubject::Entertainments, true),
+                (EventSubject::Culture, true),
+                (EventSubject::Interests, true),
+                (EventSubject::Other, true),
+            ])
+        )
+    }
+
+    pub fn switch(&mut self, event_subject: EventSubject) {
+        if let Some(f) = self.0.get_mut(&event_subject) {
+            *f = !*f;
         }
     }
 }

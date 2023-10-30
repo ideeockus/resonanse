@@ -1,19 +1,23 @@
-use std::error::Error;
 use std::str::FromStr;
+
 use teloxide::Bot;
 use teloxide::prelude::*;
-use teloxide::types::ParseMode;
+use teloxide::types::{ParseMode, ReplyMarkup};
 use teloxide::utils::command::parse_command;
-use teloxide::utils::markdown;
 use uuid::Uuid;
-use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY};
+
+use resonanse_common::EventSubjectFilter;
+
+use crate::ACCOUNTS_REPOSITORY;
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::handlers::{FillingEvent, HandlerResult, log_request, MyDialogue};
 use crate::high_logics::send_event_post;
+use crate::keyboards::get_inline_kb_set_subject_filter;
 use crate::states::{BaseState, CreateEventState};
 
 const BOT_HELP_TEXT_MD: &str = "Помощ";
 const CREATE_EVENT_TEXT_MD: &str = "Введите название события";
+const GET_EVENTS_TEXT_MD: &str = "Выбери, что тебе интересно";
 
 pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
     log_request("got start_command", &msg);
@@ -24,7 +28,7 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
                 if let Some(event_uuid) = first_param.strip_prefix("event_") {
                     if let Ok(event_uuid) = Uuid::from_str(event_uuid) {
                         send_event_post(&bot, msg.chat.id, event_uuid).await?;
-                        return Ok(())
+                        return Ok(());
                     }
                 }
             }
@@ -80,17 +84,19 @@ pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) ->
 
     let (page, page_size) = (0i64, DEFAULT_PAGE_SIZE);
 
+    let events_filter = EventSubjectFilter::new();
+
     dialogue.update(
         BaseState::GetEventList {
             page_size,
             page_num: page,
+            events_filter: events_filter.clone(),
         }
     ).await?;
 
-    let msg_text = get_choose_event_text(page, page_size).await?;
-
-    let mut message = bot.send_message(msg.chat.id, msg_text);
+    let mut message = bot.send_message(msg.chat.id, GET_EVENTS_TEXT_MD);
     message.parse_mode = Some(ParseMode::MarkdownV2);
+    message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_set_subject_filter(&events_filter)));
     message.await?;
 
     Ok(())
@@ -108,24 +114,4 @@ pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message)
     ).await?;
 
     Ok(())
-}
-
-// todo message fillers
-pub async fn get_choose_event_text(page: i64, page_size: i64) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let events = EVENTS_REPOSITORY.get()
-        .ok_or("Cannot get events repository")?
-        .get_public_events(page, page_size)
-        .await?;
-
-    let mut event_i = 0;
-    let msg_text = format!(
-        "Выбери интересное событие и нажми на его идентификатор\n\n{}",
-        events.iter().map(|event| {
-            event_i += 1;
-            format!("{} /event_{}", event.title, event_i)
-
-        }).collect::<Vec<String>>().join("\n")
-    );
-
-    Ok(markdown::escape(&msg_text))
 }

@@ -1,4 +1,5 @@
 use teloxide::types::{InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, ReplyMarkup};
+use resonanse_common::EventSubjectFilter;
 use resonanse_common::models::EventSubject;
 
 
@@ -15,7 +16,7 @@ pub fn get_inline_kb_choose_subject() -> ReplyMarkup {
     let buttons = [
         vec![
             kb_button!(EventSubject::Social),
-            kb_button!(EventSubject::Acquaintance),
+            kb_button!(EventSubject::Entertainments),
             kb_button!(EventSubject::Charity),
         ],
         vec![
@@ -112,3 +113,51 @@ pub fn get_inline_kb_event_message(map_link: Option<String>) -> InlineKeyboardMa
     let keyboard = InlineKeyboardMarkup::new(buttons);
     keyboard
 }
+
+pub const EVENTS_PAGE_LEFT: &str = "EVENTS_PAGE_LEFT";
+pub const EVENTS_PAGE_RIGHT: &str = "EVENTS_PAGE_RIGHT";
+pub fn get_inline_kb_events_page() -> InlineKeyboardMarkup {
+    let button_left = InlineKeyboardButton::new(
+            "⏪ туда",
+            InlineKeyboardButtonKind::CallbackData(EVENTS_PAGE_LEFT.to_string()),
+        );
+
+    let button_right = InlineKeyboardButton::new(
+            "сюда ⏩",
+            InlineKeyboardButtonKind::CallbackData(EVENTS_PAGE_RIGHT.to_string()),
+        );
+
+    let buttons = [
+        vec![button_left, button_right]
+    ];
+
+    let keyboard = InlineKeyboardMarkup::new(buttons);
+    // ReplyMarkup::InlineKeyboard(keyboard)
+    keyboard
+}
+
+
+pub const APPLY_EVENT_FILTER_BTN: &str = "APPLY_EVENT_FILTER_BTN";
+pub fn get_inline_kb_set_subject_filter(event_filters: &EventSubjectFilter) -> InlineKeyboardMarkup {
+    const FILTER_ON: &str = "✅";
+    const FILTER_OFF: &str = "❌";
+    const ROW_LEN: usize = 2;
+
+    let mut buttons = event_filters.0.iter().map(|(es, on)| {
+        InlineKeyboardButton::new(
+            format!("{} [{}]", es.to_string(), if *on {FILTER_ON} else {FILTER_OFF}),
+            InlineKeyboardButtonKind::CallbackData(es.to_string()),
+        )
+    }).collect::<Vec<_>>().chunks(ROW_LEN).map(|c| c.to_vec()).collect::<Vec<_>>();
+
+    let apply_button = InlineKeyboardButton::new(
+            "Показать",
+            InlineKeyboardButtonKind::CallbackData(APPLY_EVENT_FILTER_BTN.to_string()),
+        );
+    buttons.push(vec![apply_button]);
+
+    let keyboard = InlineKeyboardMarkup::new(buttons);
+    // ReplyMarkup::InlineKeyboard(keyboard)
+    keyboard
+}
+

@@ -1,3 +1,5 @@
+use resonanse_common::EventSubjectFilter;
+
 use crate::handlers::FillingEvent;
 
 #[derive(Clone, Default)]
@@ -12,6 +14,7 @@ pub enum BaseState {
     GetEventList {
         page_size: i64,
         page_num: i64,
+        events_filter: EventSubjectFilter,
     },
     SendFeedback,
 }

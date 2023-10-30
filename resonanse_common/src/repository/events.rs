@@ -3,6 +3,7 @@ use log::debug;
 use sqlx::{PgPool, query, Result};
 use uuid::Uuid;
 use crate::configuration::POSTGRES_DB_URL;
+use crate::EventSubjectFilter;
 use crate::models::{BaseEvent, EventSubject, EventType, Location};
 
 #[derive(Clone)]
@@ -83,12 +84,12 @@ impl EventsRepository {
         })
     }
 
-    pub async fn get_public_events(&self, page: i64, page_size: i64) -> Result<Vec<BaseEvent>> {
+    pub async fn get_all_public_events(&self, page: i64, page_size: i64) -> Result<Vec<BaseEvent>> {
         let events: Result<Vec<BaseEvent>> = sqlx::query_as(
             r#"select *
             from resonanse_events
             where is_private=false
-            order by id
+            order by datetime
             offset $1 rows
             fetch next $2 rows only
             "#
@@ -98,6 +99,44 @@ impl EventsRepository {
             .fetch_all(&self.db_pool)
             .await;
 
+        events
+    }
+
+    pub async fn get_public_events(&self, page: i64, page_size: i64, events_subject_filter: &EventSubjectFilter) -> Result<Vec<BaseEvent>> {
+        let filters_vec = events_subject_filter.0.iter()
+            .filter(|(_, f)| **f)
+            .map(|(f, _)| (*f as i32))
+            .collect::<Vec<_>>();
+        // let filter_params = filters_vec.iter().map(|f| f.to_string()).collect::<Vec<_>>().join("");
+
+        let filter_params_len = filters_vec.len();
+        let filter_params = (1..=filter_params_len).map(|i| format!("${}", i)).collect::<Vec<String>>().join(", ");
+        // let filter_params = format!("$1{}", ", $".repeat(filters_vec.len() - 1));
+        let query_str = format!(
+            r#"select *
+            from resonanse_events
+            WHERE subject IN ( { } ) and is_private=false
+            order by datetime
+            offset ${} rows
+            fetch next ${} rows only
+            "#,
+            filter_params,
+            filter_params_len+1,
+            filter_params_len+2,
+
+        );
+        debug!("get_public_events builded query: {}", query_str);
+
+        let mut events_query = sqlx::query_as(&query_str);
+        for subj_i32 in filters_vec {
+            events_query = events_query.bind(subj_i32);
+        }
+
+        let events: Result<Vec<BaseEvent>> = events_query
+            .bind(page * page_size)
+            .bind(page_size)
+            .fetch_all(&self.db_pool)
+            .await;
         events
     }
 
