@@ -27,11 +27,12 @@ pub fn get_inline_kb_choose_subject() -> ReplyMarkup {
         vec![
             kb_button!(EventSubject::Professional),
             kb_button!(EventSubject::Sport),
-            kb_button!(EventSubject::Interests),
-        ],
-        vec![
             kb_button!(EventSubject::Other),
+            // kb_button!(EventSubject::Interests),
         ],
+        // vec![
+        //     kb_button!(EventSubject::Other),
+        // ],
     ];
 
     let keyboard = InlineKeyboardMarkup::new(buttons);
@@ -143,9 +144,16 @@ pub fn get_inline_kb_set_subject_filter(event_filters: &EventSubjectFilter) -> I
     const FILTER_OFF: &str = "❌";
     const ROW_LEN: usize = 2;
 
+    let max_len = event_filters.0.iter().map((|(es, _)| es.to_string().len())).max().unwrap_or(0);
+
     let mut buttons = event_filters.0.iter().map(|(es, on)| {
         InlineKeyboardButton::new(
-            format!("{} [{}]", es.to_string(), if *on {FILTER_ON} else {FILTER_OFF}),
+            format!(
+                "{}{}[{}]",
+                es.to_string(),
+                " ".repeat(max_len.saturating_sub(es.to_string().len())),
+                if *on {FILTER_ON} else {FILTER_OFF},
+            ),
             InlineKeyboardButtonKind::CallbackData(es.to_string()),
         )
     }).collect::<Vec<_>>().chunks(ROW_LEN).map(|c| c.to_vec()).collect::<Vec<_>>();

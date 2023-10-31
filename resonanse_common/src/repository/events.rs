@@ -88,7 +88,7 @@ impl EventsRepository {
         let events: Result<Vec<BaseEvent>> = sqlx::query_as(
             r#"select *
             from resonanse_events
-            where is_private=false
+            where is_private=false and datetime >= CURDATE()
             order by datetime
             offset $1 rows
             fetch next $2 rows only
@@ -119,7 +119,7 @@ impl EventsRepository {
         let query_str = format!(
             r#"select *
             from resonanse_events
-            WHERE subject IN ( { } ) and is_private=false
+            WHERE subject IN ( { } ) and is_private=false and datetime >= CURDATE()
             order by datetime
             offset ${} rows
             fetch next ${} rows only

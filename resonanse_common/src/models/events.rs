@@ -47,16 +47,15 @@ impl Location {
 #[derive(Clone, Copy, Debug, sqlx::Type, Eq, Hash, PartialEq)]
 #[repr(i32)]
 pub enum EventSubject {
-    Other = 0,
-    Social = 1,
-    Sport = 2,
-    Charity = 3,
-    Education = 4,
-    Professional = 5,
-    Entertainments = 6,
+    Other=0,
+    Professional = 1,
+    Business = 2,
+    Education = 3,
+    Entertainments = 4,
+    Sport = 5,
+    Social = 6,
     Culture = 7,
-    Interests = 8,
-    Business = 9,
+    Charity = 8,
 }
 
 impl Display for EventSubject {
@@ -70,7 +69,7 @@ impl Display for EventSubject {
             EventSubject::Professional => "Профессия",
             EventSubject::Entertainments => "Развлечения",
             EventSubject::Culture => "Культура",
-            EventSubject::Interests => "Интересы",
+            // EventSubject::Interests => "Интересы",
             EventSubject::Other => "Другое",
         };
         write!(f, "{}", s)
@@ -94,7 +93,7 @@ impl From<&str> for EventSubject {
             "Профессия" => EventSubject::Professional,
             "Развлечения" => EventSubject::Entertainments,
             "Культура" => EventSubject::Culture,
-            "Интересы" => EventSubject::Interests,
+            // "Интересы" => EventSubject::Interests,
             _ => EventSubject::Other,
         }
     }
@@ -116,8 +115,8 @@ impl EventSubjectFilter {
                 (EventSubject::Professional, true),
                 (EventSubject::Entertainments, true),
                 (EventSubject::Culture, true),
-                (EventSubject::Interests, true),
-                (EventSubject::Other, true),
+                // (EventSubject::Interests, true),
+                // (EventSubject::Other, true),
             ])
         )
     }
