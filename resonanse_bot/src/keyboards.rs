@@ -58,7 +58,7 @@ pub fn get_inline_kb_edit_new_event(
     is_public: bool,
     map_link: Option<String>,
 ) -> InlineKeyboardMarkup {
-    let edit_publicity_btn = InlineKeyboardButton::new(
+    let _edit_publicity_btn = InlineKeyboardButton::new(
         if is_public {
             "Публичное [✅]"
         } else {
@@ -152,7 +152,7 @@ pub fn get_inline_kb_set_subject_filter(
     let max_len = event_filters
         .0
         .iter()
-        .map((|(es, _)| es.to_string().len()))
+        .map(|(es, _)| es.to_string().len())
         .max()
         .unwrap_or(0);
 
@@ -182,6 +182,5 @@ pub fn get_inline_kb_set_subject_filter(
     buttons.push(vec![apply_button]);
 
     let keyboard = InlineKeyboardMarkup::new(buttons);
-    // ReplyMarkup::InlineKeyboard(keyboard)
     keyboard
 }

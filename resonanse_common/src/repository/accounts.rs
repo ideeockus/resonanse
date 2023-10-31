@@ -1,7 +1,7 @@
 use crate::models::BaseAccount;
 use log::debug;
-use sqlx::{query, PgPool, Result, Row};
-use std::future::Future;
+use sqlx::{PgPool, Result, Row};
+
 
 #[derive(Debug)]
 pub struct AccountsRepository {

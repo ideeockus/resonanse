@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 
 use chrono::NaiveDateTime;
 use sqlx::postgres::PgRow;
-use sqlx::{FromRow, Row, Type};
+use sqlx::{FromRow, Row};
 use uuid::Uuid;
 
 #[derive(Clone, Copy, Debug, sqlx::Type)]

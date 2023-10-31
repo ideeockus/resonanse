@@ -14,7 +14,7 @@ use teloxide::Bot;
 
 pub async fn handle_get_events(
     bot: Bot,
-    dialogue: MyDialogue,
+    _dialogue: MyDialogue,
     (page_size, page_num, events_filter): (i64, i64, EventSubjectFilter),
     msg: Message,
 ) -> HandlerResult {
@@ -49,7 +49,7 @@ pub async fn handle_get_events(
 pub async fn handle_get_events_callback(
     bot: Bot,
     dialogue: MyDialogue,
-    (page_size, page_num, mut events_filter): (i64, i64, EventSubjectFilter),
+    (page_size, page_num, events_filter): (i64, i64, EventSubjectFilter),
     q: CallbackQuery,
 ) -> HandlerResult {
     debug!("got handle_get_events__callback callback");
@@ -106,7 +106,7 @@ pub async fn handle_events_filter_callback(
                 edit_msg.reply_markup = Some(get_inline_kb_set_subject_filter(&events_filter));
                 edit_msg.await?;
             }
-            Err(e) => {
+            Err(_e) => {
                 bot.send_message(q.from.id, "Не распознанное действие")
                     .await?;
             }

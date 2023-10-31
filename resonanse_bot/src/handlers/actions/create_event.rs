@@ -1,28 +1,28 @@
 use crate::config::DEFAULT_DATETIME_FORMAT;
-use crate::data_translators::fill_base_account_from_teloxide_user;
+
 use crate::errors::BotHandlerError;
 use crate::handlers::utils::download_file_by_id;
 use crate::handlers::{log_request, HandlerResult, MyDialogue};
 use crate::high_logics::publish_event;
 use crate::keyboards::{get_inline_kb_choose_subject, get_inline_kb_edit_new_event};
 use crate::states::{BaseState, CreateEventState};
-use crate::utils::{build_event_deep_link, get_tg_downloads_dir, repr_user_as_str};
-use crate::{keyboards, ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY, MANAGER_BOT};
-use chrono::{DateTime, NaiveDateTime, ParseResult};
+use crate::utils::{build_event_deep_link};
+use crate::{keyboards};
+use chrono::{NaiveDateTime};
 use log::{debug, warn};
-use resonanse_common::file_storage::{get_event_image_path_by_uuid, get_event_images_path};
-use resonanse_common::models::{BaseEvent, EventSubject, Location};
-use resonanse_common::repository;
+use resonanse_common::file_storage::{get_event_image_path_by_uuid};
+use resonanse_common::models::{EventSubject, Location};
+
 use resonanse_common::repository::CreateBaseEvent;
-use std::fmt::format;
-use std::fs::File;
-use teloxide::payloads::SendMessage;
+
+
+
 use teloxide::prelude::*;
-use teloxide::requests::JsonRequest;
+
 use teloxide::types::MessageKind::Common;
 use teloxide::types::{
-    InlineKeyboardMarkup, InputFile, MediaKind, MediaLocation, MediaVenue, MessageCommon,
-    ParseMode, PhotoSize, ReplyMarkup, Venue,
+    InputFile, MediaKind, MediaLocation, MediaVenue, MessageCommon,
+    ParseMode, ReplyMarkup,
 };
 use teloxide::utils::markdown;
 use teloxide::Bot;
@@ -425,7 +425,7 @@ pub async fn handle_event_subject(
         })
         .await?;
 
-    let mut message = bot.send_message(q.from.id, "Осталось добавить изображение");
+    let message = bot.send_message(q.from.id, "Осталось добавить изображение");
     message.await?;
 
     Ok(())

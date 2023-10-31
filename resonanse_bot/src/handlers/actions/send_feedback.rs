@@ -13,7 +13,7 @@ use crate::handlers::{HandlerResult, MyDialogue};
 use crate::utils::repr_user_as_str;
 use crate::MANAGER_BOT;
 
-pub async fn handle_send_feedback(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
+pub async fn handle_send_feedback(bot: Bot, _dialogue: MyDialogue, msg: Message) -> HandlerResult {
     info!("got feedback {:?}", msg);
 
     let manager_bot = MANAGER_BOT.get().ok_or("Cannot get manager bot")?;
@@ -41,7 +41,7 @@ pub async fn handle_send_feedback(bot: Bot, dialogue: MyDialogue, msg: Message) 
             }
 
             if let Some(feedback_text) = msg.text() {
-                let mut feedback_msg = manager_bot.send_message(
+                let feedback_msg = manager_bot.send_message(
                     tg_feedback_chan,
                     format!(
                         "Feedback from {}:\n\n{}",

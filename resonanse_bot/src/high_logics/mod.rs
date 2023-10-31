@@ -139,7 +139,7 @@ fn prepare_event_msg_with_base_event(
             EventPostMessageRequest::WithPoster(msg)
         }
         None => {
-            let mut msg = bot.send_message(chat_id, msg_text);
+            let msg = bot.send_message(chat_id, msg_text);
 
             EventPostMessageRequest::Text(msg)
         }

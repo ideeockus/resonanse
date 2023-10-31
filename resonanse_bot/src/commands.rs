@@ -1,4 +1,4 @@
-use teloxide::utils::command::{BotCommands, ParseError};
+use teloxide::utils::command::{BotCommands};
 
 #[derive(BotCommands, Clone)]
 #[command(

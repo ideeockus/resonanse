@@ -1,4 +1,4 @@
-use crate::configuration::POSTGRES_DB_URL;
+
 use crate::models::{BaseEvent, EventSubject, EventType, Location};
 use crate::EventSubjectFilter;
 use chrono::NaiveDateTime;

@@ -23,7 +23,7 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
     log_request("got start_command", &msg);
 
     if let Some(command_text) = msg.text() {
-        if let Some((command, params)) = parse_command(command_text, "") {
+        if let Some((_command, params)) = parse_command(command_text, "") {
             if let Some(first_param) = params.first() {
                 if let Some(event_uuid) = first_param.strip_prefix("event_") {
                     if let Ok(event_uuid) = Uuid::from_str(event_uuid) {

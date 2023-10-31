@@ -1,5 +1,5 @@
 use crate::handlers::HandlerResult;
-use crate::utils::get_tg_downloads_dir;
+
 use std::path::Path;
 use teloxide::net::Download;
 use teloxide::prelude::*;

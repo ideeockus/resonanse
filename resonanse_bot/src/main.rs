@@ -1,7 +1,7 @@
 use env_logger;
 use env_logger::{Builder, TimestampPrecision};
 use log::{info, LevelFilter};
-use std::cell::OnceCell;
+
 use std::sync::OnceLock;
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dptree;
@@ -55,7 +55,7 @@ async fn main() {
     ACCOUNTS_REPOSITORY.set(accounts_repository).unwrap();
 
     let resonanse_bot_handle = tokio::spawn(async { run_resonanse_bot_polling().await });
-    let resonanse_management_bot_handle =
+    let _resonanse_management_bot_handle =
         tokio::spawn(async { run_resonanse_management_bot_polling().await });
 
     resonanse_bot_handle.await.unwrap()
