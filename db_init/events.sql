@@ -13,6 +13,7 @@ create table resonanse_events (
     creator_id BIGINT NOT NULL REFERENCES user_accounts (id),
     event_type INT NOT NULL,
     picture UUID,
+    contact_info varchar(255),
     creation_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -157,6 +157,7 @@ pub struct BaseEvent {
     pub event_type: EventType,
     pub picture: Option<Uuid>,
     pub creation_time: NaiveDateTime,
+    pub contact_info: Option<String>,
 }
 
 impl FromRow<'_, PgRow> for BaseEvent {
@@ -178,6 +179,7 @@ impl FromRow<'_, PgRow> for BaseEvent {
             event_type: row.try_get::<_, &str>("event_type")?,
             picture: row.try_get::<_, &str>("picture")?,
             creation_time: row.try_get::<_, &str>("creation_time")?,
+            contact_info: row.try_get::<_, &str>("contact_info")?,
         })
     }
 }

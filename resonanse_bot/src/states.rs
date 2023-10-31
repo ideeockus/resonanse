@@ -29,5 +29,6 @@ pub enum CreateEventState {
     Geo,
     Subject,
     Picture,
+    ContactInfo,
     Finalisation,
 }

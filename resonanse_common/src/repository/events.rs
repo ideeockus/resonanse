@@ -1,4 +1,3 @@
-
 use crate::models::{BaseEvent, EventSubject, EventType, Location};
 use crate::EventSubjectFilter;
 use chrono::NaiveDateTime;
@@ -19,6 +18,7 @@ pub struct CreateBaseEvent {
     pub creator_id: i64,
     pub event_type: EventType,
     pub picture: Option<Uuid>,
+    pub contact_info: Option<String>,
 }
 
 #[derive(Debug)]
@@ -32,71 +32,98 @@ impl EventsRepository {
     }
 
     pub async fn create_event(&self, event: CreateBaseEvent) -> Result<BaseEvent> {
-        let created_event = query!(
+        // let created_event = query!(
+        //     r#"insert into resonanse_events
+        //     (
+        //     id, is_private, is_commercial, title, description, subject,
+        //     datetime, location_latitude, location_longitude,
+        //     location_title, creator_id, event_type, picture, contact_info
+        //     )
+        //     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        //     returning is_private, is_commercial, title, description,
+        //     datetime, location_latitude, location_longitude,
+        //     location_title, creator_id, picture, id, creation_time,
+        //     event_type as "event_type: EventType", subject as "subject: EventSubject",
+        //     contact_info
+        //     "#,
+        //     Uuid::new_v4(),
+        //     event.is_private,
+        //     event.is_commercial,
+        //     event.title,
+        //     event.description,
+        //     event.subject as i32,
+        //     event.datetime,
+        //     // event.timezone,
+        //     event.location.latitude,
+        //     event.location.longitude,
+        //     event.location.title,
+        //     event.creator_id,
+        //     event.event_type as i32,
+        //     event.picture,
+        // )
+        let created_event: BaseEvent = sqlx::query_as(
             r#"insert into resonanse_events
             (
             id, is_private, is_commercial, title, description, subject,
             datetime, location_latitude, location_longitude,
-            location_title, creator_id, event_type, picture
+            location_title, creator_id, event_type, picture, contact_info
             )
-            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-            returning is_private, is_commercial, title, description,
-            datetime, location_latitude, location_longitude,
-            location_title, creator_id, picture, id, creation_time,
-            event_type as "event_type: EventType", subject as "subject: EventSubject"
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            returning *
             "#,
-            Uuid::new_v4(),
-            event.is_private,
-            event.is_commercial,
-            event.title,
-            event.description,
-            event.subject as i32,
-            event.datetime,
-            // event.timezone,
-            event.location.latitude,
-            event.location.longitude,
-            event.location.title,
-            event.creator_id,
-            event.event_type as i32,
-            event.picture,
         )
-        .fetch_one(&self.db_pool)
-        .await?;
+            .bind(Uuid::new_v4())
+            .bind(event.is_private)
+            .bind(event.is_commercial)
+            .bind(event.title)
+            .bind(event.description)
+            .bind(event.subject as i32)
+            .bind(event.datetime)
+            .bind(event.location.latitude)
+            .bind(event.location.longitude)
+            .bind(event.location.title)
+            .bind(event.creator_id)
+            .bind(event.event_type)
+            .bind(event.picture)
+            .bind(event.contact_info)
+            .fetch_one(&self.db_pool)
+            .await?;
 
-        Ok(BaseEvent {
-            id: created_event.id,
-            is_private: created_event.is_private,
-            is_commercial: created_event.is_commercial,
-            title: created_event.title,
-            description: created_event.description,
-            subject: created_event.subject,
-            datetime: created_event.datetime,
-            location: Location {
-                latitude: created_event.location_latitude,
-                longitude: created_event.location_longitude,
-                title: created_event.location_title,
-            },
-            creator_id: created_event.creator_id,
-            event_type: created_event.event_type,
-            picture: created_event.picture,
-            creation_time: created_event.creation_time,
-        })
+        // Ok(BaseEvent {
+        //     id: created_event.id,
+        //     is_private: created_event.is_private,
+        //     is_commercial: created_event.is_commercial,
+        //     title: created_event.title,
+        //     description: created_event.description,
+        //     subject: created_event.subject,
+        //     datetime: created_event.datetime,
+        //     location: Location {
+        //         latitude: created_event.location_latitude,
+        //         longitude: created_event.location_longitude,
+        //         title: created_event.location_title,
+        //     },
+        //     creator_id: created_event.creator_id,
+        //     event_type: created_event.event_type,
+        //     picture: created_event.picture,
+        //     creation_time: created_event.creation_time,
+        // })
+        Ok(created_event)
     }
 
     pub async fn get_all_public_events(&self, page: i64, page_size: i64) -> Result<Vec<BaseEvent>> {
         let events: Result<Vec<BaseEvent>> = sqlx::query_as(
             r#"select *
             from resonanse_events
-            where is_private=false and datetime >= CURDATE()
+            where is_private=false and datetime >= current_date
             order by datetime
             offset $1 rows
             fetch next $2 rows only
             "#,
         )
-        .bind(page * page_size)
-        .bind(page_size)
-        .fetch_all(&self.db_pool)
-        .await;
+            .bind(page * page_size)
+            .bind(page_size)
+            .fetch_all(&self.db_pool)
+            .await;
 
         events
     }
@@ -128,7 +155,7 @@ impl EventsRepository {
         let query_str = format!(
             r#"select *
             from resonanse_events
-            WHERE subject IN ( { } ) and is_private=false and datetime >= CURDATE()
+            WHERE subject IN ( { } ) and is_private=false and datetime >= current_date
             order by datetime
             offset ${} rows
             fetch next ${} rows only
@@ -159,9 +186,9 @@ impl EventsRepository {
             where id=$1
             "#,
         )
-        .bind(uuid)
-        .fetch_one(&self.db_pool)
-        .await;
+            .bind(uuid)
+            .fetch_one(&self.db_pool)
+            .await;
 
         event
     }
@@ -173,9 +200,9 @@ impl EventsRepository {
             where id=$1
             "#,
         )
-        .bind(event_uuid)
-        .execute(&self.db_pool)
-        .await?;
+            .bind(event_uuid)
+            .execute(&self.db_pool)
+            .await?;
 
         debug!("delete_events result {:?}", result);
 
@@ -189,10 +216,10 @@ impl EventsRepository {
             values ($1, $2)
             "#,
         )
-        .bind(post_id)
-        .bind(event_id)
-        .execute(&self.db_pool)
-        .await?;
+            .bind(post_id)
+            .bind(event_id)
+            .execute(&self.db_pool)
+            .await?;
         debug!("event_tg_table result {:?}", result);
 
         Ok(())

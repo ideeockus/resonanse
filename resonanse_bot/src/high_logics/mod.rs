@@ -106,8 +106,9 @@ fn prepare_event_msg_with_base_event(
 *{}*
 {}
 
-Тематика: _{}_
-🗓 Дата: _{}_
+💡 Тематика: _{}_
+📅 Дата: _{}_
+{}
 {}
 "#,
         markdown::escape(&base_event.title),
@@ -121,8 +122,12 @@ fn prepare_event_msg_with_base_event(
         ),
         match base_event.location.title.as_deref() {
             None => "".to_string(),
-            Some(location_title) => format!("Место: _{}_", markdown::escape(location_title)),
-        } // markdown::escape(&self.location.get_yandex_map_link_to()),
+            Some(location_title) => format!("📍 Место: _{}_", markdown::escape(location_title)),
+        },
+        match base_event.contact_info.as_deref() {
+            None => "".to_string(),
+            Some(contact_info) => format!("Контакт: _{}_", markdown::escape(contact_info)),
+        },
     );
 
     match base_event.picture {

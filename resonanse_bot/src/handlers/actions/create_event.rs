@@ -16,7 +16,6 @@ use resonanse_common::models::{EventSubject, Location};
 use resonanse_common::repository::CreateBaseEvent;
 
 
-
 use teloxide::prelude::*;
 
 use teloxide::types::MessageKind::Common;
@@ -41,6 +40,7 @@ pub struct FillingEvent {
     datetime: Option<chrono::NaiveDateTime>,
     geo_position: Option<Location>,
     picture: Option<Uuid>,
+    contact_info: Option<String>,
     creator_id: i64,
 }
 
@@ -54,6 +54,7 @@ impl FillingEvent {
             datetime: None,
             geo_position: None,
             picture: None,
+            contact_info: None,
             creator_id: 0,
         }
     }
@@ -70,13 +71,18 @@ impl TgTextFormatter for CreateBaseEvent {
 *{}*
 {}
 
-Тематика: _{}_
-Дата: _{}_
+💡 Тематика: _{}_
+📅 Дата: _{}_
+{}
 "#,
             markdown::escape(&self.title),
             markdown::escape(&self.description),
             markdown::escape(&self.subject.to_string()),
             markdown::escape(&self.datetime.format(DEFAULT_DATETIME_FORMAT).to_string()),
+            match &self.contact_info.as_deref() {
+                None => "".to_string(),
+                Some(contact_info) => format!("Контакт: _{}_", markdown::escape(contact_info)),
+            },
             // markdown::escape(&self.location.get_yandex_map_link_to()),
         );
 
@@ -103,6 +109,7 @@ impl From<FillingEvent> for CreateBaseEvent {
             event_type: Default::default(),
             picture: value.picture,
             // creation_time: Default::default(),
+            contact_info: value.contact_info,
         }
     }
 }
@@ -140,6 +147,7 @@ pub async fn handle_create_event_state_message(
         CreateEventState::Geo => handle_event_geo(bot, dialogue, msg, filling_event).await,
         // CreateEventState::Subject => handle_event_subject,
         CreateEventState::Picture => handle_event_picture(bot, dialogue, msg, filling_event).await,
+        CreateEventState::ContactInfo => handle_event_contact(bot, dialogue, msg, filling_event).await,
         // CreateEventState::Finalisation => handle_event_finalisation(bot, dialogue, msg, filling_event).await,
         _ => {
             warn!(
@@ -348,13 +356,13 @@ pub async fn handle_event_geo(
     debug!("provided msg: {:?}", msg);
     let location = match msg.kind {
         Common(MessageCommon {
-            media_kind: MediaKind::Location(MediaLocation { location, .. }),
-            ..
-        }) => Location::from_ll(location.latitude, location.longitude),
+                   media_kind: MediaKind::Location(MediaLocation { location, .. }),
+                   ..
+               }) => Location::from_ll(location.latitude, location.longitude),
         Common(MessageCommon {
-            media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
-            ..
-        }) => Location {
+                   media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
+                   ..
+               }) => Location {
             latitude: venue.location.latitude,
             longitude: venue.location.longitude,
             title: Some(venue.title),
@@ -403,11 +411,6 @@ pub async fn handle_event_subject(
     let event_subject = match q.data.as_ref() {
         None => {
             reject_user_answer!(bot, q.from.id, "No subject provided");
-            // bot.send_message(
-            //     q.from.id,
-            //     "No subject provided",
-            // ).await?;
-            // return Ok(());
         }
         Some(v) => EventSubject::from(v.as_ref()),
     };
@@ -425,7 +428,7 @@ pub async fn handle_event_subject(
         })
         .await?;
 
-    let message = bot.send_message(q.from.id, "Осталось добавить изображение");
+    let message = bot.send_message(q.from.id, "Осталось пара шагов. Добавьте изображение или постер");
     message.await?;
 
     Ok(())
@@ -440,17 +443,11 @@ pub async fn handle_event_picture(
     let event_photo_file_id = match msg.photo().and_then(|p| p.last()) {
         None => {
             reject_user_answer!(bot, msg.chat.id, "No photo provided");
-            // bot.send_message(
-            //     msg.chat.id,
-            //     "No photo provided",
-            // ).await?;
-            // return Ok(());
         }
         Some(v) => v.file.id.clone(),
     };
 
     let local_file_uuid = Uuid::new_v4();
-    // let local_file_path = get_event_images_path().join(&local_file_uuid.to_string());
     let local_file_path = get_event_image_path_by_uuid(local_file_uuid);
 
     download_file_by_id(&bot, &event_photo_file_id, &local_file_path).await?;
@@ -459,11 +456,40 @@ pub async fn handle_event_picture(
 
     dialogue
         .update(BaseState::CreateEvent {
+            state: CreateEventState::ContactInfo,
+            filling_event: filling_event.clone(),
+        })
+        .await?;
+
+    let message = bot.send_message(msg.chat.id, "Укажите контакт для связи. Например, юзернейм (как @resonanse_app)");
+    message.await?;
+
+    Ok(())
+}
+
+pub async fn handle_event_contact(
+    bot: Bot,
+    dialogue: MyDialogue,
+    msg: Message,
+    mut filling_event: FillingEvent,
+) -> HandlerResult {
+    let contact_info = match msg.text() {
+        None => {
+            reject_user_answer!(bot, msg.chat.id, "No subject provided");
+        }
+        Some(v) => v.to_string(),
+    };
+
+    filling_event.contact_info = Some(contact_info);
+
+    dialogue
+        .update(BaseState::CreateEvent {
             state: CreateEventState::Finalisation,
             filling_event: filling_event.clone(),
         })
         .await?;
 
+    let local_file_path = get_event_image_path_by_uuid(filling_event.picture.ok_or("Picture not set")?);
     let mut message = bot.send_photo(msg.chat.id, InputFile::file(local_file_path));
     let event_text_representation = CreateBaseEvent::from(filling_event.clone()).format();
     let message_text = format!(
@@ -501,11 +527,9 @@ pub async fn handle_event_finalisation_callback(
     match q.data.as_deref() {
         Some(keyboards::EDIT_PUBLICITY_TRUE_CALLBACK) => {
             filling_event.is_private = false;
-            // update_reply_kb().await;
         }
         Some(keyboards::EDIT_PUBLICITY_FALSE_CALLBACK) => {
             filling_event.is_private = true;
-            // update_reply_kb().await;
         }
         Some(keyboards::REFILL_EVENT_AGAIN_CALLBACK) => {
             bot.delete_message(msg.chat.id, msg.id).await?;
@@ -519,7 +543,7 @@ pub async fn handle_event_finalisation_callback(
                 msg.chat.id,
                 "Хорошо, вы можете заполнить данные заново. Введите название",
             )
-            .await?;
+                .await?;
             return Ok(());
         }
         Some(keyboards::CREATE_EVENT_CALLBACK) => {
@@ -539,7 +563,7 @@ pub async fn handle_event_finalisation_callback(
                         tg_event_deep_link
                     ),
                 )
-                .await?;
+                    .await?;
             } else {
                 bot.send_message(
                     msg.chat.id,
@@ -548,7 +572,7 @@ pub async fn handle_event_finalisation_callback(
                         tg_event_deep_link
                     ),
                 )
-                .await?;
+                    .await?;
             }
 
             return Ok(());
