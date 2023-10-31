@@ -1,24 +1,24 @@
+use crate::states::BaseState;
+pub use actions::*;
+pub use base::*;
+pub use commands::*;
+pub use common::*;
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::prelude::*;
-use crate::states::BaseState;
-pub use common::*;
-pub use commands::*;
-pub use base::*;
-pub use actions::*;
 
-mod commands;
-mod middlewares;
-mod common;
-mod base;
 mod actions;
+mod base;
+mod commands;
+mod common;
+mod middlewares;
 mod utils;
-
 
 type MyDialogue = Dialogue<BaseState, InMemStorage<BaseState>>;
 type HandlerResult = Result<(), Box<dyn std::error::Error + Send + Sync>>;
 
 fn log_request<S>(log_text: S, msg: &Message)
-    where S: ToString
+where
+    S: ToString,
 {
     log::debug!("{}", log_text.to_string());
     match msg.from() {

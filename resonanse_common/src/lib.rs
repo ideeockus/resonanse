@@ -1,9 +1,9 @@
-pub use sqlx::PgPool;
 pub use models::EventSubjectFilter;
+pub use sqlx::PgPool;
 
+pub mod file_storage;
 pub mod models;
 pub mod repository;
-pub mod file_storage;
 
 mod configuration;
 

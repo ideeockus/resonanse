@@ -1,19 +1,19 @@
 use std::str::FromStr;
 
-use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::{ParseMode, ReplyMarkup};
 use teloxide::utils::command::parse_command;
+use teloxide::Bot;
 use uuid::Uuid;
 
 use resonanse_common::EventSubjectFilter;
 
-use crate::ACCOUNTS_REPOSITORY;
 use crate::data_translators::fill_base_account_from_teloxide_user;
-use crate::handlers::{FillingEvent, HandlerResult, log_request, MyDialogue};
+use crate::handlers::{log_request, FillingEvent, HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::get_inline_kb_set_subject_filter;
 use crate::states::{BaseState, CreateEventState};
+use crate::ACCOUNTS_REPOSITORY;
 
 const BOT_HELP_TEXT_MD: &str = "Помощ";
 const CREATE_EVENT_TEXT_MD: &str = "Введите название события";
@@ -41,7 +41,8 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
 
     if let Some(user) = msg.from() {
         let new_user_account = fill_base_account_from_teloxide_user(user);
-        ACCOUNTS_REPOSITORY.get()
+        ACCOUNTS_REPOSITORY
+            .get()
             .ok_or("Cannot get accounts repository")?
             .create_user_by_tg_user_id(new_user_account)
             .await?;
@@ -67,12 +68,12 @@ pub async fn create_event_command(bot: Bot, dialogue: MyDialogue, msg: Message) 
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
-    dialogue.update(
-        BaseState::CreateEvent {
+    dialogue
+        .update(BaseState::CreateEvent {
             state: CreateEventState::Name,
             filling_event: FillingEvent::new(),
-        }
-    ).await?;
+        })
+        .await?;
 
     Ok(())
 }
@@ -86,17 +87,19 @@ pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) ->
 
     let events_filter = EventSubjectFilter::new();
 
-    dialogue.update(
-        BaseState::GetEventList {
+    dialogue
+        .update(BaseState::GetEventList {
             page_size,
             page_num: page,
             events_filter: events_filter.clone(),
-        }
-    ).await?;
+        })
+        .await?;
 
     let mut message = bot.send_message(msg.chat.id, GET_EVENTS_TEXT_MD);
     message.parse_mode = Some(ParseMode::MarkdownV2);
-    message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_set_subject_filter(&events_filter)));
+    message.reply_markup = Some(ReplyMarkup::InlineKeyboard(
+        get_inline_kb_set_subject_filter(&events_filter),
+    ));
     message.await?;
 
     Ok(())
@@ -105,13 +108,14 @@ pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) ->
 pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     log_request("got send_feedback_command command", &msg);
 
-    let mut message = bot.send_message(msg.chat.id, "Введите отзыв, предложение или другую полезную обратную связь");
+    let mut message = bot.send_message(
+        msg.chat.id,
+        "Введите отзыв, предложение или другую полезную обратную связь",
+    );
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
-    dialogue.update(
-        BaseState::SendFeedback
-    ).await?;
+    dialogue.update(BaseState::SendFeedback).await?;
 
     Ok(())
 }

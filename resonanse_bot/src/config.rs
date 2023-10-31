@@ -24,6 +24,5 @@ pub fn check_all_mandatory_envs_is_ok() {
     env::var(POSTGRES_DB_URL).unwrap();
 }
 
-
 // other
 pub const DEFAULT_DATETIME_FORMAT: &str = "%d.%m.%Y %H:%M";

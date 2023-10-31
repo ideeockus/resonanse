@@ -2,10 +2,9 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 use chrono::NaiveDateTime;
-use sqlx::{FromRow, Row, Type};
 use sqlx::postgres::PgRow;
+use sqlx::{FromRow, Row, Type};
 use uuid::Uuid;
-
 
 #[derive(Clone, Copy, Debug, sqlx::Type)]
 #[repr(i32)]
@@ -14,7 +13,6 @@ pub enum EventType {
     OfflineMeetup = 1,
     OneToOne = 2,
     Online = 3,
-
 }
 
 impl Default for EventType {
@@ -40,14 +38,17 @@ impl Location {
     }
 
     pub fn get_yandex_map_link_to(&self) -> String {
-        format!("https://yandex.ru/maps/?pt={},{}&z=15", self.longitude, self.latitude)
+        format!(
+            "https://yandex.ru/maps/?pt={},{}&z=15",
+            self.longitude, self.latitude
+        )
     }
 }
 
 #[derive(Clone, Copy, Debug, sqlx::Type, Eq, Hash, PartialEq)]
 #[repr(i32)]
 pub enum EventSubject {
-    Other=0,
+    Other = 0,
     Professional = 1,
     Business = 2,
     Education = 3,
@@ -105,20 +106,18 @@ pub struct EventSubjectFilter(pub HashMap<EventSubject, bool>);
 
 impl EventSubjectFilter {
     pub fn new() -> Self {
-        Self(
-            HashMap::from([
-                (EventSubject::Business, true),
-                (EventSubject::Social, true),
-                (EventSubject::Sport, true),
-                (EventSubject::Charity, true),
-                (EventSubject::Education, true),
-                (EventSubject::Professional, true),
-                (EventSubject::Entertainments, true),
-                (EventSubject::Culture, true),
-                // (EventSubject::Interests, true),
-                // (EventSubject::Other, true),
-            ])
-        )
+        Self(HashMap::from([
+            (EventSubject::Business, true),
+            (EventSubject::Social, true),
+            (EventSubject::Sport, true),
+            (EventSubject::Charity, true),
+            (EventSubject::Education, true),
+            (EventSubject::Professional, true),
+            (EventSubject::Entertainments, true),
+            (EventSubject::Culture, true),
+            // (EventSubject::Interests, true),
+            // (EventSubject::Other, true),
+        ]))
     }
 
     pub fn switch(&mut self, event_subject: EventSubject) {
@@ -162,25 +161,23 @@ pub struct BaseEvent {
 
 impl FromRow<'_, PgRow> for BaseEvent {
     fn from_row(row: &PgRow) -> Result<Self, sqlx::error::Error> {
-        Ok(
-            Self {
-                id: row.try_get::<_, &str>("id")?,
-                is_private: row.try_get::<_, &str>("is_private")?,
-                is_commercial: row.try_get::<_, &str>("is_commercial")?,
-                title: row.try_get::<_, &str>("title")?,
-                description: row.try_get::<_, &str>("description")?,
-                subject: row.try_get::<_, &str>("subject")?,
-                datetime: row.try_get::<_, &str>("datetime")?,
-                location: Location {
-                    latitude: row.try_get::<_, &str>("location_latitude")?,
-                    longitude: row.try_get::<_, &str>("location_longitude")?,
-                    title: row.try_get::<_, &str>("location_title")?,
-                },
-                creator_id: row.try_get::<_, &str>("creator_id")?,
-                event_type: row.try_get::<_, &str>("event_type")?,
-                picture: row.try_get::<_, &str>("picture")?,
-                creation_time: row.try_get::<_, &str>("creation_time")?,
-            }
-        )
+        Ok(Self {
+            id: row.try_get::<_, &str>("id")?,
+            is_private: row.try_get::<_, &str>("is_private")?,
+            is_commercial: row.try_get::<_, &str>("is_commercial")?,
+            title: row.try_get::<_, &str>("title")?,
+            description: row.try_get::<_, &str>("description")?,
+            subject: row.try_get::<_, &str>("subject")?,
+            datetime: row.try_get::<_, &str>("datetime")?,
+            location: Location {
+                latitude: row.try_get::<_, &str>("location_latitude")?,
+                longitude: row.try_get::<_, &str>("location_longitude")?,
+                title: row.try_get::<_, &str>("location_title")?,
+            },
+            creator_id: row.try_get::<_, &str>("creator_id")?,
+            event_type: row.try_get::<_, &str>("event_type")?,
+            picture: row.try_get::<_, &str>("picture")?,
+            creation_time: row.try_get::<_, &str>("creation_time")?,
+        })
     }
 }

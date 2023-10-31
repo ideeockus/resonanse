@@ -1,37 +1,38 @@
-use std::cell::OnceCell;
-use std::sync::OnceLock;
 use env_logger;
 use env_logger::{Builder, TimestampPrecision};
 use log::{info, LevelFilter};
+use std::cell::OnceCell;
+use std::sync::OnceLock;
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dptree;
 use teloxide::prelude::*;
 
+use crate::config::{
+    check_all_mandatory_envs_is_ok, POSTGRES_DB_URL, RESONANSE_BOT_TOKEN,
+    RESONANSE_MANAGEMENT_BOT_TOKEN,
+};
 use dispatch::schema;
 use resonanse_common::repository::{AccountsRepository, EventsRepository};
-use crate::config::{check_all_mandatory_envs_is_ok, POSTGRES_DB_URL, RESONANSE_BOT_TOKEN, RESONANSE_MANAGEMENT_BOT_TOKEN};
 
 use crate::states::BaseState;
 
-mod dispatch;
-mod handlers;
-mod keyboards;
-mod user_settings;
 mod commands;
-mod states;
-mod errors;
-mod utils;
-mod management;
 mod config;
 mod data_translators;
+mod dispatch;
+mod errors;
+mod handlers;
 mod high_logics;
-
+mod keyboards;
+mod management;
+mod states;
+mod user_settings;
+mod utils;
 
 static MANAGER_BOT: OnceLock<Bot> = OnceLock::new();
 // static DB_POOL: OnceCell<resonanse_common::PgPool> = OnceCell::new();
 static EVENTS_REPOSITORY: OnceLock<EventsRepository> = OnceLock::new();
 static ACCOUNTS_REPOSITORY: OnceLock<AccountsRepository> = OnceLock::new();
-
 
 #[tokio::main]
 async fn main() {
@@ -53,12 +54,9 @@ async fn main() {
     let accounts_repository = AccountsRepository::new(pool.clone());
     ACCOUNTS_REPOSITORY.set(accounts_repository).unwrap();
 
-    let resonanse_bot_handle = tokio::spawn(async {
-        run_resonanse_bot_polling().await
-    });
-    let resonanse_management_bot_handle = tokio::spawn(async {
-        run_resonanse_management_bot_polling().await
-    });
+    let resonanse_bot_handle = tokio::spawn(async { run_resonanse_bot_polling().await });
+    let resonanse_management_bot_handle =
+        tokio::spawn(async { run_resonanse_management_bot_polling().await });
 
     resonanse_bot_handle.await.unwrap()
 }

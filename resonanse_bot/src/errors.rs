@@ -8,7 +8,9 @@ pub enum BotHandlerError {
 
 impl Display for BotHandlerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self { BotHandlerError::UnknownHandler => write!(f, "UnknownHandler") }
+        match self {
+            BotHandlerError::UnknownHandler => write!(f, "UnknownHandler"),
+        }
     }
 }
 

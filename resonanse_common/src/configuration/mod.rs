@@ -1,3 +1,2 @@
 pub const POSTGRES_DB_URL: &str = "POSTGRES_DB_URL";
 pub const RESONANSE_STORAGE_DIR: &str = "RESONANSE_STORAGE_DIR";
-

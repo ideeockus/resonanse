@@ -1,5 +1,5 @@
-use teloxide::prelude::Message;
 use crate::handlers::HandlerResult;
+use teloxide::prelude::Message;
 
 pub async fn log_request_handler(msg: Message) -> HandlerResult {
     match msg.from() {

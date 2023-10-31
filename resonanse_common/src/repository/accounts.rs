@@ -1,8 +1,7 @@
-use std::future::Future;
-use log::debug;
-use sqlx::{PgPool, query, Result, Row};
 use crate::models::BaseAccount;
-
+use log::debug;
+use sqlx::{query, PgPool, Result, Row};
+use std::future::Future;
 
 #[derive(Debug)]
 pub struct AccountsRepository {
@@ -11,9 +10,7 @@ pub struct AccountsRepository {
 
 impl AccountsRepository {
     pub fn new(pool: PgPool) -> Self {
-        Self {
-            db_pool: pool,
-        }
+        Self { db_pool: pool }
     }
 
     /// Creates new user if there are no user with given tg_user_id
@@ -22,10 +19,10 @@ impl AccountsRepository {
             match self.get_user_by_tg_id(tg_user_id).await {
                 Err(sqlx::error::Error::RowNotFound) => {
                     debug!("tg_user_id {} not found", tg_user_id);
-                },
+                }
                 Err(err) => {
                     debug!("get_user_by_tg_id returned err {:?}", err);
-                    return Err(err)
+                    return Err(err);
                 }
                 Ok(account) => {
                     debug!("account already exists {:?}", account);
@@ -41,11 +38,11 @@ impl AccountsRepository {
         let account: BaseAccount = sqlx::query_as(
             r#"select * from user_accounts
                 where tg_user_id=$1
-            "#
+            "#,
         )
-            .bind(tg_user_id)
-            .fetch_one(&self.db_pool)
-            .await?;
+        .bind(tg_user_id)
+        .fetch_one(&self.db_pool)
+        .await?;
 
         Ok(account)
     }
@@ -56,12 +53,12 @@ impl AccountsRepository {
             r#"
             select id from user_accounts
             where tg_user_id=$1
-            "#
+            "#,
         )
-            .bind(tg_user_id)
-            .fetch_one(&self.db_pool)
-            .await?
-            .try_get::<_, usize>(0);
+        .bind(tg_user_id)
+        .fetch_one(&self.db_pool)
+        .await?
+        .try_get::<_, usize>(0);
 
         debug!("account_id {:?}", account_id);
 
@@ -90,39 +87,33 @@ impl AccountsRepository {
             returning *
             "#,
         )
-            .bind(account.username)
-            .bind(account.user_data.first_name)
-            .bind(account.user_data.last_name)
-            .bind(account.user_data.city)
-            .bind(account.user_data.about)
-
-            .bind(account.user_data.headline)
-            .bind(account.user_data.goals)
-            .bind(account.user_data.interests)
-            .bind(account.user_data.language)
-            .bind(account.user_data.age)
-            .bind(account.user_data.education)
-
-            .bind(account.user_data.hobby)
-            .bind(account.user_data.music)
-            .bind(account.user_data.sport)
-            .bind(account.user_data.books)
-            .bind(account.user_data.food)
-            .bind(account.user_data.worldview)
-            .bind(account.user_data.alcohol)
-
-            .bind(account.contact_data.email)
-            .bind(account.contact_data.phone)
-            .bind(account.contact_data.telegram.username)
-            .bind(account.contact_data.telegram.user_id)
-            .bind(account.contact_data.instagram)
-
-            .bind(account.auth_data.password_hash)
-
-            .bind(account.user_type)
-
-            .fetch_one(&self.db_pool)
-            .await?;
+        .bind(account.username)
+        .bind(account.user_data.first_name)
+        .bind(account.user_data.last_name)
+        .bind(account.user_data.city)
+        .bind(account.user_data.about)
+        .bind(account.user_data.headline)
+        .bind(account.user_data.goals)
+        .bind(account.user_data.interests)
+        .bind(account.user_data.language)
+        .bind(account.user_data.age)
+        .bind(account.user_data.education)
+        .bind(account.user_data.hobby)
+        .bind(account.user_data.music)
+        .bind(account.user_data.sport)
+        .bind(account.user_data.books)
+        .bind(account.user_data.food)
+        .bind(account.user_data.worldview)
+        .bind(account.user_data.alcohol)
+        .bind(account.contact_data.email)
+        .bind(account.contact_data.phone)
+        .bind(account.contact_data.telegram.username)
+        .bind(account.contact_data.telegram.user_id)
+        .bind(account.contact_data.instagram)
+        .bind(account.auth_data.password_hash)
+        .bind(account.user_type)
+        .fetch_one(&self.db_pool)
+        .await?;
 
         // debug!("inserted account: {:?}", created_account.get::<i64, usize>(0));
         debug!("inserted account: {:?}", created_account);

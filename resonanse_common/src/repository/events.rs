@@ -1,10 +1,10 @@
+use crate::configuration::POSTGRES_DB_URL;
+use crate::models::{BaseEvent, EventSubject, EventType, Location};
+use crate::EventSubjectFilter;
 use chrono::NaiveDateTime;
 use log::debug;
-use sqlx::{PgPool, query, Result};
+use sqlx::{query, PgPool, Result};
 use uuid::Uuid;
-use crate::configuration::POSTGRES_DB_URL;
-use crate::EventSubjectFilter;
-use crate::models::{BaseEvent, EventSubject, EventType, Location};
 
 #[derive(Clone)]
 pub struct CreateBaseEvent {
@@ -28,9 +28,7 @@ pub struct EventsRepository {
 
 impl EventsRepository {
     pub fn new(pool: PgPool) -> Self {
-        Self {
-            db_pool: pool,
-        }
+        Self { db_pool: pool }
     }
 
     pub async fn create_event(&self, event: CreateBaseEvent) -> Result<BaseEvent> {
@@ -61,8 +59,9 @@ impl EventsRepository {
             event.creator_id,
             event.event_type as i32,
             event.picture,
-        ).fetch_one(&self.db_pool)
-            .await?;
+        )
+        .fetch_one(&self.db_pool)
+        .await?;
 
         Ok(BaseEvent {
             id: created_event.id,
@@ -92,18 +91,25 @@ impl EventsRepository {
             order by datetime
             offset $1 rows
             fetch next $2 rows only
-            "#
+            "#,
         )
-            .bind(page * page_size)
-            .bind(page_size)
-            .fetch_all(&self.db_pool)
-            .await;
+        .bind(page * page_size)
+        .bind(page_size)
+        .fetch_all(&self.db_pool)
+        .await;
 
         events
     }
 
-    pub async fn get_public_events(&self, page: i64, page_size: i64, events_subject_filter: &EventSubjectFilter) -> Result<Vec<BaseEvent>> {
-        let filters_vec = events_subject_filter.0.iter()
+    pub async fn get_public_events(
+        &self,
+        page: i64,
+        page_size: i64,
+        events_subject_filter: &EventSubjectFilter,
+    ) -> Result<Vec<BaseEvent>> {
+        let filters_vec = events_subject_filter
+            .0
+            .iter()
             .filter(|(_, f)| **f)
             .map(|(f, _)| (*f as i32))
             .collect::<Vec<_>>();
@@ -114,7 +120,10 @@ impl EventsRepository {
         }
 
         let filter_params_len = filters_vec.len();
-        let filter_params = (1..=filter_params_len).map(|i| format!("${}", i)).collect::<Vec<String>>().join(", ");
+        let filter_params = (1..=filter_params_len)
+            .map(|i| format!("${}", i))
+            .collect::<Vec<String>>()
+            .join(", ");
         // let filter_params = format!("$1{}", ", $".repeat(filters_vec.len() - 1));
         let query_str = format!(
             r#"select *
@@ -125,9 +134,8 @@ impl EventsRepository {
             fetch next ${} rows only
             "#,
             filter_params,
-            filter_params_len+1,
-            filter_params_len+2,
-
+            filter_params_len + 1,
+            filter_params_len + 2,
         );
         debug!("get_public_events builded query: {}", query_str);
 
@@ -149,11 +157,11 @@ impl EventsRepository {
             r#"select *
             from resonanse_events
             where id=$1
-            "#
+            "#,
         )
-            .bind(uuid)
-            .fetch_one(&self.db_pool)
-            .await;
+        .bind(uuid)
+        .fetch_one(&self.db_pool)
+        .await;
 
         event
     }
@@ -163,11 +171,11 @@ impl EventsRepository {
             r#"
             delete from resonanse_events
             where id=$1
-            "#
+            "#,
         )
-            .bind(event_uuid)
-            .execute(&self.db_pool)
-            .await?;
+        .bind(event_uuid)
+        .execute(&self.db_pool)
+        .await?;
 
         debug!("delete_events result {:?}", result);
 
@@ -179,12 +187,12 @@ impl EventsRepository {
             r#"insert into event_tg_table
             (post_id, creator_id)
             values ($1, $2)
-            "#
+            "#,
         )
-            .bind(post_id)
-            .bind(event_id)
-            .execute(&self.db_pool)
-            .await?;
+        .bind(post_id)
+        .bind(event_id)
+        .execute(&self.db_pool)
+        .await?;
         debug!("event_tg_table result {:?}", result);
 
         Ok(())

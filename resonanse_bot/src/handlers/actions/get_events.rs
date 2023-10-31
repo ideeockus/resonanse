@@ -1,16 +1,16 @@
-use std::error::Error;
-use log::debug;
-use teloxide::Bot;
-use teloxide::prelude::*;
-use teloxide::types::{Message, ParseMode, ReplyMarkup};
-use teloxide::utils::markdown;
-use resonanse_common::EventSubjectFilter;
-use resonanse_common::models::EventSubject;
-use crate::{EVENTS_REPOSITORY, keyboards};
 use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_events_page, get_inline_kb_set_subject_filter};
 use crate::states::BaseState;
+use crate::{keyboards, EVENTS_REPOSITORY};
+use log::debug;
+use resonanse_common::models::EventSubject;
+use resonanse_common::EventSubjectFilter;
+use std::error::Error;
+use teloxide::prelude::*;
+use teloxide::types::{Message, ParseMode, ReplyMarkup};
+use teloxide::utils::markdown;
+use teloxide::Bot;
 
 pub async fn handle_get_events(
     bot: Bot,
@@ -24,7 +24,8 @@ pub async fn handle_get_events(
             if let Some(event_num) = rest_msg.splitn(1, " ").next() {
                 if let Ok(event_num) = event_num.parse::<i64>() {
                     // let event_global_num = event_num;
-                    let events = EVENTS_REPOSITORY.get()
+                    let events = EVENTS_REPOSITORY
+                        .get()
                         .ok_or("Cannot get events repository")?
                         .get_public_events(page_num, page_size, &events_filter)
                         .await?;
@@ -39,10 +40,8 @@ pub async fn handle_get_events(
     }
     // handle event command end
 
-    bot.send_message(
-        msg.chat.id,
-        "Выбранное событие не найдено",
-    ).await?;
+    bot.send_message(msg.chat.id, "Выбранное событие не найдено")
+        .await?;
 
     Ok(())
 }
@@ -58,17 +57,16 @@ pub async fn handle_get_events_callback(
 
     match q.data.as_deref() {
         None => {
-            bot.send_message(
-                q.from.id,
-                "Действие не распознано",
-            ).await?;
+            bot.send_message(q.from.id, "Действие не распознано")
+                .await?;
             Ok(())
         }
         Some(keyboards::EVENTS_PAGE_LEFT | keyboards::EVENTS_PAGE_RIGHT) => {
             handle_page_callback(bot, dialogue, (page_size, page_num, events_filter), q).await
         }
         _ => {
-            handle_events_filter_callback(bot, dialogue, (page_size, page_num, events_filter), q).await
+            handle_events_filter_callback(bot, dialogue, (page_size, page_num, events_filter), q)
+                .await
         }
     }
 }
@@ -83,15 +81,10 @@ pub async fn handle_events_filter_callback(
 
     let msg = match q.message {
         None => {
-            bot.send_message(
-                q.from.id,
-                "Unknown message",
-            ).await?;
-            return Ok(())
+            bot.send_message(q.from.id, "Unknown message").await?;
+            return Ok(());
         }
-        Some(v) => {
-            v
-        }
+        Some(v) => v,
     };
 
     match q.data.as_deref() {
@@ -100,40 +93,33 @@ pub async fn handle_events_filter_callback(
             bot.delete_message(msg.chat.id, msg.id).await?;
 
             let msg_text = get_choose_event_text(page_num, page_size, &events_filter).await?;
-            let mut message = bot.send_message(
-                q.from.id,
-                msg_text,
-            );
+            let mut message = bot.send_message(q.from.id, msg_text);
             message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_events_page()));
             message.parse_mode = Some(ParseMode::MarkdownV2);
             message.await?;
             return Ok(());
         }
-        Some(text) => {
-            match EventSubject::try_from(text) {
-                Ok(event_subject) => {
-                    events_filter.switch(event_subject);
-                    let mut edit_msg = bot.edit_message_reply_markup(msg.chat.id, msg.id);
-                    edit_msg.reply_markup = Some(get_inline_kb_set_subject_filter(&events_filter));
-                    edit_msg.await?;
-                }
-                Err(e) => {
-                    bot.send_message(
-                        q.from.id,
-                        "Не распознанное действие",
-                    ).await?;
-                }
+        Some(text) => match EventSubject::try_from(text) {
+            Ok(event_subject) => {
+                events_filter.switch(event_subject);
+                let mut edit_msg = bot.edit_message_reply_markup(msg.chat.id, msg.id);
+                edit_msg.reply_markup = Some(get_inline_kb_set_subject_filter(&events_filter));
+                edit_msg.await?;
             }
-        }
+            Err(e) => {
+                bot.send_message(q.from.id, "Не распознанное действие")
+                    .await?;
+            }
+        },
     };
 
-    dialogue.update(
-        BaseState::GetEventList {
+    dialogue
+        .update(BaseState::GetEventList {
             page_size,
             page_num,
             events_filter,
-        }
-    ).await?;
+        })
+        .await?;
 
     // message.await?;
     Ok(())
@@ -150,24 +136,15 @@ pub async fn handle_page_callback(
 
     let msg = match q.message {
         None => {
-            bot.send_message(
-                q.from.id,
-                "Unknown message",
-            ).await?;
-            return Ok(())
+            bot.send_message(q.from.id, "Unknown message").await?;
+            return Ok(());
         }
-        Some(v) => {
-            v
-        }
+        Some(v) => v,
     };
 
     let (page_size, page_num) = match q.data.as_deref() {
-        Some(keyboards::EVENTS_PAGE_LEFT) => {
-            (page_size, page_num.saturating_sub(1))
-        }
-        Some(keyboards::EVENTS_PAGE_RIGHT) => {
-            (page_size, page_num + 1)
-        }
+        Some(keyboards::EVENTS_PAGE_LEFT) => (page_size, page_num.saturating_sub(1)),
+        Some(keyboards::EVENTS_PAGE_RIGHT) => (page_size, page_num + 1),
         _ => {
             return Ok(());
         }
@@ -175,18 +152,16 @@ pub async fn handle_page_callback(
 
     let page_num = page_num as i64;
 
-    dialogue.update(
-        BaseState::GetEventList {
+    dialogue
+        .update(BaseState::GetEventList {
             page_size,
             page_num,
             events_filter: events_filter.clone(),
-        }
-    ).await?;
+        })
+        .await?;
 
     let msg_text = get_choose_event_text(page_num, page_size, &events_filter).await?;
-    let mut message = bot.edit_message_text(
-        msg.chat.id, msg.id, msg_text
-    );
+    let mut message = bot.edit_message_text(msg.chat.id, msg.id, msg_text);
     message.reply_markup = Some(get_inline_kb_events_page());
     message.parse_mode = Some(ParseMode::MarkdownV2);
 
@@ -199,7 +174,8 @@ pub async fn get_choose_event_text(
     page_size: i64,
     events_filter: &EventSubjectFilter,
 ) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let events = EVENTS_REPOSITORY.get()
+    let events = EVENTS_REPOSITORY
+        .get()
         .ok_or("Cannot get events repository")?
         .get_public_events(page_num, page_size, events_filter)
         .await?;
@@ -208,10 +184,18 @@ pub async fn get_choose_event_text(
     let msg_text = format!(
         "_Страница {}_\nВыбери интересное событие и нажми на его идентификатор\n\n{}",
         markdown::escape(&page_num.to_string()),
-        events.iter().map(|event| {
-            event_i += 1;
-            format!("*{}*\t\t/event\\_{}", markdown::escape(&event.title), event_i)
-        }).collect::<Vec<String>>().join("\n\n")
+        events
+            .iter()
+            .map(|event| {
+                event_i += 1;
+                format!(
+                    "*{}*\t\t/event\\_{}",
+                    markdown::escape(&event.title),
+                    event_i
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("\n\n")
     );
 
     Ok(msg_text)

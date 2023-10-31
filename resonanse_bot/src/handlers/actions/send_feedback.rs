@@ -1,28 +1,25 @@
 use std::env;
 
 use log::info;
-use teloxide::Bot;
+use resonanse_common::file_storage::get_feedback_images_path;
 use teloxide::prelude::*;
 use teloxide::types::InputFile;
 use teloxide::utils::markdown;
-use resonanse_common::file_storage::get_feedback_images_path;
+use teloxide::Bot;
 
 use crate::config::FEEDBACK_CHANNEL_ID;
-use crate::handlers::{HandlerResult, MyDialogue};
 use crate::handlers::utils::download_file_by_id;
-use crate::MANAGER_BOT;
+use crate::handlers::{HandlerResult, MyDialogue};
 use crate::utils::repr_user_as_str;
+use crate::MANAGER_BOT;
 
 pub async fn handle_send_feedback(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     info!("got feedback {:?}", msg);
 
-    let manager_bot = MANAGER_BOT.get()
-        .ok_or("Cannot get manager bot")?;
+    let manager_bot = MANAGER_BOT.get().ok_or("Cannot get manager bot")?;
 
-    bot.send_message(
-        msg.chat.id,
-        "Спасибо за оставленный фидбек!"
-    ).await?;
+    bot.send_message(msg.chat.id, "Спасибо за оставленный фидбек!")
+        .await?;
 
     if let Ok(tg_feedback_chan) = env::var(FEEDBACK_CHANNEL_ID) {
         if let Ok(tg_feedback_chan) = tg_feedback_chan.parse::<i64>() {
@@ -31,11 +28,8 @@ pub async fn handle_send_feedback(bot: Bot, dialogue: MyDialogue, msg: Message) 
                 let local_img_path = get_feedback_images_path().join(&feedback_photo.file.id);
                 download_file_by_id(&bot, &feedback_photo.file.id, &local_img_path).await?;
 
-
-                let mut feedback_msg = manager_bot.send_photo(
-                    tg_feedback_chan,
-                    InputFile::file(local_img_path),
-                );
+                let mut feedback_msg =
+                    manager_bot.send_photo(tg_feedback_chan, InputFile::file(local_img_path));
 
                 feedback_msg.caption = Some(format!(
                     "Feedback from {}:\n\n{}",

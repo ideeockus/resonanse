@@ -1,5 +1,5 @@
-use sqlx::{Error, FromRow, Row};
 use sqlx::postgres::PgRow;
+use sqlx::{Error, FromRow, Row};
 
 #[derive(Debug)]
 pub struct UserData {
@@ -66,43 +66,41 @@ pub struct BaseAccount {
 
 impl FromRow<'_, PgRow> for BaseAccount {
     fn from_row(row: &PgRow) -> Result<Self, Error> {
-        Ok(
-            BaseAccount {
-                id: row.try_get::<_, usize>(0)?,
-                username: row.try_get::<_, usize>(1)?,
-                user_data: UserData {
-                    first_name: row.try_get::<_, usize>(2)?,
-                    last_name: row.try_get::<_, usize>(3)?,
-                    city: row.try_get::<_, usize>(4)?,
-                    about: row.try_get::<_, usize>(5)?,
-                    headline: row.try_get::<_, usize>(6)?,
-                    goals: row.try_get::<_, usize>(7)?,
-                    interests: row.try_get::<_, usize>(8)?,
-                    language: row.try_get::<_, usize>(9)?,
-                    age: row.try_get::<_, usize>(10)?,
-                    education: row.try_get::<_, usize>(11)?,
-                    hobby: row.try_get::<_, usize>(12)?,
-                    music: row.try_get::<_, usize>(13)?,
-                    sport: row.try_get::<_, usize>(14)?,
-                    books: row.try_get::<_, usize>(15)?,
-                    food: row.try_get::<_, usize>(16)?,
-                    worldview: row.try_get::<_, usize>(17)?,
-                    alcohol: row.try_get::<_, usize>(18)?,
+        Ok(BaseAccount {
+            id: row.try_get::<_, usize>(0)?,
+            username: row.try_get::<_, usize>(1)?,
+            user_data: UserData {
+                first_name: row.try_get::<_, usize>(2)?,
+                last_name: row.try_get::<_, usize>(3)?,
+                city: row.try_get::<_, usize>(4)?,
+                about: row.try_get::<_, usize>(5)?,
+                headline: row.try_get::<_, usize>(6)?,
+                goals: row.try_get::<_, usize>(7)?,
+                interests: row.try_get::<_, usize>(8)?,
+                language: row.try_get::<_, usize>(9)?,
+                age: row.try_get::<_, usize>(10)?,
+                education: row.try_get::<_, usize>(11)?,
+                hobby: row.try_get::<_, usize>(12)?,
+                music: row.try_get::<_, usize>(13)?,
+                sport: row.try_get::<_, usize>(14)?,
+                books: row.try_get::<_, usize>(15)?,
+                food: row.try_get::<_, usize>(16)?,
+                worldview: row.try_get::<_, usize>(17)?,
+                alcohol: row.try_get::<_, usize>(18)?,
+            },
+            contact_data: UserContactData {
+                email: row.try_get::<_, usize>(19)?,
+                phone: row.try_get::<_, usize>(20)?,
+                telegram: UserTgData {
+                    username: row.try_get::<_, usize>(21)?,
+                    user_id: row.try_get::<_, usize>(22)?,
                 },
-                contact_data: UserContactData {
-                    email: row.try_get::<_, usize>(19)?,
-                    phone: row.try_get::<_, usize>(20)?,
-                    telegram: UserTgData {
-                        username: row.try_get::<_, usize>(21)?,
-                        user_id: row.try_get::<_, usize>(22)?
-                    },
-                    instagram: row.try_get::<_, usize>(23)?,
-                },
-                auth_data: AuthData {
-                    password_hash: row.try_get::<_, usize>(24)?
-                },
-                user_type: row.try_get::<_, usize>(25)?,
-            }
-        )
+                instagram: row.try_get::<_, usize>(23)?,
+            },
+            auth_data: AuthData {
+                password_hash: row.try_get::<_, usize>(24)?,
+            },
+            user_type: row.try_get::<_, usize>(25)?,
+        })
     }
 }

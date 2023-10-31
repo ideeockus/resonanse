@@ -1,7 +1,7 @@
-use std::{env, fs};
-use std::path::{Path, PathBuf};
-use uuid::Uuid;
 use crate::config::RESONANSE_BOT_USERNAME;
+use std::path::{Path, PathBuf};
+use std::{env, fs};
+use uuid::Uuid;
 
 const TG_DOWNLOADS_PATH: &str = "tg_downloads";
 
@@ -23,9 +23,10 @@ pub fn repr_user_as_str(user: Option<&teloxide::types::User>) -> String {
                 "{} {} {} [{}]",
                 user.first_name,
                 user.last_name.as_ref().unwrap_or(&String::new()),
-                user.username.as_ref().and_then(|username| {
-                    Some(format!("@{}", username))
-                }).unwrap_or(String::new()),
+                user.username
+                    .as_ref()
+                    .and_then(|username| { Some(format!("@{}", username)) })
+                    .unwrap_or(String::new()),
                 user.id,
             )
         }
@@ -34,13 +35,11 @@ pub fn repr_user_as_str(user: Option<&teloxide::types::User>) -> String {
 
 pub fn build_event_deep_link(event_uuid: Uuid) -> String {
     let bot_username = env::var(RESONANSE_BOT_USERNAME);
-    let bot_username = bot_username
-        .as_deref()
-        .unwrap_or("resonanse_bot");
+    let bot_username = bot_username.as_deref().unwrap_or("resonanse_bot");
 
     build_deep_link_with_param(bot_username, &format!("event_{}", &event_uuid.to_string()))
 }
 
 pub fn build_deep_link_with_param(bot_username: &str, param: &str) -> String {
-    format!("https://t.me/{}?start={}",bot_username,  param)
+    format!("https://t.me/{}?start={}", bot_username, param)
 }

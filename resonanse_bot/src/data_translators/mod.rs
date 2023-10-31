@@ -1,6 +1,8 @@
-use std::cmp::Ordering;
 use log::warn;
-use resonanse_common::models::{AuthData, BaseAccount, ResoAccountType, UserContactData, UserData, UserTgData};
+use resonanse_common::models::{
+    AuthData, BaseAccount, ResoAccountType, UserContactData, UserData, UserTgData,
+};
+use std::cmp::Ordering;
 
 pub fn fill_base_account_from_teloxide_user(user: &teloxide::types::User) -> BaseAccount {
     let user_data = UserData {
@@ -23,13 +25,12 @@ pub fn fill_base_account_from_teloxide_user(user: &teloxide::types::User) -> Bas
         alcohol: None,
     };
 
-
     let tg_user_id = match user.id.0.cmp(&(i64::MAX as u64)) {
         Ordering::Greater => {
             warn!("tg_user_id {:?} is greater than MAX i64", user.id.0);
             None
         }
-        _ => Some(user.id.0 as i64)
+        _ => Some(user.id.0 as i64),
     };
 
     let contact_data = UserContactData {
@@ -43,11 +44,13 @@ pub fn fill_base_account_from_teloxide_user(user: &teloxide::types::User) -> Bas
     };
 
     BaseAccount {
-        id: 0,  // will be filled on insert to db
+        id: 0, // will be filled on insert to db
         username: user.username.clone(),
         user_data,
         contact_data,
-        auth_data: AuthData { password_hash: None },
+        auth_data: AuthData {
+            password_hash: None,
+        },
         user_type: ResoAccountType::Standard,
     }
 }

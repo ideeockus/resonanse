@@ -19,4 +19,3 @@ pub enum Command {
     // #[command(description = "Выбор события", parse_with = accept_two_digits)]
     // Event{event_num: i64},
 }
-
