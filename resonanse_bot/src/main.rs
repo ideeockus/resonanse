@@ -11,6 +11,7 @@ use crate::config::{
     check_all_mandatory_envs_is_ok, POSTGRES_DB_URL, RESONANSE_BOT_TOKEN,
     RESONANSE_MANAGEMENT_BOT_TOKEN,
 };
+use crate::management::run_resonanse_management_bot_polling;
 use dispatch::schema;
 use resonanse_common::repository::{AccountsRepository, EventsRepository};
 
@@ -69,26 +70,6 @@ pub async fn run_resonanse_bot_polling() {
 
     let update_handler = schema();
     let mut dispatcher = Dispatcher::builder(bot, update_handler)
-        .dependencies(dptree::deps![InMemStorage::<BaseState>::new()])
-        .enable_ctrlc_handler()
-        .build();
-
-    dispatcher.dispatch().await;
-
-    info!("Dispatcher started");
-}
-
-pub async fn run_resonanse_management_bot_polling() {
-    info!("Run telegram resonanse management bot polling...");
-
-    let resonanse_mngmnt_bot_token = std::env::var(RESONANSE_MANAGEMENT_BOT_TOKEN).unwrap();
-    let manager_bot = Bot::new(resonanse_mngmnt_bot_token);
-    MANAGER_BOT.set(manager_bot.clone()).unwrap();
-
-    let update_handler = schema();
-
-    // todo change handlers
-    let mut dispatcher = Dispatcher::builder(manager_bot, update_handler)
         .dependencies(dptree::deps![InMemStorage::<BaseState>::new()])
         .enable_ctrlc_handler()
         .build();

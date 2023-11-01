@@ -2,7 +2,6 @@ use crate::models::BaseAccount;
 use log::debug;
 use sqlx::{PgPool, Result, Row};
 
-
 #[derive(Debug)]
 pub struct AccountsRepository {
     db_pool: PgPool,
@@ -138,5 +137,17 @@ impl AccountsRepository {
         // })
 
         Ok(created_account)
+    }
+
+    pub async fn count_accounts(&self) -> Result<i64> {
+        debug!("count_account");
+        sqlx::query(
+            r#"
+            select count(*) from user_accounts
+            "#,
+        )
+        .fetch_one(&self.db_pool)
+        .await?
+        .try_get::<_, usize>(0)
     }
 }

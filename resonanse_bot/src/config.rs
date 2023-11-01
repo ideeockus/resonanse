@@ -22,6 +22,8 @@ pub fn check_all_mandatory_envs_is_ok() {
     env::var(POSTS_CHANNEL_ID).unwrap();
 
     env::var(POSTGRES_DB_URL).unwrap();
+
+    env::var(MANAGER_TG_IDS).unwrap();
 }
 
 // other

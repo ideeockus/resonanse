@@ -1,22 +1,21 @@
-use crate::commands::Command;
 use crate::handlers::*;
-use crate::states::*;
+use crate::management::actions::{delete_event_command, get_stats_command};
+use crate::management::commands::ManagementCommand;
+use crate::management::BaseManagementState;
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dispatching::{dialogue, UpdateHandler};
 use teloxide::prelude::*;
 
-pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
+pub fn manager_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
     use dptree::case;
 
-    let command_handler = teloxide::filter_command::<Command, _>()
-        .branch(case![Command::Help].endpoint(help_command))
-    ;
+    let command_handler = teloxide::filter_command::<ManagementCommand, _>()
+        .branch(case![ManagementCommand::DeleteEvent].endpoint(delete_event_command))
+        .branch(case![ManagementCommand::GetStatistics].endpoint(get_stats_command));
 
-    let message_handler = Update::filter_message()
-        .branch(dptree::endpoint(invalid_state));
+    let message_handler = Update::filter_message().branch(command_handler);
+    // .branch(dptree::endpoint(invalid_state));
 
-
-    dialogue::enter::<Update, InMemStorage<BaseState>, BaseState, _>()
+    dialogue::enter::<Update, InMemStorage<BaseManagementState>, BaseManagementState, _>()
         .branch(message_handler)
-        // .branch(callback_query_handler)
 }

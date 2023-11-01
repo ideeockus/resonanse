@@ -32,35 +32,6 @@ impl EventsRepository {
     }
 
     pub async fn create_event(&self, event: CreateBaseEvent) -> Result<BaseEvent> {
-        // let created_event = query!(
-        //     r#"insert into resonanse_events
-        //     (
-        //     id, is_private, is_commercial, title, description, subject,
-        //     datetime, location_latitude, location_longitude,
-        //     location_title, creator_id, event_type, picture, contact_info
-        //     )
-        //     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-        //     returning is_private, is_commercial, title, description,
-        //     datetime, location_latitude, location_longitude,
-        //     location_title, creator_id, picture, id, creation_time,
-        //     event_type as "event_type: EventType", subject as "subject: EventSubject",
-        //     contact_info
-        //     "#,
-        //     Uuid::new_v4(),
-        //     event.is_private,
-        //     event.is_commercial,
-        //     event.title,
-        //     event.description,
-        //     event.subject as i32,
-        //     event.datetime,
-        //     // event.timezone,
-        //     event.location.latitude,
-        //     event.location.longitude,
-        //     event.location.title,
-        //     event.creator_id,
-        //     event.event_type as i32,
-        //     event.picture,
-        // )
         let created_event: BaseEvent = sqlx::query_as(
             r#"insert into resonanse_events
             (
@@ -72,42 +43,70 @@ impl EventsRepository {
             returning *
             "#,
         )
-            .bind(Uuid::new_v4())
-            .bind(event.is_private)
-            .bind(event.is_commercial)
-            .bind(event.title)
-            .bind(event.description)
-            .bind(event.subject as i32)
-            .bind(event.datetime)
-            .bind(event.location.latitude)
-            .bind(event.location.longitude)
-            .bind(event.location.title)
-            .bind(event.creator_id)
-            .bind(event.event_type)
-            .bind(event.picture)
-            .bind(event.contact_info)
-            .fetch_one(&self.db_pool)
-            .await?;
+        .bind(Uuid::new_v4())
+        .bind(event.is_private)
+        .bind(event.is_commercial)
+        .bind(event.title)
+        .bind(event.description)
+        .bind(event.subject as i32)
+        .bind(event.datetime)
+        .bind(event.location.latitude)
+        .bind(event.location.longitude)
+        .bind(event.location.title)
+        .bind(event.creator_id)
+        .bind(event.event_type)
+        .bind(event.picture)
+        .bind(event.contact_info)
+        .fetch_one(&self.db_pool)
+        .await?;
 
-        // Ok(BaseEvent {
-        //     id: created_event.id,
-        //     is_private: created_event.is_private,
-        //     is_commercial: created_event.is_commercial,
-        //     title: created_event.title,
-        //     description: created_event.description,
-        //     subject: created_event.subject,
-        //     datetime: created_event.datetime,
-        //     location: Location {
-        //         latitude: created_event.location_latitude,
-        //         longitude: created_event.location_longitude,
-        //         title: created_event.location_title,
-        //     },
-        //     creator_id: created_event.creator_id,
-        //     event_type: created_event.event_type,
-        //     picture: created_event.picture,
-        //     creation_time: created_event.creation_time,
-        // })
         Ok(created_event)
+    }
+
+    // pub async fn edit_event(&self, event: CreateBaseEvent, event_uuid: Uuid) -> Result<BaseEvent> {
+    //     let created_event: BaseEvent = sqlx::query_as(
+    //         r#"insert into resonanse_events
+    //         (
+    //         id, is_private, is_commercial, title, description, subject,
+    //         datetime, location_latitude, location_longitude,
+    //         location_title, creator_id, event_type, picture, contact_info
+    //         )
+    //         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+    //         returning *
+    //         "#,
+    //     )
+    //         .bind(Uuid::new_v4())
+    //         .bind(event.is_private)
+    //         .bind(event.is_commercial)
+    //         .bind(event.title)
+    //         .bind(event.description)
+    //         .bind(event.subject as i32)
+    //         .bind(event.datetime)
+    //         .bind(event.location.latitude)
+    //         .bind(event.location.longitude)
+    //         .bind(event.location.title)
+    //         .bind(event.creator_id)
+    //         .bind(event.event_type)
+    //         .bind(event.picture)
+    //         .bind(event.contact_info)
+    //         .fetch_one(&self.db_pool)
+    //         .await?;
+    //
+    //     Ok(created_event)
+    // }
+
+    pub async fn get_all_events(&self) -> Result<Vec<BaseEvent>> {
+        let events: Result<Vec<BaseEvent>> = sqlx::query_as(
+            r#"select *
+            from resonanse_events
+            where datetime >= current_date
+            order by datetime
+            "#,
+        )
+        .fetch_all(&self.db_pool)
+        .await;
+
+        events
     }
 
     pub async fn get_all_public_events(&self, page: i64, page_size: i64) -> Result<Vec<BaseEvent>> {
@@ -120,10 +119,10 @@ impl EventsRepository {
             fetch next $2 rows only
             "#,
         )
-            .bind(page * page_size)
-            .bind(page_size)
-            .fetch_all(&self.db_pool)
-            .await;
+        .bind(page * page_size)
+        .bind(page_size)
+        .fetch_all(&self.db_pool)
+        .await;
 
         events
     }
@@ -186,23 +185,54 @@ impl EventsRepository {
             where id=$1
             "#,
         )
-            .bind(uuid)
-            .fetch_one(&self.db_pool)
-            .await;
+        .bind(uuid)
+        .fetch_one(&self.db_pool)
+        .await;
 
         event
     }
 
-    pub async fn delete_events(&self, event_uuid: Uuid) -> Result<()> {
+    pub async fn delete_event(&self, event_uuid: Uuid, deleted_by_id: i64) -> Result<()> {
+        let deleting_event = self.get_event_by_uuid(event_uuid).await?;
+
+        let deleted_event: BaseEvent = sqlx::query_as(
+            r#"insert into deleted_events
+            (
+            id, is_private, is_commercial, title, description, subject,
+            datetime, location_latitude, location_longitude,
+            location_title, creator_id, updater_id, event_type, picture, contact_info
+            )
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            returning *
+            "#,
+        )
+        .bind(deleting_event.id)
+        .bind(deleting_event.is_private)
+        .bind(deleting_event.is_commercial)
+        .bind(deleting_event.title)
+        .bind(deleting_event.description)
+        .bind(deleting_event.subject as i32)
+        .bind(deleting_event.datetime)
+        .bind(deleting_event.location.latitude)
+        .bind(deleting_event.location.longitude)
+        .bind(deleting_event.location.title)
+        .bind(deleting_event.creator_id)
+        .bind(deleted_by_id)
+        .bind(deleting_event.event_type)
+        .bind(deleting_event.picture)
+        .bind(deleting_event.contact_info)
+        .fetch_one(&self.db_pool)
+        .await?;
+
         let result = sqlx::query(
             r#"
             delete from resonanse_events
             where id=$1
             "#,
         )
-            .bind(event_uuid)
-            .execute(&self.db_pool)
-            .await?;
+        .bind(event_uuid)
+        .execute(&self.db_pool)
+        .await?;
 
         debug!("delete_events result {:?}", result);
 
@@ -216,10 +246,10 @@ impl EventsRepository {
             values ($1, $2)
             "#,
         )
-            .bind(post_id)
-            .bind(event_id)
-            .execute(&self.db_pool)
-            .await?;
+        .bind(post_id)
+        .bind(event_id)
+        .execute(&self.db_pool)
+        .await?;
         debug!("event_tg_table result {:?}", result);
 
         Ok(())

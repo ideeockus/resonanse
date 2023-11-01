@@ -4,24 +4,22 @@ use crate::errors::BotHandlerError;
 use crate::handlers::utils::download_file_by_id;
 use crate::handlers::{log_request, HandlerResult, MyDialogue};
 use crate::high_logics::publish_event;
+use crate::keyboards;
 use crate::keyboards::{get_inline_kb_choose_subject, get_inline_kb_edit_new_event};
 use crate::states::{BaseState, CreateEventState};
-use crate::utils::{build_event_deep_link};
-use crate::{keyboards};
-use chrono::{NaiveDateTime};
+use crate::utils::build_event_deep_link;
+use chrono::NaiveDateTime;
 use log::{debug, warn};
-use resonanse_common::file_storage::{get_event_image_path_by_uuid};
+use resonanse_common::file_storage::get_event_image_path_by_uuid;
 use resonanse_common::models::{EventSubject, Location};
 
 use resonanse_common::repository::CreateBaseEvent;
-
 
 use teloxide::prelude::*;
 
 use teloxide::types::MessageKind::Common;
 use teloxide::types::{
-    InputFile, MediaKind, MediaLocation, MediaVenue, MessageCommon,
-    ParseMode, ReplyMarkup,
+    InputFile, MediaKind, MediaLocation, MediaVenue, MessageCommon, ParseMode, ReplyMarkup,
 };
 use teloxide::utils::markdown;
 use teloxide::Bot;
@@ -147,7 +145,9 @@ pub async fn handle_create_event_state_message(
         CreateEventState::Geo => handle_event_geo(bot, dialogue, msg, filling_event).await,
         // CreateEventState::Subject => handle_event_subject,
         CreateEventState::Picture => handle_event_picture(bot, dialogue, msg, filling_event).await,
-        CreateEventState::ContactInfo => handle_event_contact(bot, dialogue, msg, filling_event).await,
+        CreateEventState::ContactInfo => {
+            handle_event_contact(bot, dialogue, msg, filling_event).await
+        }
         // CreateEventState::Finalisation => handle_event_finalisation(bot, dialogue, msg, filling_event).await,
         _ => {
             warn!(
@@ -327,7 +327,10 @@ pub async fn handle_event_datetime(
         })
         .await?;
 
-    let message = bot.send_message(msg.chat.id, "Отправьте геометку (вложением)");
+    let message = bot.send_message(
+        msg.chat.id,
+        "Отправьте геометку события (Прикрепить вложение -> локация)",
+    );
     message.await?;
 
     Ok(())
@@ -356,13 +359,13 @@ pub async fn handle_event_geo(
     debug!("provided msg: {:?}", msg);
     let location = match msg.kind {
         Common(MessageCommon {
-                   media_kind: MediaKind::Location(MediaLocation { location, .. }),
-                   ..
-               }) => Location::from_ll(location.latitude, location.longitude),
+            media_kind: MediaKind::Location(MediaLocation { location, .. }),
+            ..
+        }) => Location::from_ll(location.latitude, location.longitude),
         Common(MessageCommon {
-                   media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
-                   ..
-               }) => Location {
+            media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
+            ..
+        }) => Location {
             latitude: venue.location.latitude,
             longitude: venue.location.longitude,
             title: Some(venue.title),
@@ -428,7 +431,10 @@ pub async fn handle_event_subject(
         })
         .await?;
 
-    let message = bot.send_message(q.from.id, "Осталось пара шагов. Добавьте изображение или постер");
+    let message = bot.send_message(
+        q.from.id,
+        "Осталось пара шагов. Добавьте изображение или постер",
+    );
     message.await?;
 
     Ok(())
@@ -461,7 +467,10 @@ pub async fn handle_event_picture(
         })
         .await?;
 
-    let message = bot.send_message(msg.chat.id, "Укажите контакт для связи. Например, юзернейм (как @resonanse_app)");
+    let message = bot.send_message(
+        msg.chat.id,
+        "Укажите контакт для связи. Например, юзернейм (как @resonanse_app)",
+    );
     message.await?;
 
     Ok(())
@@ -489,7 +498,8 @@ pub async fn handle_event_contact(
         })
         .await?;
 
-    let local_file_path = get_event_image_path_by_uuid(filling_event.picture.ok_or("Picture not set")?);
+    let local_file_path =
+        get_event_image_path_by_uuid(filling_event.picture.ok_or("Picture not set")?);
     let mut message = bot.send_photo(msg.chat.id, InputFile::file(local_file_path));
     let event_text_representation = CreateBaseEvent::from(filling_event.clone()).format();
     let message_text = format!(
@@ -543,7 +553,7 @@ pub async fn handle_event_finalisation_callback(
                 msg.chat.id,
                 "Хорошо, вы можете заполнить данные заново. Введите название",
             )
-                .await?;
+            .await?;
             return Ok(());
         }
         Some(keyboards::CREATE_EVENT_CALLBACK) => {
@@ -563,7 +573,7 @@ pub async fn handle_event_finalisation_callback(
                         tg_event_deep_link
                     ),
                 )
-                    .await?;
+                .await?;
             } else {
                 bot.send_message(
                     msg.chat.id,
@@ -572,7 +582,7 @@ pub async fn handle_event_finalisation_callback(
                         tg_event_deep_link
                     ),
                 )
-                    .await?;
+                .await?;
             }
 
             return Ok(());
