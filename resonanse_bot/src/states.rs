@@ -27,6 +27,7 @@ pub enum CreateEventState {
     Description,
     Datetime,
     Geo,
+    PlaceTitle,
     Subject,
     Picture,
     ContactInfo,

@@ -13,6 +13,7 @@ tokio = { version = "1", features = ["full"] }
 teloxide = { version = "0.12", features = ["macros"] }
 chrono = "0.4"
 uuid = "1.4"
-chrono-tz = "0.8.3"
+chrono-tz = "0.8"
+url = "2.4"
 
 resonanse_common = { path = "../resonanse_common" }

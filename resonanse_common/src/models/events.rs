@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 use chrono::NaiveDateTime;
+use log::debug;
 use sqlx::postgres::PgRow;
 use sqlx::{FromRow, Row};
 use uuid::Uuid;
@@ -42,6 +43,22 @@ impl Location {
             "https://yandex.ru/maps/?pt={},{}&z=15",
             self.longitude, self.latitude
         )
+    }
+
+    pub fn parse_from_yandex_map_link(link_str: &str) -> Option<Self> {
+        let url = url::Url::parse(&link_str).ok()?;
+        let (_key, value) = url.query_pairs().find(|(k, v)| k == "ll")?;
+
+        debug!("parsed from link: k {} : v {}", _key, value);
+        let mut split = value.splitn(1, ",");
+        let longitude = split.next().map(|s| s.parse::<f64>().ok()).flatten()?;
+        let latitude = split.next().map(|s| s.parse::<f64>().ok()).flatten()?;
+
+        Some(Self {
+            latitude,
+            longitude,
+            title: None,
+        })
     }
 }
 

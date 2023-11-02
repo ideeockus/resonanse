@@ -1622,6 +1622,7 @@ dependencies = [
  "resonanse_common",
  "teloxide",
  "tokio",
+ "url",
  "uuid",
 ]
 
@@ -1633,6 +1634,7 @@ dependencies = [
  "chrono-tz",
  "log",
  "sqlx",
+ "url",
  "uuid",
 ]
 

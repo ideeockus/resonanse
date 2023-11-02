@@ -143,6 +143,7 @@ pub async fn handle_create_event_state_message(
             handle_event_datetime(bot, dialogue, msg, filling_event).await
         }
         CreateEventState::Geo => handle_event_geo(bot, dialogue, msg, filling_event).await,
+        CreateEventState::PlaceTitle => handle_event_place_title(bot, dialogue, msg, filling_event).await,
         // CreateEventState::Subject => handle_event_subject,
         CreateEventState::Picture => handle_event_picture(bot, dialogue, msg, filling_event).await,
         CreateEventState::ContactInfo => {
@@ -329,7 +330,7 @@ pub async fn handle_event_datetime(
 
     let message = bot.send_message(
         msg.chat.id,
-        "Отправьте геометку события (Прикрепить вложение -> локация)",
+        "Отправьте ссылку в Yandex.Map или геометку (Прикрепить вложение -> локация)",
     );
     message.await?;
 
@@ -342,30 +343,70 @@ pub async fn handle_event_geo(
     msg: Message,
     mut filling_event: FillingEvent,
 ) -> HandlerResult {
-    // let event_location = match msg.location() {
-    //     None => {
-    //         debug!("provided msg: {:?}", msg);
-    //         debug!("rejected user ({})", repr_user_as_str(msg.from()));
-    //         reject_user_answer!(bot, msg.chat.id, "No location provided");
-    //         // bot.send_message(
-    //         //     msg.chat.id,
-    //         //     "",
-    //         // ).await?;
-    //         // return Ok(());
-    //     }
-    //     Some(v) => v,
-    // };
-
     debug!("provided msg: {:?}", msg);
     let location = match msg.kind {
         Common(MessageCommon {
-            media_kind: MediaKind::Location(MediaLocation { location, .. }),
-            ..
-        }) => Location::from_ll(location.latitude, location.longitude),
+                   media_kind: MediaKind::Location(MediaLocation { location, .. }),
+                   ..
+               }) => Location::from_ll(location.latitude, location.longitude),
         Common(MessageCommon {
-            media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
-            ..
-        }) => Location {
+                   media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
+                   ..
+               }) => Location {
+            latitude: venue.location.latitude,
+            longitude: venue.location.longitude,
+            title: Some(venue.title),
+        },
+        Common(MessageCommon {
+                   media_kind: MediaKind::Text(media_text), ..
+               }) => {
+            let plain_text = media_text.text;
+            match Location::parse_from_yandex_map_link(&plain_text) {
+                Some(loc) => {
+                    loc
+                }
+                None => {
+                    reject_user_answer!(bot, msg.chat.id, "Место не распознано");
+                }
+            }
+        }
+        _ => {
+            reject_user_answer!(bot, msg.chat.id, "No location provided");
+        }
+    };
+
+    filling_event.geo_position = Some(location);
+
+    dialogue
+        .update(BaseState::CreateEvent {
+            state: CreateEventState::Subject,
+            filling_event,
+        })
+        .await?;
+
+    let mut message = bot.send_message(msg.chat.id, "Выберите тематику");
+    message.reply_markup = Some(get_inline_kb_choose_subject());
+    message.await?;
+
+    Ok(())
+}
+
+pub async fn handle_event_place_title(
+    bot: Bot,
+    dialogue: MyDialogue,
+    msg: Message,
+    mut filling_event: FillingEvent,
+) -> HandlerResult {
+    debug!("provided msg: {:?}", msg);
+    let location = match msg.kind {
+        Common(MessageCommon {
+                   media_kind: MediaKind::Location(MediaLocation { location, .. }),
+                   ..
+               }) => Location::from_ll(location.latitude, location.longitude),
+        Common(MessageCommon {
+                   media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
+                   ..
+               }) => Location {
             latitude: venue.location.latitude,
             longitude: venue.location.longitude,
             title: Some(venue.title),
@@ -374,19 +415,6 @@ pub async fn handle_event_geo(
             reject_user_answer!(bot, msg.chat.id, "No location provided");
         }
     };
-
-    // let event_location = match msg.location() {
-    //     None => {
-    //         debug!("rejected user ({})", repr_user_as_str(msg.from()));
-    //         reject_user_answer!(bot, msg.chat.id, "No location provided");
-    //         // bot.send_message(
-    //         //     msg.chat.id,
-    //         //     "",
-    //         // ).await?;
-    //         // return Ok(());
-    //     }
-    //     Some(v) => v,
-    // };
 
     filling_event.geo_position = Some(location);
 
@@ -553,7 +581,7 @@ pub async fn handle_event_finalisation_callback(
                 msg.chat.id,
                 "Хорошо, вы можете заполнить данные заново. Введите название",
             )
-            .await?;
+                .await?;
             return Ok(());
         }
         Some(keyboards::CREATE_EVENT_CALLBACK) => {
@@ -573,7 +601,7 @@ pub async fn handle_event_finalisation_callback(
                         tg_event_deep_link
                     ),
                 )
-                .await?;
+                    .await?;
             } else {
                 bot.send_message(
                     msg.chat.id,
@@ -582,7 +610,7 @@ pub async fn handle_event_finalisation_callback(
                         tg_event_deep_link
                     ),
                 )
-                .await?;
+                    .await?;
             }
 
             return Ok(());
