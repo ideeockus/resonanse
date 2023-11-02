@@ -51,14 +51,14 @@ pub async fn delete_event_command(bot: Bot, msg: Message) -> HandlerResult {
                                 msg.chat.id,
                                 format!("Событие {} удалено", event_uuid),
                             )
-                            .await?;
+                                .await?;
                         }
                         Err(_) => {
                             bot.send_message(
                                 msg.chat.id,
                                 format!("Событие {} НЕ удалено", event_uuid),
                             )
-                            .await?;
+                                .await?;
                         }
                     }
 
@@ -115,6 +115,58 @@ pub async fn get_stats_command(bot: Bot, msg: Message) -> HandlerResult {
         ),
     );
 
+    message.parse_mode = Some(ParseMode::MarkdownV2);
+    message.await?;
+
+    Ok(())
+}
+
+pub async fn search_event_command(bot: Bot, msg: Message, searching_event_title: String) -> HandlerResult {
+    debug!("got search_event_command {:?}", &msg);
+
+    // CHECK FOR MANAGER RIGHTS
+    if !get_managers_ids().contains(&msg.chat.id.0) {
+        return Ok(());
+    }
+
+    debug!("{:?}", msg.entities());
+
+    debug!("search by substr {:?}", searching_event_title);
+
+    let result = EVENTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get events repository")?
+        .get_events_by_title_substr(&searching_event_title)
+        .await?;
+
+    debug!("reesult {:?}", result);
+    if !result.is_empty() {
+        let result_formatted = result.iter()
+            .map(|be| {
+                format!(
+                    "*{}* \\- `{}`",
+                    markdown::escape(&be.title),
+                    markdown::escape(&be.id.to_string())
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        let mut message = bot.send_message(
+            msg.chat.id,
+            format!(
+                "События:\n{}",
+                result_formatted
+            ),
+        );
+
+        message.parse_mode = Some(ParseMode::MarkdownV2);
+        message.await?;
+        return Ok(());
+    }
+
+
+    let mut message = bot.send_message(msg.chat.id, "Ничего не найдено");
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 

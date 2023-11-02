@@ -109,6 +109,20 @@ impl EventsRepository {
         events
     }
 
+    pub async fn get_events_by_title_substr(&self, title: &str) -> Result<Vec<BaseEvent>> {
+        let events: Result<Vec<BaseEvent>> = sqlx::query_as(
+            r#"select *
+            from resonanse_events
+            where title like $1
+            "#,
+        )
+        .bind(format!("%{}%", title))
+        .fetch_all(&self.db_pool)
+        .await;
+
+        events
+    }
+
     pub async fn get_all_public_events(&self, page: i64, page_size: i64) -> Result<Vec<BaseEvent>> {
         let events: Result<Vec<BaseEvent>> = sqlx::query_as(
             r#"select *

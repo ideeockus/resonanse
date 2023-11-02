@@ -361,6 +361,7 @@ pub async fn handle_event_geo(
                    media_kind: MediaKind::Text(media_text), ..
                }) => {
             let plain_text = media_text.text;
+
             match Location::parse_from_yandex_map_link(&plain_text) {
                 Some(loc) => {
                     loc
@@ -379,13 +380,12 @@ pub async fn handle_event_geo(
 
     dialogue
         .update(BaseState::CreateEvent {
-            state: CreateEventState::Subject,
+            state: CreateEventState::PlaceTitle,
             filling_event,
         })
         .await?;
 
-    let mut message = bot.send_message(msg.chat.id, "Выберите тематику");
-    message.reply_markup = Some(get_inline_kb_choose_subject());
+    let message = bot.send_message(msg.chat.id, "Введите название места");
     message.await?;
 
     Ok(())
@@ -398,25 +398,16 @@ pub async fn handle_event_place_title(
     mut filling_event: FillingEvent,
 ) -> HandlerResult {
     debug!("provided msg: {:?}", msg);
-    let location = match msg.kind {
-        Common(MessageCommon {
-                   media_kind: MediaKind::Location(MediaLocation { location, .. }),
-                   ..
-               }) => Location::from_ll(location.latitude, location.longitude),
-        Common(MessageCommon {
-                   media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
-                   ..
-               }) => Location {
-            latitude: venue.location.latitude,
-            longitude: venue.location.longitude,
-            title: Some(venue.title),
-        },
+    let place_title = match msg.text() {
+        Some(place_title) => place_title,
         _ => {
             reject_user_answer!(bot, msg.chat.id, "No location provided");
         }
     };
 
-    filling_event.geo_position = Some(location);
+    filling_event.geo_position.as_mut().map(|location| {
+        location.title = Some(place_title.to_string())
+    });
 
     dialogue
         .update(BaseState::CreateEvent {

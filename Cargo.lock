@@ -1619,10 +1619,10 @@ dependencies = [
  "chrono-tz",
  "env_logger",
  "log",
+ "reqwest",
  "resonanse_common",
  "teloxide",
  "tokio",
- "url",
  "uuid",
 ]
 

@@ -46,11 +46,15 @@ impl Location {
     }
 
     pub fn parse_from_yandex_map_link(link_str: &str) -> Option<Self> {
-        let url = url::Url::parse(&link_str).ok()?;
-        let (_key, value) = url.query_pairs().find(|(k, v)| k == "ll")?;
+        let url = url::Url::parse(&link_str).ok();
+        Location::parse_from_yandex_map_url(url.as_ref())
+    }
+
+    pub fn parse_from_yandex_map_url(map_url: Option<&url::Url>) -> Option<Self> {
+        let (_key, value) = map_url?.query_pairs().find(|(k, v)| k == "ll")?;
 
         debug!("parsed from link: k {} : v {}", _key, value);
-        let mut split = value.splitn(1, ",");
+        let mut split = value.splitn(2, ",");
         let longitude = split.next().map(|s| s.parse::<f64>().ok()).flatten()?;
         let latitude = split.next().map(|s| s.parse::<f64>().ok()).flatten()?;
 
