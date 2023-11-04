@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::models::{BaseEvent, EventSubject, EventType, Location};
 use crate::EventSubjectFilter;
 use chrono::NaiveDateTime;
@@ -267,5 +268,19 @@ impl EventsRepository {
         debug!("event_tg_table result {:?}", result);
 
         Ok(())
+    }
+
+    pub async fn count_events_by_subject(&self) -> Result<HashMap<EventSubject, i64>> {
+        let result = sqlx::query(
+            r#"select subject, count(*)
+            from resonanse_events
+            group by subject
+            "#,
+        )
+        .fetch_all(&self.db_pool)
+        .await;
+        // debug!("count_events_by_subject result: {:?}", result);
+
+        Ok(HashMap::new())
     }
 }

@@ -89,29 +89,30 @@ pub async fn get_stats_command(bot: Bot, msg: Message) -> HandlerResult {
         .count_accounts()
         .await?;
 
-    let events_uuids_map = EVENTS_REPOSITORY
+    // todo
+    let count_events_by_subject = EVENTS_REPOSITORY
         .get()
         .ok_or("Cannot get events repository")?
-        .get_all_events()
+        .count_events_by_subject()
         .await?;
 
-    let all_events = events_uuids_map
-        .iter()
-        .map(|be| {
-            format!(
-                "*{}* \\- `{}`",
-                markdown::escape(&be.title),
-                markdown::escape(&be.id.to_string())
-            )
-        })
-        .collect::<Vec<String>>()
-        .join("\n");
+    // let all_events = events_uuids_map
+    //     .iter()
+    //     .map(|be| {
+    //         format!(
+    //             "*{}* \\- `{}`",
+    //             markdown::escape(&be.title),
+    //             markdown::escape(&be.id.to_string())
+    //         )
+    //     })
+    //     .collect::<Vec<String>>()
+    //     .join("\n");
 
     let mut message = bot.send_message(
         msg.chat.id,
         format!(
-            "\\[пока статистика только такая\\]\nКоличество пользователей: {}\n\nСобытия:\n{}",
-            count_accounts, all_events,
+            "\\[пока статистика только такая\\]\nКоличество пользователей: {}\n\n",
+            count_accounts,
         ),
     );
 

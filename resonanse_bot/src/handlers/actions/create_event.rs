@@ -1,3 +1,4 @@
+use std::ops::{Range, RangeInclusive};
 use crate::config::DEFAULT_DATETIME_FORMAT;
 
 use crate::errors::BotHandlerError;
@@ -28,6 +29,11 @@ use uuid::Uuid;
 const DATETIME_FORMAT_1: &str = "%d/%m/%Y %H:%M";
 const DATETIME_FORMAT_2: &str = "%d.%m.%Y %H.%M";
 const DATETIME_FORMAT_3: &str = "%d-%m-%Y %H:%M";
+
+const TITLE_LIMIT: RangeInclusive<usize> = 5..=100;
+const DESCRIPTION_LIMIT: RangeInclusive<usize> = 15..=700;
+const PLACE_TITLE_LIMIT: RangeInclusive<usize> = 0..=30;
+const CONTACT_LIMIT: RangeInclusive<usize> = 3..=100;
 
 #[derive(Clone, Default)]
 pub struct FillingEvent {
@@ -72,11 +78,16 @@ impl TgTextFormatter for CreateBaseEvent {
 💡 Тематика: _{}_
 📅 Дата: _{}_
 {}
+{}
 "#,
             markdown::escape(&self.title),
             markdown::escape(&self.description),
             markdown::escape(&self.subject.to_string()),
             markdown::escape(&self.datetime.format(DEFAULT_DATETIME_FORMAT).to_string()),
+            match &self.location.title.as_deref() {
+                None => "".to_string(),
+                Some(location_title) => format!("📍 Место: _{}_", markdown::escape(location_title)),
+            },
             match &self.contact_info.as_deref() {
                 None => "".to_string(),
                 Some(contact_info) => format!("Контакт: _{}_", markdown::escape(contact_info)),
@@ -115,8 +126,27 @@ impl From<FillingEvent> for CreateBaseEvent {
 macro_rules! reject_user_answer {
     ($bot: ident, $chat_id: expr, $text:expr) => {
         $bot.send_message($chat_id, $text).await?;
-        // debug!("rejected user ({}) answer: {}", repr_user_as_str($msg.from()), $text);
         return Ok(());
+    };
+}
+
+macro_rules! check_msg_size {
+    ($bot: ident, $chat_id: expr, $limit_range:ident, $value_to_check:ident) => {
+        if $limit_range.contains(&$value_to_check.len()) {
+            $value_to_check
+        } else {
+            $bot.send_message(
+                $chat_id,
+                format!(
+                    "Количество символов ожидается от {} до {}. В вашем сообщении {}",
+                    $limit_range.start(),
+                    $limit_range.end(),
+                    $value_to_check.len()
+                ),
+            ).await?;
+
+            return Ok(());
+        }
     };
 }
 
@@ -217,16 +247,12 @@ pub async fn handle_event_name(
 ) -> HandlerResult {
     let event_name = match msg.text() {
         None => {
-            // bot.send_message(
-            //     msg.chat.id,
-            //     "No name provided",
-            // ).await?;
-            // return Ok(());
             reject_user_answer!(bot, msg.chat.id, "No name provided");
-            // debug!("rejected user ({}) answer: {}", repr_user_as_str(msg.from()), $text);
-            // msg.from()
         }
-        Some(v) => v,
+        Some(v) => {
+            check_msg_size!(bot, msg.chat.id, TITLE_LIMIT, v)
+                .replace("\n", " ")
+        }
     };
 
     filling_event.title = Some(event_name.to_string());
@@ -259,7 +285,7 @@ pub async fn handle_event_description(
             // ).await?;
             // return Ok(());
         }
-        Some(v) => v,
+        Some(v) => check_msg_size!(bot, msg.chat.id, DESCRIPTION_LIMIT, v),
     };
 
     filling_event.description = Some(event_description.to_string());
@@ -399,7 +425,7 @@ pub async fn handle_event_place_title(
 ) -> HandlerResult {
     debug!("provided msg: {:?}", msg);
     let place_title = match msg.text() {
-        Some(place_title) => place_title,
+        Some(place_title) => check_msg_size!(bot, msg.chat.id, PLACE_TITLE_LIMIT, place_title),
         _ => {
             reject_user_answer!(bot, msg.chat.id, "No location provided");
         }
@@ -505,7 +531,7 @@ pub async fn handle_event_contact(
         None => {
             reject_user_answer!(bot, msg.chat.id, "No subject provided");
         }
-        Some(v) => v.to_string(),
+        Some(v) => check_msg_size!(bot, msg.chat.id, CONTACT_LIMIT, v).to_string(),
     };
 
     filling_event.contact_info = Some(contact_info);

@@ -39,6 +39,7 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
         .branch(dptree::endpoint(invalid_state));
 
     let callback_query_handler = Update::filter_callback_query()
+        // .map_async(|msg: Message, a| {})
         .branch(
             case![BaseState::CreateEvent {
                 state,
