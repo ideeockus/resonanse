@@ -24,7 +24,7 @@ pub async fn handle_get_events(
     // handle event command start
     if let Some(msg_text) = msg.text() {
         if let Some(rest_msg) = msg_text.strip_prefix("/event_") {
-            if let Some(event_num) = rest_msg.splitn(1, " ").next() {
+            if let Some(event_num) = rest_msg.split(' ').next() {
                 if let Ok(event_num) = event_num.parse::<i64>() {
                     // let event_global_num = event_num;
                     let events = EVENTS_REPOSITORY

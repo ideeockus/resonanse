@@ -46,7 +46,7 @@ impl Location {
     }
 
     pub fn parse_from_yandex_map_link(link_str: &str) -> Option<Self> {
-        let url = url::Url::parse(&link_str).ok();
+        let url = url::Url::parse(link_str).ok();
         Location::parse_from_yandex_map_url(url.as_ref())
     }
 
@@ -54,9 +54,9 @@ impl Location {
         let (_key, value) = map_url?.query_pairs().find(|(k, _v)| k == "ll")?;
 
         debug!("parsed from link: k {} : v {}", _key, value);
-        let mut split = value.splitn(2, ",");
-        let longitude = split.next().map(|s| s.parse::<f64>().ok()).flatten()?;
-        let latitude = split.next().map(|s| s.parse::<f64>().ok()).flatten()?;
+        let mut split = value.splitn(2, ',');
+        let longitude = split.next().and_then(|s| s.parse::<f64>().ok())?;
+        let latitude = split.next().and_then(|s| s.parse::<f64>().ok())?;
 
         Some(Self {
             latitude,
@@ -145,6 +145,12 @@ impl EventSubjectFilter {
         if let Some(f) = self.0.get_mut(&event_subject) {
             *f = !*f;
         }
+    }
+}
+
+impl Default for EventSubjectFilter {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

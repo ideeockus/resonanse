@@ -1,17 +1,16 @@
-use env_logger;
+use std::sync::OnceLock;
+
 use env_logger::{Builder, TimestampPrecision};
 use log::{info, LevelFilter};
-
-use std::sync::OnceLock;
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dptree;
 use teloxide::prelude::*;
 
-use crate::config::{check_all_mandatory_envs_is_ok, POSTGRES_DB_URL, RESONANSE_BOT_TOKEN};
-use crate::management::run_resonanse_management_bot_polling;
 use dispatch::schema;
 use resonanse_common::repository::{AccountsRepository, EventsRepository};
 
+use crate::config::{check_all_mandatory_envs_is_ok, POSTGRES_DB_URL, RESONANSE_BOT_TOKEN};
+use crate::management::run_resonanse_management_bot_polling;
 use crate::states::BaseState;
 
 mod commands;

@@ -185,7 +185,7 @@ pub async fn handle_create_event_state_message(
             );
             bot.send_message(msg.chat.id, "unknown create event handler")
                 .await?;
-            return Err(Box::try_from(BotHandlerError::UnknownHandler).unwrap());
+            Err(Box::try_from(BotHandlerError::UnknownHandler).unwrap())
         }
     }
 }
@@ -209,7 +209,7 @@ pub async fn handle_create_event_state_callback(
             "handle_create_event_state_callback {:?}",
             create_event_state
         ),
-        &msg,
+        msg,
     );
 
     match create_event_state {
@@ -230,7 +230,7 @@ pub async fn handle_create_event_state_callback(
             );
             bot.send_message(msg.chat.id, "unknown create event handler")
                 .await?;
-            return Err(Box::try_from(BotHandlerError::UnknownHandler).unwrap());
+            Err(Box::try_from(BotHandlerError::UnknownHandler).unwrap())
         }
     }
 }
@@ -245,7 +245,7 @@ pub async fn handle_event_name(
         None => {
             reject_user_answer!(bot, msg.chat.id, "No name provided");
         }
-        Some(v) => check_msg_size!(bot, msg.chat.id, TITLE_LIMIT, v).replace("\n", " "),
+        Some(v) => check_msg_size!(bot, msg.chat.id, TITLE_LIMIT, v).replace('\n', " "),
     };
 
     filling_event.title = Some(event_name.to_string());
@@ -413,10 +413,11 @@ pub async fn handle_event_place_title(
         }
     };
 
-    filling_event
+    if let Some(location) = filling_event
         .geo_position
-        .as_mut()
-        .map(|location| location.title = Some(place_title.to_string()));
+        .as_mut() {
+        location.title = Some(place_title.to_string())
+    }
 
     dialogue
         .update(BaseState::CreateEvent {

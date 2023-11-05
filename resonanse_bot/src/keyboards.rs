@@ -100,9 +100,7 @@ pub fn get_inline_kb_edit_new_event(
         vec![publish_btn],
     ]);
 
-    let keyboard = InlineKeyboardMarkup::new(buttons);
-    // ReplyMarkup::InlineKeyboard(keyboard)
-    keyboard
+    InlineKeyboardMarkup::new(buttons)
 }
 
 pub fn get_inline_kb_event_message(map_link: Option<String>) -> InlineKeyboardMarkup {
@@ -117,8 +115,7 @@ pub fn get_inline_kb_event_message(map_link: Option<String>) -> InlineKeyboardMa
         buttons.push(vec![map_link_btn]);
     }
 
-    let keyboard = InlineKeyboardMarkup::new(buttons);
-    keyboard
+    InlineKeyboardMarkup::new(buttons)
 }
 
 pub const EVENTS_PAGE_LEFT: &str = "EVENTS_PAGE_LEFT";
@@ -136,9 +133,7 @@ pub fn get_inline_kb_events_page() -> InlineKeyboardMarkup {
 
     let buttons = [vec![button_left, button_right]];
 
-    let keyboard = InlineKeyboardMarkup::new(buttons);
-    // ReplyMarkup::InlineKeyboard(keyboard)
-    keyboard
+    InlineKeyboardMarkup::new(buttons)
 }
 
 pub const APPLY_EVENT_FILTER_BTN: &str = "APPLY_EVENT_FILTER_BTN";
@@ -151,8 +146,8 @@ pub fn get_inline_kb_set_subject_filter(
 
     let max_len = event_filters
         .0
-        .iter()
-        .map(|(es, _)| es.to_string().len())
+        .keys()
+        .map(|es| es.to_string().len())
         .max()
         .unwrap_or(0);
 
@@ -163,7 +158,7 @@ pub fn get_inline_kb_set_subject_filter(
             InlineKeyboardButton::new(
                 format!(
                     "{}{}[{}]",
-                    es.to_string(),
+                    es,
                     " ".repeat(max_len.saturating_sub(es.to_string().len())),
                     if *on { FILTER_ON } else { FILTER_OFF },
                 ),
@@ -181,6 +176,5 @@ pub fn get_inline_kb_set_subject_filter(
     );
     buttons.push(vec![apply_button]);
 
-    let keyboard = InlineKeyboardMarkup::new(buttons);
-    keyboard
+    InlineKeyboardMarkup::new(buttons)
 }

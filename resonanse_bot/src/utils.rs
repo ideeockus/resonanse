@@ -26,7 +26,7 @@ pub fn repr_user_as_str(user: Option<&teloxide::types::User>) -> String {
                 user.last_name.as_ref().unwrap_or(&String::new()),
                 user.username
                     .as_ref()
-                    .and_then(|username| { Some(format!("@{}", username)) })
+                    .map(|username| { format!("@{}", username) })
                     .unwrap_or(String::new()),
                 user.id,
             )
