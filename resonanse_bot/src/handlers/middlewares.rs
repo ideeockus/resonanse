@@ -4,16 +4,15 @@ use teloxide::prelude::Message;
 pub async fn log_request_handler(msg: Message) -> HandlerResult {
     match msg.from() {
         None => {
-            log::debug!("message from unknown user");
+            log::debug!("message from unknown user: {:?}", msg);
         }
         Some(user) => {
             log::debug!(
-                "message from user {:?} [{}] - {}. special: {}|{}",
+                "message from user {:?} [{}] - {}. {:?}",
                 user.mention(),
                 user.id,
                 user.full_name(),
-                user.is_anonymous(),
-                user.is_telegram(),
+                msg,
             );
         }
     }

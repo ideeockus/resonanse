@@ -51,7 +51,7 @@ impl Location {
     }
 
     pub fn parse_from_yandex_map_url(map_url: Option<&url::Url>) -> Option<Self> {
-        let (_key, value) = map_url?.query_pairs().find(|(k, v)| k == "ll")?;
+        let (_key, value) = map_url?.query_pairs().find(|(k, _v)| k == "ll")?;
 
         debug!("parsed from link: k {} : v {}", _key, value);
         let mut split = value.splitn(2, ",");
@@ -149,18 +149,18 @@ impl EventSubjectFilter {
 }
 
 // todo translation
-const EVENT_SUBJECTS: &[&str] = &[
-    "Бизнес",
-    "Спорт",
-    "Благотворительность",
-    "Развлечения",
-    "Образование",
-    "Профессиональное",
-    "Знакомства",
-    "Культура",
-    "Интересы",
-    "Другое",
-];
+// const EVENT_SUBJECTS: &[&str] = &[
+//     "Бизнес",
+//     "Спорт",
+//     "Благотворительность",
+//     "Развлечения",
+//     "Образование",
+//     "Профессиональное",
+//     "Знакомства",
+//     "Культура",
+//     "Интересы",
+//     "Другое",
+// ];
 
 #[derive(Clone, Debug)]
 pub struct BaseEvent {

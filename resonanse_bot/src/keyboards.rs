@@ -37,17 +37,17 @@ pub fn get_inline_kb_choose_subject() -> ReplyMarkup {
     ReplyMarkup::InlineKeyboard(keyboard)
 }
 
-pub fn get_inline_kb_view_event(map_link: String) -> ReplyMarkup {
-    let map_link_btn = InlineKeyboardButton::new(
-        "Место на карте",
-        InlineKeyboardButtonKind::Url(map_link.parse().unwrap()),
-    );
-    let buttons = [[map_link_btn]];
-
-    let keyboard = InlineKeyboardMarkup::new(buttons);
-
-    ReplyMarkup::InlineKeyboard(keyboard)
-}
+// pub fn get_inline_kb_view_event(map_link: String) -> ReplyMarkup {
+//     let map_link_btn = InlineKeyboardButton::new(
+//         "Место на карте",
+//         InlineKeyboardButtonKind::Url(map_link.parse().unwrap()),
+//     );
+//     let buttons = [[map_link_btn]];
+//
+//     let keyboard = InlineKeyboardMarkup::new(buttons);
+//
+//     ReplyMarkup::InlineKeyboard(keyboard)
+// }
 
 pub const EDIT_PUBLICITY_TRUE_CALLBACK: &str = "EDIT_PUBLICITY_TRUE";
 pub const EDIT_PUBLICITY_FALSE_CALLBACK: &str = "EDIT_PUBLICITY_FALSE";

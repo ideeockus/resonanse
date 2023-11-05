@@ -1,10 +1,7 @@
-use crate::config::MANAGER_TG_IDS;
-use crate::management::BaseManagementState;
-use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY};
-use log::debug;
 use std::env;
 use std::str::FromStr;
-use teloxide::dispatching::dialogue::InMemStorage;
+
+use log::debug;
 use teloxide::prelude::*;
 use teloxide::types::{Message, ParseMode};
 use teloxide::utils::command::parse_command;
@@ -12,8 +9,9 @@ use teloxide::utils::markdown;
 use teloxide::Bot;
 use uuid::Uuid;
 
-type ManagementDialogue = Dialogue<BaseManagementState, InMemStorage<BaseManagementState>>;
-type HandlerResult = Result<(), Box<dyn std::error::Error + Send + Sync>>;
+use crate::config::MANAGER_TG_IDS;
+use crate::management::common::HandlerResult;
+use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY};
 
 fn get_managers_ids() -> Vec<i64> {
     let managers_ids_str = env::var(MANAGER_TG_IDS).unwrap_or("".to_string());
@@ -51,14 +49,14 @@ pub async fn delete_event_command(bot: Bot, msg: Message) -> HandlerResult {
                                 msg.chat.id,
                                 format!("Событие {} удалено", event_uuid),
                             )
-                                .await?;
+                            .await?;
                         }
                         Err(_) => {
                             bot.send_message(
                                 msg.chat.id,
                                 format!("Событие {} НЕ удалено", event_uuid),
                             )
-                                .await?;
+                            .await?;
                         }
                     }
 
@@ -78,11 +76,6 @@ pub async fn delete_event_command(bot: Bot, msg: Message) -> HandlerResult {
 pub async fn get_stats_command(bot: Bot, msg: Message) -> HandlerResult {
     debug!("got get_stats_command {:?}", &msg);
 
-    // CHECK FOR MANAGER RIGHTS
-    if !get_managers_ids().contains(&msg.chat.id.0) {
-        return Ok(());
-    }
-
     let count_accounts = ACCOUNTS_REPOSITORY
         .get()
         .ok_or("Cannot get accounts repository")?
@@ -90,7 +83,7 @@ pub async fn get_stats_command(bot: Bot, msg: Message) -> HandlerResult {
         .await?;
 
     // todo
-    let count_events_by_subject = EVENTS_REPOSITORY
+    let _count_events_by_subject = EVENTS_REPOSITORY
         .get()
         .ok_or("Cannot get events repository")?
         .count_events_by_subject()
@@ -122,7 +115,11 @@ pub async fn get_stats_command(bot: Bot, msg: Message) -> HandlerResult {
     Ok(())
 }
 
-pub async fn search_event_command(bot: Bot, msg: Message, searching_event_title: String) -> HandlerResult {
+pub async fn search_event_command(
+    bot: Bot,
+    msg: Message,
+    searching_event_title: String,
+) -> HandlerResult {
     debug!("got search_event_command {:?}", &msg);
 
     // CHECK FOR MANAGER RIGHTS
@@ -142,7 +139,8 @@ pub async fn search_event_command(bot: Bot, msg: Message, searching_event_title:
 
     debug!("reesult {:?}", result);
     if !result.is_empty() {
-        let result_formatted = result.iter()
+        let result_formatted = result
+            .iter()
             .map(|be| {
                 format!(
                     "*{}* \\- `{}`",
@@ -153,19 +151,12 @@ pub async fn search_event_command(bot: Bot, msg: Message, searching_event_title:
             .collect::<Vec<String>>()
             .join("\n");
 
-        let mut message = bot.send_message(
-            msg.chat.id,
-            format!(
-                "События:\n{}",
-                result_formatted
-            ),
-        );
+        let mut message = bot.send_message(msg.chat.id, format!("События:\n{}", result_formatted));
 
         message.parse_mode = Some(ParseMode::MarkdownV2);
         message.await?;
         return Ok(());
     }
-
 
     let mut message = bot.send_message(msg.chat.id, "Ничего не найдено");
     message.parse_mode = Some(ParseMode::MarkdownV2);

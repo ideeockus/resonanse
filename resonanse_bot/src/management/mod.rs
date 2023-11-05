@@ -8,12 +8,14 @@ use teloxide::{dptree, Bot};
 
 mod actions;
 mod commands;
+mod common;
 mod dispatch;
 
 #[derive(Clone, Default)]
 pub enum BaseManagementState {
     #[default]
     Start,
+    #[allow(unused)]
     Idle,
 }
 

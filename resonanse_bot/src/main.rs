@@ -7,10 +7,7 @@ use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dptree;
 use teloxide::prelude::*;
 
-use crate::config::{
-    check_all_mandatory_envs_is_ok, POSTGRES_DB_URL, RESONANSE_BOT_TOKEN,
-    RESONANSE_MANAGEMENT_BOT_TOKEN,
-};
+use crate::config::{check_all_mandatory_envs_is_ok, POSTGRES_DB_URL, RESONANSE_BOT_TOKEN};
 use crate::management::run_resonanse_management_bot_polling;
 use dispatch::schema;
 use resonanse_common::repository::{AccountsRepository, EventsRepository};
@@ -27,7 +24,6 @@ mod high_logics;
 mod keyboards;
 mod management;
 mod states;
-mod user_settings;
 mod utils;
 
 static MANAGER_BOT: OnceLock<Bot> = OnceLock::new();

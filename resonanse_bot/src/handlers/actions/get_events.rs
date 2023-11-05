@@ -1,19 +1,19 @@
 use std::error::Error;
 
 use log::debug;
-use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::{Message, ParseMode, ReplyMarkup};
 use teloxide::utils::markdown;
+use teloxide::Bot;
 
-use resonanse_common::EventSubjectFilter;
 use resonanse_common::models::EventSubject;
+use resonanse_common::EventSubjectFilter;
 
-use crate::{EVENTS_REPOSITORY, keyboards};
 use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_events_page, get_inline_kb_set_subject_filter};
 use crate::states::BaseState;
+use crate::{keyboards, EVENTS_REPOSITORY};
 
 pub async fn handle_get_events(
     bot: Bot,

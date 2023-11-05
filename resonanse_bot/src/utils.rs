@@ -1,18 +1,19 @@
-use crate::config::RESONANSE_BOT_USERNAME;
-use std::path::{Path, PathBuf};
-use std::{env, fs};
+use std::env;
+
 use uuid::Uuid;
 
-const TG_DOWNLOADS_PATH: &str = "tg_downloads";
+use crate::config::RESONANSE_BOT_USERNAME;
 
-pub fn get_tg_downloads_dir() -> PathBuf {
-    let tg_downloads_path = Path::new(TG_DOWNLOADS_PATH);
-    if !tg_downloads_path.exists() {
-        fs::create_dir(tg_downloads_path).expect("Oops, cannot create dir");
-    }
+// const TG_DOWNLOADS_PATH: &str = "tg_downloads";
 
-    tg_downloads_path.to_path_buf()
-}
+// pub fn get_tg_downloads_dir() -> PathBuf {
+//     let tg_downloads_path = Path::new(TG_DOWNLOADS_PATH);
+//     if !tg_downloads_path.exists() {
+//         fs::create_dir(tg_downloads_path).expect("Oops, cannot create dir");
+//     }
+//
+//     tg_downloads_path.to_path_buf()
+// }
 
 #[inline]
 pub fn repr_user_as_str(user: Option<&teloxide::types::User>) -> String {

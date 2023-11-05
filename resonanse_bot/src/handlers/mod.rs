@@ -1,10 +1,12 @@
-use crate::states::BaseState;
-pub use actions::*;
-
-pub use commands::*;
-pub use common::*;
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::prelude::*;
+
+pub use actions::*;
+pub use commands::*;
+pub use common::*;
+pub use middlewares::*;
+
+use crate::states::BaseState;
 
 mod actions;
 mod base;

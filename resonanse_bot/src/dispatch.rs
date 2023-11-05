@@ -18,6 +18,7 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
 
     let message_handler = Update::filter_message()
         // todo: add logging middleware
+        .map_async(log_request_handler)
         .branch(command_handler)
         .branch(case![BaseState::Start].endpoint(handle_start_state))
         .branch(case![BaseState::SendFeedback].endpoint(handle_send_feedback))

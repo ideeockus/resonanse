@@ -2,13 +2,13 @@ use std::ops::RangeInclusive;
 
 use chrono::NaiveDateTime;
 use log::{debug, warn};
-use teloxide::Bot;
 use teloxide::prelude::*;
+use teloxide::types::MessageKind::Common;
 use teloxide::types::{
     InputFile, MediaKind, MediaLocation, MediaVenue, MessageCommon, ParseMode, ReplyMarkup,
 };
-use teloxide::types::MessageKind::Common;
 use teloxide::utils::markdown;
+use teloxide::Bot;
 use uuid::Uuid;
 
 use resonanse_common::file_storage::get_event_image_path_by_uuid;
@@ -17,8 +17,8 @@ use resonanse_common::repository::CreateBaseEvent;
 
 use crate::config::DEFAULT_DATETIME_FORMAT;
 use crate::errors::BotHandlerError;
-use crate::handlers::{HandlerResult, log_request, MyDialogue};
 use crate::handlers::utils::download_file_by_id;
+use crate::handlers::{log_request, HandlerResult, MyDialogue};
 use crate::high_logics::publish_event;
 use crate::keyboards;
 use crate::keyboards::{get_inline_kb_choose_subject, get_inline_kb_edit_new_event};
@@ -169,7 +169,9 @@ pub async fn handle_create_event_state_message(
             handle_event_datetime(bot, dialogue, msg, filling_event).await
         }
         CreateEventState::Geo => handle_event_geo(bot, dialogue, msg, filling_event).await,
-        CreateEventState::PlaceTitle => handle_event_place_title(bot, dialogue, msg, filling_event).await,
+        CreateEventState::PlaceTitle => {
+            handle_event_place_title(bot, dialogue, msg, filling_event).await
+        }
         // CreateEventState::Subject => handle_event_subject,
         CreateEventState::Picture => handle_event_picture(bot, dialogue, msg, filling_event).await,
         CreateEventState::ContactInfo => {
@@ -243,10 +245,7 @@ pub async fn handle_event_name(
         None => {
             reject_user_answer!(bot, msg.chat.id, "No name provided");
         }
-        Some(v) => {
-            check_msg_size!(bot, msg.chat.id, TITLE_LIMIT, v)
-                .replace("\n", " ")
-        }
+        Some(v) => check_msg_size!(bot, msg.chat.id, TITLE_LIMIT, v).replace("\n", " "),
     };
 
     filling_event.title = Some(event_name.to_string());
@@ -356,26 +355,25 @@ pub async fn handle_event_geo(
     debug!("provided msg: {:?}", msg);
     let location = match msg.kind {
         Common(MessageCommon {
-                   media_kind: MediaKind::Location(MediaLocation { location, .. }),
-                   ..
-               }) => Location::from_ll(location.latitude, location.longitude),
+            media_kind: MediaKind::Location(MediaLocation { location, .. }),
+            ..
+        }) => Location::from_ll(location.latitude, location.longitude),
         Common(MessageCommon {
-                   media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
-                   ..
-               }) => Location {
+            media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
+            ..
+        }) => Location {
             latitude: venue.location.latitude,
             longitude: venue.location.longitude,
             title: Some(venue.title),
         },
         Common(MessageCommon {
-                   media_kind: MediaKind::Text(media_text), ..
-               }) => {
+            media_kind: MediaKind::Text(media_text),
+            ..
+        }) => {
             let plain_text = media_text.text;
 
             match Location::parse_from_yandex_map_link(&plain_text) {
-                Some(loc) => {
-                    loc
-                }
+                Some(loc) => loc,
                 None => {
                     reject_user_answer!(bot, msg.chat.id, "Место не распознано");
                 }
@@ -415,9 +413,10 @@ pub async fn handle_event_place_title(
         }
     };
 
-    filling_event.geo_position.as_mut().map(|location| {
-        location.title = Some(place_title.to_string())
-    });
+    filling_event
+        .geo_position
+        .as_mut()
+        .map(|location| location.title = Some(place_title.to_string()));
 
     dialogue
         .update(BaseState::CreateEvent {
@@ -582,7 +581,7 @@ pub async fn handle_event_finalisation_callback(
                 msg.chat.id,
                 "Хорошо, вы можете заполнить данные заново. Введите название",
             )
-                .await?;
+            .await?;
             return Ok(());
         }
         Some(keyboards::CREATE_EVENT_CALLBACK) => {
@@ -602,7 +601,7 @@ pub async fn handle_event_finalisation_callback(
                         tg_event_deep_link
                     ),
                 )
-                    .await?;
+                .await?;
             } else {
                 bot.send_message(
                     msg.chat.id,
@@ -611,7 +610,7 @@ pub async fn handle_event_finalisation_callback(
                         tg_event_deep_link
                     ),
                 )
-                    .await?;
+                .await?;
             }
 
             return Ok(());

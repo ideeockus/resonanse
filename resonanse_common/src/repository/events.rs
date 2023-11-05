@@ -1,9 +1,9 @@
-use std::collections::HashMap;
 use crate::models::{BaseEvent, EventSubject, EventType, Location};
 use crate::EventSubjectFilter;
 use chrono::NaiveDateTime;
 use log::debug;
-use sqlx::{query, PgPool, Result};
+use sqlx::{PgPool, Result};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -210,7 +210,7 @@ impl EventsRepository {
     pub async fn delete_event(&self, event_uuid: Uuid, deleted_by_id: i64) -> Result<()> {
         let deleting_event = self.get_event_by_uuid(event_uuid).await?;
 
-        let deleted_event: BaseEvent = sqlx::query_as(
+        let _deleted_event: BaseEvent = sqlx::query_as(
             r#"insert into deleted_events
             (
             id, is_private, is_commercial, title, description, subject,
@@ -271,7 +271,7 @@ impl EventsRepository {
     }
 
     pub async fn count_events_by_subject(&self) -> Result<HashMap<EventSubject, i64>> {
-        let result = sqlx::query(
+        let _result = sqlx::query(
             r#"select subject, count(*)
             from resonanse_events
             group by subject

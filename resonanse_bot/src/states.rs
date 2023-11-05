@@ -23,7 +23,6 @@ pub enum BaseState {
 pub enum CreateEventState {
     #[default]
     Name,
-    Publicity,
     Description,
     Datetime,
     Geo,

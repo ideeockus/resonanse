@@ -1,20 +1,22 @@
-use crate::config::{DEFAULT_DATETIME_FORMAT, POSTS_CHANNEL_ID};
-use crate::data_translators::fill_base_account_from_teloxide_user;
-use crate::handlers::TgTextFormatter;
-use crate::keyboards::get_inline_kb_event_message;
-use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY, MANAGER_BOT};
-use log::debug;
-use resonanse_common::file_storage::get_event_image_path_by_uuid;
-use resonanse_common::models::BaseEvent;
-use resonanse_common::repository::CreateBaseEvent;
 use std::env;
 use std::error::Error;
+
+use log::debug;
 use teloxide::payloads::{SendMessage, SendPhoto};
 use teloxide::prelude::*;
 use teloxide::requests::{JsonRequest, MultipartRequest};
 use teloxide::types::{InputFile, ParseMode, ReplyMarkup};
 use teloxide::utils::markdown;
 use uuid::Uuid;
+
+use resonanse_common::file_storage::get_event_image_path_by_uuid;
+use resonanse_common::models::BaseEvent;
+use resonanse_common::repository::CreateBaseEvent;
+
+use crate::config::{DEFAULT_DATETIME_FORMAT, POSTS_CHANNEL_ID};
+use crate::data_translators::fill_base_account_from_teloxide_user;
+use crate::keyboards::get_inline_kb_event_message;
+use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY, MANAGER_BOT};
 
 pub async fn publish_event<I>(
     new_event: I,
