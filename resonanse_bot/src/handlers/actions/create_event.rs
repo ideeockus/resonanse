@@ -1,30 +1,29 @@
-use std::ops::{Range, RangeInclusive};
-use crate::config::DEFAULT_DATETIME_FORMAT;
+use std::ops::RangeInclusive;
 
+use chrono::NaiveDateTime;
+use log::{debug, warn};
+use teloxide::Bot;
+use teloxide::prelude::*;
+use teloxide::types::{
+    InputFile, MediaKind, MediaLocation, MediaVenue, MessageCommon, ParseMode, ReplyMarkup,
+};
+use teloxide::types::MessageKind::Common;
+use teloxide::utils::markdown;
+use uuid::Uuid;
+
+use resonanse_common::file_storage::get_event_image_path_by_uuid;
+use resonanse_common::models::{EventSubject, Location};
+use resonanse_common::repository::CreateBaseEvent;
+
+use crate::config::DEFAULT_DATETIME_FORMAT;
 use crate::errors::BotHandlerError;
+use crate::handlers::{HandlerResult, log_request, MyDialogue};
 use crate::handlers::utils::download_file_by_id;
-use crate::handlers::{log_request, HandlerResult, MyDialogue};
 use crate::high_logics::publish_event;
 use crate::keyboards;
 use crate::keyboards::{get_inline_kb_choose_subject, get_inline_kb_edit_new_event};
 use crate::states::{BaseState, CreateEventState};
 use crate::utils::build_event_deep_link;
-use chrono::NaiveDateTime;
-use log::{debug, warn};
-use resonanse_common::file_storage::get_event_image_path_by_uuid;
-use resonanse_common::models::{EventSubject, Location};
-
-use resonanse_common::repository::CreateBaseEvent;
-
-use teloxide::prelude::*;
-
-use teloxide::types::MessageKind::Common;
-use teloxide::types::{
-    InputFile, MediaKind, MediaLocation, MediaVenue, MessageCommon, ParseMode, ReplyMarkup,
-};
-use teloxide::utils::markdown;
-use teloxide::Bot;
-use uuid::Uuid;
 
 const DATETIME_FORMAT_1: &str = "%d/%m/%Y %H:%M";
 const DATETIME_FORMAT_2: &str = "%d.%m.%Y %H.%M";
@@ -92,7 +91,6 @@ impl TgTextFormatter for CreateBaseEvent {
                 None => "".to_string(),
                 Some(contact_info) => format!("Контакт: _{}_", markdown::escape(contact_info)),
             },
-            // markdown::escape(&self.location.get_yandex_map_link_to()),
         );
 
         msg_text
@@ -161,8 +159,6 @@ pub async fn handle_create_event_state_message(
         &msg,
     );
 
-    // type CreateEventMessageHandler = fn(Bot, MyDialogue, Message, FillingEvent) -> HandlerResult;
-
     match create_event_state {
         CreateEventState::Name => handle_event_name(bot, dialogue, msg, filling_event).await,
         // CreateEventState::Publicity => (),
@@ -190,8 +186,6 @@ pub async fn handle_create_event_state_message(
             return Err(Box::try_from(BotHandlerError::UnknownHandler).unwrap());
         }
     }
-
-    // handler(bot, dialogue, msg, filling_event)
 }
 
 pub async fn handle_create_event_state_callback(
@@ -279,11 +273,6 @@ pub async fn handle_event_description(
     let event_description = match msg.text() {
         None => {
             reject_user_answer!(bot, msg.chat.id, "No description provided");
-            // bot.send_message(
-            //     msg.chat.id,
-            //     "No description provided",
-            // ).await?;
-            // return Ok(());
         }
         Some(v) => check_msg_size!(bot, msg.chat.id, DESCRIPTION_LIMIT, v),
     };
@@ -322,11 +311,6 @@ pub async fn handle_event_datetime(
     let event_dt = match msg.text() {
         None => {
             reject_user_answer!(bot, msg.chat.id, "No datetime provided");
-            // bot.send_message(
-            //     msg.chat.id,
-            //     "No datetime provided",
-            // ).await?;
-            // return Ok(());
         }
         Some(v) => v,
     };
