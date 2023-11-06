@@ -13,12 +13,12 @@ pub fn manager_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync
     use dptree::case;
 
     let command_handler = teloxide::filter_command::<ManagementCommand, _>()
-        .filter(check_is_manager)
         .branch(case![ManagementCommand::DeleteEvent].endpoint(delete_event_command))
         .branch(case![ManagementCommand::GetStatistics].endpoint(get_stats_command))
         .branch(case![ManagementCommand::SearchEventByName(name)].endpoint(search_event_command));
 
     let message_handler = Update::filter_message()
+        .filter(check_is_manager)
         .branch(command_handler)
         .branch(dptree::endpoint(unhandled_message));
 
@@ -28,7 +28,7 @@ pub fn manager_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync
 
 fn get_managers_ids() -> Vec<i64> {
     let managers_ids_str = env::var(MANAGER_TG_IDS).unwrap_or("".to_string());
-    debug!("managers_ids_str: {:?}", managers_ids_str);
+    // debug!("managers_ids_str: {:?}", managers_ids_str);
     let managers_ids = managers_ids_str
         .split(',')
         .filter_map(|mng_id_str| mng_id_str.parse::<i64>().ok())
@@ -44,6 +44,7 @@ pub fn check_is_manager(msg: Message) -> bool {
         debug!("User with id {:?} passed as manager", msg.chat.id);
         true
     } else {
+        debug!("Attention: User with id {:?} is NOT manager", msg.chat.id);
         false
     }
 }

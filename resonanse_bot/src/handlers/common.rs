@@ -10,7 +10,7 @@ use teloxide::Bot;
 // "#;
 
 pub async fn handle_start_state(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
-    log_request("got contact (start state) message", &msg);
+    // log_request("got contact (start state) message", &msg);
 
     dialogue.update(BaseState::Idle).await?;
 
@@ -33,11 +33,11 @@ pub async fn invalid_state_callback(bot: Bot, q: CallbackQuery) -> HandlerResult
 }
 
 pub async fn invalid_state(bot: Bot, msg: Message) -> HandlerResult {
-    log_request("got message, but state invalid", &msg);
+    // log_request("got message, but state invalid", &msg);
     debug!(
-        "unhandled message from {}: {:?}",
+        "unhandled message from {}",
         repr_user_as_str(msg.from()),
-        msg
+        // msg
     );
 
     bot.send_message(
