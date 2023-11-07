@@ -30,9 +30,9 @@ const DATETIME_FORMAT_2: &str = "%d.%m.%Y %H.%M";
 const DATETIME_FORMAT_3: &str = "%d-%m-%Y %H:%M";
 
 const TITLE_LIMIT: RangeInclusive<usize> = 5..=100;
-const DESCRIPTION_LIMIT: RangeInclusive<usize> = 15..=700;
-const PLACE_TITLE_LIMIT: RangeInclusive<usize> = 0..=30;
-const CONTACT_LIMIT: RangeInclusive<usize> = 3..=100;
+const DESCRIPTION_LIMIT: RangeInclusive<usize> = 15..=764;
+const PLACE_TITLE_LIMIT: RangeInclusive<usize> = 0..=40;
+const CONTACT_LIMIT: RangeInclusive<usize> = 3..=40;
 
 #[derive(Clone, Default)]
 pub struct FillingEvent {
@@ -130,7 +130,7 @@ macro_rules! reject_user_answer {
 
 macro_rules! check_msg_size {
     ($bot: ident, $chat_id: expr, $limit_range:ident, $value_to_check:ident) => {
-        if $limit_range.contains(&$value_to_check.len()) {
+        if $limit_range.contains(&$value_to_check.chars().count()) {
             $value_to_check
         } else {
             $bot.send_message(
@@ -139,7 +139,7 @@ macro_rules! check_msg_size {
                     "Количество символов ожидается от {} до {}. В вашем сообщении {}",
                     $limit_range.start(),
                     $limit_range.end(),
-                    $value_to_check.len()
+                    $value_to_check.chars().count()
                 ),
             ).await?;
 
@@ -204,12 +204,9 @@ pub async fn handle_create_event_state_callback(
         Some(v) => v,
     };
 
-    log_request(
-        format!(
-            "handle_create_event_state_callback {:?}",
-            create_event_state
-        ),
-        msg,
+    debug!(
+        "handle_create_event_state_callback {:?} {:?}",
+        create_event_state, q,
     );
 
     match create_event_state {
@@ -413,9 +410,7 @@ pub async fn handle_event_place_title(
         }
     };
 
-    if let Some(location) = filling_event
-        .geo_position
-        .as_mut() {
+    if let Some(location) = filling_event.geo_position.as_mut() {
         location.title = Some(place_title.to_string())
     }
 
@@ -527,15 +522,27 @@ pub async fn handle_event_contact(
         })
         .await?;
 
+    bot.send_message(msg.chat.id, "Готово, проверьте заполненные данные")
+        .await?;
+
     let local_file_path =
         get_event_image_path_by_uuid(filling_event.picture.ok_or("Picture not set")?);
     let mut message = bot.send_photo(msg.chat.id, InputFile::file(local_file_path));
     let event_text_representation = CreateBaseEvent::from(filling_event.clone()).format();
-    let message_text = format!(
-        "Готово, проверьте заполненные данные:\n {}",
-        event_text_representation
-    );
-    message.caption = Some(message_text);
+
+    let event_text_representation_size = event_text_representation.chars().count();
+    if event_text_representation_size > 1024 {
+        bot.send_message(
+            msg.chat.id,
+            format!(
+                "Ограничение сообщения в телеграм - 1024 символа {:?}",
+                event_text_representation_size,
+            ),
+        )
+        .await?;
+    }
+
+    message.caption = Some(event_text_representation);
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_edit_new_event(
         !filling_event.is_private,
