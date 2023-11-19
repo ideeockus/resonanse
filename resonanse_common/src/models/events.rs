@@ -6,6 +6,8 @@ use log::debug;
 use sqlx::postgres::PgRow;
 use sqlx::{FromRow, Row};
 use uuid::Uuid;
+use crate::i18n::MyI18N;
+use strum_macros;
 
 #[derive(Clone, Copy, Debug, sqlx::Type)]
 #[repr(i32)]
@@ -66,37 +68,46 @@ impl Location {
     }
 }
 
-#[derive(Clone, Copy, Debug, sqlx::Type, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, sqlx::Type, Eq, Hash, PartialEq, strum_macros::EnumString, strum_macros::Display)]
 #[repr(i32)]
 pub enum EventSubject {
+    #[strum(serialize = "event_subject.other")]
     Other = 0,
+    #[strum(serialize = "event_subject.professional")]
     Professional = 1,
+    #[strum(serialize = "event_subject.business")]
     Business = 2,
+    #[strum(serialize = "event_subject.education")]
     Education = 3,
+    #[strum(serialize = "event_subject.entertainments")]
     Entertainments = 4,
+    #[strum(serialize = "event_subject.sport")]
     Sport = 5,
+    #[strum(serialize = "event_subject.social")]
     Social = 6,
+    #[strum(serialize = "event_subject.culture")]
     Culture = 7,
+    #[strum(serialize = "event_subject.charity")]
     Charity = 8,
 }
 
-impl Display for EventSubject {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            EventSubject::Business => "Бизнес",
-            EventSubject::Social => "Знакомства",
-            EventSubject::Sport => "Спорт",
-            EventSubject::Charity => "Добро",
-            EventSubject::Education => "Образование",
-            EventSubject::Professional => "Профессия",
-            EventSubject::Entertainments => "Развлечения",
-            EventSubject::Culture => "Культура",
-            // EventSubject::Interests => "Интересы",
-            EventSubject::Other => "Другое",
-        };
-        write!(f, "{}", s)
-    }
-}
+// impl Display for EventSubject {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//         let s = match self {
+//             EventSubject::Business => "Бизнес",
+//             EventSubject::Social => "Знакомства",
+//             EventSubject::Sport => "Спорт",
+//             EventSubject::Charity => "Добро",
+//             EventSubject::Education => "Образование",
+//             EventSubject::Professional => "Профессия",
+//             EventSubject::Entertainments => "Развлечения",
+//             EventSubject::Culture => "Культура",
+//             // EventSubject::Interests => "Интересы",
+//             EventSubject::Other => "Другое",
+//         };
+//         write!(f, "{}", s)
+//     }
+// }
 
 impl From<EventSubject> for String {
     fn from(value: EventSubject) -> Self {
@@ -104,22 +115,22 @@ impl From<EventSubject> for String {
     }
 }
 
-impl From<&str> for EventSubject {
-    fn from(value: &str) -> Self {
-        match value {
-            "Бизнес" => EventSubject::Business,
-            "Знакомства" => EventSubject::Social,
-            "Спорт" => EventSubject::Sport,
-            "Добро" => EventSubject::Charity,
-            "Образование" => EventSubject::Education,
-            "Профессия" => EventSubject::Professional,
-            "Развлечения" => EventSubject::Entertainments,
-            "Культура" => EventSubject::Culture,
-            // "Интересы" => EventSubject::Interests,
-            _ => EventSubject::Other,
-        }
-    }
-}
+// impl From<&str> for EventSubject {
+//     fn from(value: &str) -> Self {
+//         match value {
+//             "Бизнес" => EventSubject::Business,
+//             "Знакомства" => EventSubject::Social,
+//             "Спорт" => EventSubject::Sport,
+//             "Добро" => EventSubject::Charity,
+//             "Образование" => EventSubject::Education,
+//             "Профессия" => EventSubject::Professional,
+//             "Развлечения" => EventSubject::Entertainments,
+//             "Культура" => EventSubject::Culture,
+//             // "Интересы" => EventSubject::Interests,
+//             _ => EventSubject::Other,
+//         }
+//     }
+// }
 
 // pub struct EventSubjectFilter(Vec<(EventSubject, bool)>);
 #[derive(Clone)]
@@ -137,7 +148,7 @@ impl EventSubjectFilter {
             (EventSubject::Entertainments, true),
             (EventSubject::Culture, true),
             // (EventSubject::Interests, true),
-            // (EventSubject::Other, true),
+            (EventSubject::Other, true),
         ]))
     }
 
@@ -153,6 +164,65 @@ impl Default for EventSubjectFilter {
         Self::new()
     }
 }
+
+#[derive(Clone, Copy, Debug, sqlx::Type, Eq, Hash, PartialEq, strum_macros::EnumString)]
+#[repr(i32)]
+/// Kind of resonanse event
+pub enum ResonanseEventKind {
+    Announcement = 0,
+    UserOffer = 1,
+    // Private = 2,
+}
+
+// impl MyI18N for ResonanseEventKind {
+//     fn to_text(&self) -> &'static str {
+//         match self {
+//             ResonanseEventKind::Announcement => {}
+//             ResonanseEventKind::UserOffer => {}
+//         }
+//     }
+//
+//     fn from_text(text: &str) -> Self {
+//         todo!()
+//     }
+// }
+
+// const EVENT_KIND_ANNOUNCEMENT: &str = "Announcement";
+// const EVENT_KIND_USER_OFFER: &str = "UserOffer";
+// impl Display for EventSubject {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//         let s = match self {
+//             EventSubject::Business => "Бизнес",
+//             EventSubject::Social => "Знакомства",
+//             EventSubject::Sport => "Спорт",
+//             EventSubject::Charity => "Добро",
+//             EventSubject::Education => "Образование",
+//             EventSubject::Professional => "Профессия",
+//             EventSubject::Entertainments => "Развлечения",
+//             EventSubject::Culture => "Культура",
+//             // EventSubject::Interests => "Интересы",
+//             EventSubject::Other => "Другое",
+//         };
+//         write!(f, "{}", s)
+//     }
+// }
+//
+// impl From<&str> for EventSubject {
+//     fn from(value: &str) -> Self {
+//         match value {
+//             "Бизнес" => EventSubject::Business,
+//             "Знакомства" => EventSubject::Social,
+//             "Спорт" => EventSubject::Sport,
+//             "Добро" => EventSubject::Charity,
+//             "Образование" => EventSubject::Education,
+//             "Профессия" => EventSubject::Professional,
+//             "Развлечения" => EventSubject::Entertainments,
+//             "Культура" => EventSubject::Culture,
+//             // "Интересы" => EventSubject::Interests,
+//             _ => EventSubject::Other,
+//         }
+//     }
+// }
 
 // todo translation
 // const EVENT_SUBJECTS: &[&str] = &[

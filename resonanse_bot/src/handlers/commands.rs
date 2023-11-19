@@ -15,23 +15,22 @@ use crate::keyboards::get_inline_kb_set_subject_filter;
 use crate::states::{BaseState, CreateEventState};
 use crate::ACCOUNTS_REPOSITORY;
 
-const BOT_HELP_TEXT_MD: &str = "Помощ";
 const CREATE_EVENT_TEXT_MD: &str = "Введите название события";
 const GET_EVENTS_TEXT_MD: &str = "Выбери, что тебе интересно";
-pub const HELLO_MESSAGE_MD: &str = r#"
-*Привет\!*
-
-Тут ты моожешь выбрать _интересное событие_\.
-/get\_events
-
-Если ничего подходящего не нашел, можешь _создать свое_
-/create\_event
-
-Также эти команды доступны из меню бота, которое находится снизу\.
-Команда *Resonanse* будет рада любому фидбеку, так что если есть что сказать
-/send\_feedback
-
-"#;
+// pub const HELLO_MESSAGE_MD: &str = r#"
+// *Привет\!*
+//
+// Тут ты моожешь выбрать _интересное событие_\.
+// /get\_events
+//
+// Если ничего подходящего не нашел, можешь _создать свое_
+// /create\_event
+//
+// Также эти команды доступны из меню бота, которое находится снизу\.
+// Команда *Resonanse* будет рада любому фидбеку, так что если есть что сказать
+// /send\_feedback
+//
+// "#;
 
 pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
     log_request("got start_command", &msg);
@@ -49,7 +48,7 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
         }
     }
 
-    let mut message = bot.send_message(msg.chat.id, HELLO_MESSAGE_MD);
+    let mut message = bot.send_message(msg.chat.id, &t!("hello_msg"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
@@ -68,7 +67,7 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
 pub async fn about_command(bot: Bot, msg: Message) -> HandlerResult {
     log_request("got about_command", &msg);
 
-    let mut message = bot.send_message(msg.chat.id, BOT_HELP_TEXT_MD);
+    let mut message = bot.send_message(msg.chat.id, &t!("hello_msg"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
@@ -124,7 +123,7 @@ pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message)
 
     let mut message = bot.send_message(
         msg.chat.id,
-        "Введите отзыв, предложение или другую полезную обратную связь",
+        t!("feedback_msg"),
     );
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;

@@ -17,8 +17,7 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
         .branch(case![Command::SendFeedback].endpoint(send_feedback_command));
 
     let message_handler = Update::filter_message()
-        // todo: add logging middleware
-        .map_async(log_request_handler)
+        .map_async(log_msg_handler)
         .branch(command_handler)
         .branch(case![BaseState::Start].endpoint(handle_start_state))
         .branch(case![BaseState::SendFeedback].endpoint(handle_send_feedback))
@@ -40,7 +39,7 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
         .branch(dptree::endpoint(invalid_state));
 
     let callback_query_handler = Update::filter_callback_query()
-        // .map_async(|msg: Message, a| {})
+        .map_async(log_callback_handler)
         .branch(
             case![BaseState::CreateEvent {
                 state,

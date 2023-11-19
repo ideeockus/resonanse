@@ -24,6 +24,11 @@ mod keyboards;
 mod management;
 mod states;
 mod utils;
+mod data_structs;
+
+#[macro_use]
+extern crate rust_i18n;
+i18n!("locales", fallback = "ru");
 
 static MANAGER_BOT: OnceLock<Bot> = OnceLock::new();
 // static DB_POOL: OnceCell<resonanse_common::PgPool> = OnceCell::new();
@@ -40,6 +45,7 @@ async fn main() {
         .init();
 
     check_all_mandatory_envs_is_ok();
+    setup_i18n_locales();
 
     let conn_url = std::env::var(POSTGRES_DB_URL).unwrap();
     let pool = resonanse_common::PgPool::connect(&conn_url).await.unwrap();
@@ -72,4 +78,15 @@ pub async fn run_resonanse_bot_polling() {
     dispatcher.dispatch().await;
 
     info!("Dispatcher started");
+}
+
+fn setup_i18n_locales() {
+    rust_i18n::set_locale("ru");
+    info!("available rust_i18n locales: {:?}", rust_i18n::available_locales!());
+    info!("default rust_i18n locale: {:?}", rust_i18n::locale());
+}
+
+fn run_migrations() {
+    info!("running sqlx migrate");
+
 }

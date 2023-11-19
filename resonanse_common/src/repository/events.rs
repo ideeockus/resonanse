@@ -154,7 +154,6 @@ impl EventsRepository {
             .filter(|(_, f)| **f)
             .map(|(f, _)| (*f as i32))
             .collect::<Vec<_>>();
-        // let filter_params = filters_vec.iter().map(|f| f.to_string()).collect::<Vec<_>>().join("");
 
         if filters_vec.is_empty() {
             return Ok(Vec::new());
@@ -165,7 +164,6 @@ impl EventsRepository {
             .map(|i| format!("${}", i))
             .collect::<Vec<String>>()
             .join(", ");
-        // let filter_params = format!("$1{}", ", $".repeat(filters_vec.len() - 1));
         let query_str = format!(
             r#"select *
             from resonanse_events
@@ -279,7 +277,6 @@ impl EventsRepository {
         )
         .fetch_all(&self.db_pool)
         .await;
-        // debug!("count_events_by_subject result: {:?}", result);
 
         Ok(HashMap::new())
     }

@@ -5,16 +5,13 @@ use log::debug;
 use teloxide::types::ParseMode;
 use teloxide::Bot;
 
-// const HELLO_MSG: &str = r#"
-// Привет!
-// "#;
 
 pub async fn handle_start_state(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     // log_request("got contact (start state) message", &msg);
 
     dialogue.update(BaseState::Idle).await?;
 
-    let mut message = bot.send_message(msg.chat.id, HELLO_MESSAGE_MD);
+    let mut message = bot.send_message(msg.chat.id, &t!("hello_msg"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     // message.reply_markup = Some(base_keyboard());
     message.await?;

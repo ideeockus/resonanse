@@ -1,0 +1,68 @@
+{
+  "_version": 2,
+  "event_kind.announce": {
+    "en": "Announce",
+    "ru": "Анонс"
+  },
+  "event_kind.user_offer": {
+    "en": "Let's Together",
+    "ru": "Давай вместе"
+  },
+
+  "event_subject.other": {
+    "en": "Other",
+    "ru": "Другое"
+  },
+  "event_subject.professional": {
+    "en": "Professional",
+    "ru": "Профессия"
+  },
+  "event_subject.business": {
+    "en": "Business",
+    "ru": "Бизнес"
+  },
+  "event_subject.education": {
+    "en": "Education",
+    "ru": "Образование"
+  },
+  "event_subject.entertainments": {
+    "en": "Entertainments",
+    "ru": "Развлечения"
+  },
+  "event_subject.sport": {
+    "en": "Sport",
+    "ru": "Спорт"
+  },
+  "event_subject.social": {
+    "en": "Social",
+    "ru": "Знакомства"
+  },
+  "event_subject.culture": {
+    "en": "Culture",
+    "ru": "Культура"
+  },
+  "event_subject.charity": {
+    "en": "Charity",
+    "ru": "Добро"
+  },
+
+  "event_page": {
+    "page_title": {
+      "ru": "_Страница %{page_num}_\nВыбери интересное событие и нажми на его идентификатор\n\n%{page_data}"
+    },
+    "turn_left": {
+      "ru": "⏪ туда"
+    },
+    "turn_right": {
+      "ru": "сюда ⏩"
+    }
+  },
+
+  "feedback_msg": {
+    "ru": "Введите отзыв, предложение или другую полезную обратную связь"
+  },
+  "hello_msg": {
+    "ru": "*Привет\\!*\n\nТут ты моожешь выбрать _интересное событие_\\.\n/get\\_events\n\nЕсли ничего подходящего не нашел, можешь _создать свое_\n/create\\_event\n\nТакже эти команды доступны из меню бота, которое находится снизу\\.\nКоманда *Resonanse* будет рада любому фидбеку, так что если есть что сказать\n/send\\_feedback\n\n"
+  }
+}
+

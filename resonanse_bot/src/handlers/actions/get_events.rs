@@ -183,17 +183,34 @@ pub async fn get_choose_event_text(
         .await?;
 
     let mut event_i = 0;
-    let msg_text = format!(
-        "_Страница {}_\nВыбери интересное событие и нажми на его идентификатор\n\n{}",
-        markdown::escape(&page_num.to_string()),
-        events
+    // let msg_text = format!(
+    //     "_Страница {}_\nВыбери интересное событие и нажми на его идентификатор\n\n{}",
+    //     markdown::escape(&page_num.to_string()),
+    //     events
+    //         .iter()
+    //         .map(|event| {
+    //             event_i += 1;
+    //             format!(
+    //                 "*{}*\t\t/event\\_{}",
+    //                 markdown::escape(&event.title),
+    //                 event_i
+    //             )
+    //         })
+    //         .collect::<Vec<String>>()
+    //         .join("\n\n")
+    // );
+
+    let msg_text = t!(
+        "event_page.page_title",
+        page_num=markdown::escape(&page_num.to_string()),
+        page_data=events
             .iter()
             .map(|event| {
                 event_i += 1;
                 format!(
-                    "*{}*\t\t/event\\_{}",
+                    "/event\\_{}\t*{}*",
+                    event_i,
                     markdown::escape(&event.title),
-                    event_i
                 )
             })
             .collect::<Vec<String>>()

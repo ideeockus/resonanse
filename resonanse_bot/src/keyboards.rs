@@ -23,7 +23,7 @@ pub fn get_inline_kb_choose_subject() -> ReplyMarkup {
             kb_button!(EventSubject::Education),
         ],
         vec![
-            kb_button!(EventSubject::Professional),
+            kb_button!(t!(&EventSubject::Professional.to_string())),
             kb_button!(EventSubject::Sport),
             kb_button!(EventSubject::Other),
             // kb_button!(EventSubject::Interests),
@@ -122,12 +122,12 @@ pub const EVENTS_PAGE_LEFT: &str = "EVENTS_PAGE_LEFT";
 pub const EVENTS_PAGE_RIGHT: &str = "EVENTS_PAGE_RIGHT";
 pub fn get_inline_kb_events_page() -> InlineKeyboardMarkup {
     let button_left = InlineKeyboardButton::new(
-        "⏪ туда",
+        t!("event_page.turn_left"),
         InlineKeyboardButtonKind::CallbackData(EVENTS_PAGE_LEFT.to_string()),
     );
 
     let button_right = InlineKeyboardButton::new(
-        "сюда ⏩",
+        t!("event_page.turn_right"),
         InlineKeyboardButtonKind::CallbackData(EVENTS_PAGE_RIGHT.to_string()),
     );
 
@@ -158,7 +158,7 @@ pub fn get_inline_kb_set_subject_filter(
             InlineKeyboardButton::new(
                 format!(
                     "{}{}[{}]",
-                    es,
+                    t!(&es.to_string()),
                     " ".repeat(max_len.saturating_sub(es.to_string().len())),
                     if *on { FILTER_ON } else { FILTER_OFF },
                 ),
@@ -178,3 +178,15 @@ pub fn get_inline_kb_set_subject_filter(
 
     InlineKeyboardMarkup::new(buttons)
 }
+
+const SET_EVENT_TITLE_CALLBACK: &str = "SET_EVENT_TITLE_CALLBACK";
+// pub fn get_make_event_keyboard(
+//     event_filters: &EventSubjectFilter,
+// ) -> InlineKeyboardMarkup {
+//
+//     let title_btn = InlineKeyboardButton::new(
+//         format!(),
+//         InlineKeyboardButtonKind::CallbackData()
+//     );
+//
+// }
