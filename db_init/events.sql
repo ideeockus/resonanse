@@ -12,7 +12,7 @@ create table resonanse_events (
 --    timezone SMALLINT,
     location_latitude FLOAT8,
     location_longitude FLOAT8,
-    location_title varchar(255),
+    location_title varchar(255) NOT NULL,
     creator_id BIGINT NOT NULL REFERENCES user_accounts (id),
     event_type INT NOT NULL,
     picture UUID,

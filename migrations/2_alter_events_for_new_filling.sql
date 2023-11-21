@@ -8,6 +8,7 @@ alter table resonanse_events alter column location_latitude type FLOAT8;
 alter table resonanse_events alter column location_longitude type FLOAT8;
 alter table resonanse_events alter column location_latitude drop NOT NULL;
 alter table resonanse_events alter column location_longitude drop NOT NULL;
+alter table resonanse_events alter column location_title set NOT NULL;
 
 alter table deleted_events add event_kind INT NOT NULL DEFAULT 0;
 alter table deleted_events alter column event_kind drop DEFAULT;
@@ -19,3 +20,4 @@ alter table deleted_events alter column location_latitude type FLOAT8;
 alter table deleted_events alter column location_longitude type FLOAT8;
 alter table deleted_events alter column location_latitude drop NOT NULL;
 alter table deleted_events alter column location_longitude drop NOT NULL;
+alter table deleted_events alter column location_title set NOT NULL;
