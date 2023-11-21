@@ -15,6 +15,7 @@ use crate::states::BaseState;
 
 mod commands;
 mod config;
+mod data_structs;
 mod data_translators;
 mod dispatch;
 mod errors;
@@ -24,7 +25,6 @@ mod keyboards;
 mod management;
 mod states;
 mod utils;
-mod data_structs;
 
 #[macro_use]
 extern crate rust_i18n;
@@ -82,11 +82,13 @@ pub async fn run_resonanse_bot_polling() {
 
 fn setup_i18n_locales() {
     rust_i18n::set_locale("ru");
-    info!("available rust_i18n locales: {:?}", rust_i18n::available_locales!());
+    info!(
+        "available rust_i18n locales: {:?}",
+        rust_i18n::available_locales!()
+    );
     info!("default rust_i18n locale: {:?}", rust_i18n::locale());
 }
 
 fn run_migrations() {
     info!("running sqlx migrate");
-
 }

@@ -1,31 +1,44 @@
-use resonanse_common::models::EventSubject;
+use resonanse_common::models::{EventSubject, ResonanseEventKind};
 use resonanse_common::EventSubjectFilter;
 use teloxide::types::{
     InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, ReplyMarkup,
 };
+use crate::states::CreateEventState::EventKind;
 
-macro_rules! kb_button {
+macro_rules! kb_button_from_enum {
     ($s:expr) => {
-        InlineKeyboardButton::new($s, InlineKeyboardButtonKind::CallbackData($s.to_string()))
+        InlineKeyboardButton::new(
+            t!(&$s.to_string()),
+            InlineKeyboardButtonKind::CallbackData($s.to_string()),
+        )
     };
 }
 
-pub fn get_inline_kb_choose_subject() -> ReplyMarkup {
+macro_rules! kb_button_from_str {
+    ($s:expr) => {
+        InlineKeyboardButton::new(
+            t!($s),
+            InlineKeyboardButtonKind::CallbackData($s.to_string()),
+        )
+    };
+}
+
+pub fn get_inline_kb_choose_subject() -> InlineKeyboardMarkup {
     let buttons = [
         vec![
-            kb_button!(EventSubject::Social),
-            kb_button!(EventSubject::Entertainments),
-            kb_button!(EventSubject::Charity),
+            kb_button_from_enum!(EventSubject::Social),
+            kb_button_from_enum!(EventSubject::Entertainments),
+            kb_button_from_enum!(EventSubject::Charity),
         ],
         vec![
-            kb_button!(EventSubject::Culture),
-            kb_button!(EventSubject::Business),
-            kb_button!(EventSubject::Education),
+            kb_button_from_enum!(EventSubject::Culture),
+            kb_button_from_enum!(EventSubject::Business),
+            kb_button_from_enum!(EventSubject::Education),
         ],
         vec![
-            kb_button!(t!(&EventSubject::Professional.to_string())),
-            kb_button!(EventSubject::Sport),
-            kb_button!(EventSubject::Other),
+            kb_button_from_enum!(&EventSubject::Professional),
+            kb_button_from_enum!(EventSubject::Sport),
+            kb_button_from_enum!(EventSubject::Other),
             // kb_button!(EventSubject::Interests),
         ],
         // vec![
@@ -33,8 +46,19 @@ pub fn get_inline_kb_choose_subject() -> ReplyMarkup {
         // ],
     ];
 
-    let keyboard = InlineKeyboardMarkup::new(buttons);
-    ReplyMarkup::InlineKeyboard(keyboard)
+    InlineKeyboardMarkup::new(buttons)
+    // ReplyMarkup::InlineKeyboard(keyboard)
+}
+
+pub fn get_inline_kb_choose_event_kind() -> InlineKeyboardMarkup {
+    let buttons = [
+        vec![
+            kb_button_from_enum!(ResonanseEventKind::Announcement),
+            kb_button_from_enum!(ResonanseEventKind::UserOffer),
+        ],
+    ];
+
+    InlineKeyboardMarkup::new(buttons)
 }
 
 // pub fn get_inline_kb_view_event(map_link: String) -> ReplyMarkup {
@@ -120,6 +144,7 @@ pub fn get_inline_kb_event_message(map_link: Option<String>) -> InlineKeyboardMa
 
 pub const EVENTS_PAGE_LEFT: &str = "EVENTS_PAGE_LEFT";
 pub const EVENTS_PAGE_RIGHT: &str = "EVENTS_PAGE_RIGHT";
+
 pub fn get_inline_kb_events_page() -> InlineKeyboardMarkup {
     let button_left = InlineKeyboardButton::new(
         t!("event_page.turn_left"),
@@ -137,6 +162,7 @@ pub fn get_inline_kb_events_page() -> InlineKeyboardMarkup {
 }
 
 pub const APPLY_EVENT_FILTER_BTN: &str = "APPLY_EVENT_FILTER_BTN";
+
 pub fn get_inline_kb_set_subject_filter(
     event_filters: &EventSubjectFilter,
 ) -> InlineKeyboardMarkup {
@@ -145,14 +171,14 @@ pub fn get_inline_kb_set_subject_filter(
     const ROW_LEN: usize = 2;
 
     let max_len = event_filters
-        .0
+        .get_filters()
         .keys()
         .map(|es| es.to_string().len())
         .max()
         .unwrap_or(0);
 
     let mut buttons = event_filters
-        .0
+        .get_filters()
         .iter()
         .map(|(es, on)| {
             InlineKeyboardButton::new(
@@ -179,14 +205,50 @@ pub fn get_inline_kb_set_subject_filter(
     InlineKeyboardMarkup::new(buttons)
 }
 
-const SET_EVENT_TITLE_CALLBACK: &str = "SET_EVENT_TITLE_CALLBACK";
-// pub fn get_make_event_keyboard(
-//     event_filters: &EventSubjectFilter,
-// ) -> InlineKeyboardMarkup {
-//
-//     let title_btn = InlineKeyboardButton::new(
-//         format!(),
-//         InlineKeyboardButtonKind::CallbackData()
-//     );
-//
-// }
+pub const FILL_EVENT_TITLE_BTN_ID: &str = "keyboards.fill_event.title_btn";
+pub const FILL_EVENT_SUBJECT_BTN_ID: &str = "keyboards.fill_event.subject_btn";
+pub const FILL_EVENT_DESCRIPTION_BTN_ID: &str = "keyboards.fill_event.description_btn";
+// const FILL_EVENT_DATETIME_BTN_ID: &str = "fill_event.datetime";
+pub const FILL_EVENT_DATETIME_FROM_BTN_ID: &str = "keyboards.fill_event.datetime_from";
+pub const FILL_EVENT_DATETIME_TO_BTN_ID: &str = "keyboards.fill_event.datetime_to";
+
+// const FILL_EVENT_LOCATION_BTN_ID: &str = "fill_event.location";
+pub const FILL_EVENT_LOCATION_GEO_BTN_ID: &str = "keyboards.fill_event.location_geo";
+pub const FILL_EVENT_LOCATION_TITLE_BTN_ID: &str = "keyboards.fill_event.location_title";
+
+pub const FILL_EVENT_PICTURE_BTN_ID: &str = "keyboards.fill_event.picture";
+pub const FILL_EVENT_CONTACT_BTN_ID: &str = "keyboards.fill_event.contact_data";
+pub const FILL_EVENT_KIND_BTN_ID: &str = "keyboards.fill_event.kind";
+
+pub const FILL_EVENT_FINALIZE_BTN_ID: &str = "keyboards.fill_event.finalize";
+
+pub fn get_make_event_keyboard() -> InlineKeyboardMarkup {
+    // let title_btn = InlineKeyboardButton::new(
+    //     t!("fill_event.title_btn"),
+    //     InlineKeyboardButtonKind::CallbackData(),
+    // );
+
+    let buttons = [
+        vec![
+            kb_button_from_str!(FILL_EVENT_TITLE_BTN_ID),
+            kb_button_from_str!(FILL_EVENT_SUBJECT_BTN_ID),
+            kb_button_from_str!(FILL_EVENT_DESCRIPTION_BTN_ID),
+        ],
+        vec![
+            kb_button_from_str!(FILL_EVENT_DATETIME_FROM_BTN_ID),
+            kb_button_from_str!(FILL_EVENT_DATETIME_TO_BTN_ID),
+        ],
+        vec![
+            kb_button_from_str!(FILL_EVENT_LOCATION_TITLE_BTN_ID),
+            kb_button_from_str!(FILL_EVENT_LOCATION_GEO_BTN_ID),
+        ],
+        vec![
+            kb_button_from_str!(FILL_EVENT_PICTURE_BTN_ID),
+            kb_button_from_str!(FILL_EVENT_CONTACT_BTN_ID),
+            kb_button_from_str!(FILL_EVENT_KIND_BTN_ID),
+        ],
+        vec![kb_button_from_str!(FILL_EVENT_FINALIZE_BTN_ID)],
+    ];
+
+    InlineKeyboardMarkup::new(buttons)
+}

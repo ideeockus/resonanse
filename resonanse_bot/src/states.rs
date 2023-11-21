@@ -1,6 +1,6 @@
+use teloxide::types::MessageId;
+use crate::data_structs::FillingEvent;
 use resonanse_common::EventSubjectFilter;
-
-use crate::handlers::FillingEvent;
 
 #[derive(Clone, Default)]
 pub enum BaseState {
@@ -10,6 +10,7 @@ pub enum BaseState {
     CreateEvent {
         state: CreateEventState,
         filling_event: FillingEvent,
+        last_edit_msg_id: MessageId,
     },
     GetEventList {
         page_size: i64,
@@ -22,9 +23,13 @@ pub enum BaseState {
 #[derive(Clone, Debug, Default)]
 pub enum CreateEventState {
     #[default]
-    Name,
+    Idle,
+    EventKind,
+    EventTitle,
     Description,
-    Datetime,
+    BriefDescription,
+    DatetimeFrom,
+    DatetimeTo,
     Geo,
     PlaceTitle,
     Subject,

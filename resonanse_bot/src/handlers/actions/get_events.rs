@@ -202,16 +202,12 @@ pub async fn get_choose_event_text(
 
     let msg_text = t!(
         "event_page.page_title",
-        page_num=markdown::escape(&page_num.to_string()),
-        page_data=events
+        page_num = markdown::escape(&page_num.to_string()),
+        page_data = events
             .iter()
             .map(|event| {
                 event_i += 1;
-                format!(
-                    "/event\\_{}\t*{}*",
-                    event_i,
-                    markdown::escape(&event.title),
-                )
+                format!("/event\\_{}\t*{}*", event_i, markdown::escape(&event.title),)
             })
             .collect::<Vec<String>>()
             .join("\n\n")

@@ -18,6 +18,7 @@ pub async fn handle_send_feedback(bot: Bot, _dialogue: MyDialogue, msg: Message)
 
     let manager_bot = MANAGER_BOT.get().ok_or("Cannot get manager bot")?;
 
+    // todo move all text to locales
     bot.send_message(msg.chat.id, "Спасибо за оставленный фидбек!")
         .await?;
 

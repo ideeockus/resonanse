@@ -1,0 +1,21 @@
+alter table resonanse_events add event_kind INT NOT NULL DEFAULT 0;
+alter table resonanse_events alter column event_kind drop DEFAULT;
+alter table resonanse_events alter column description type varchar(4095);
+alter table resonanse_events add brief_description varchar(1023);
+alter table resonanse_events rename column datetime to datetime_from;
+alter table resonanse_events add datetime_to TIMESTAMP;
+alter table resonanse_events alter column location_latitude type FLOAT8;
+alter table resonanse_events alter column location_longitude type FLOAT8;
+alter table resonanse_events alter column location_latitude drop NOT NULL;
+alter table resonanse_events alter column location_longitude drop NOT NULL;
+
+alter table deleted_events add event_kind INT NOT NULL DEFAULT 0;
+alter table deleted_events alter column event_kind drop DEFAULT;
+alter table deleted_events alter column description type varchar(4095);
+alter table deleted_events add brief_description varchar(1023);
+alter table deleted_events rename column datetime to datetime_from;
+alter table deleted_events add datetime_to TIMESTAMP;
+alter table deleted_events alter column location_latitude type FLOAT8;
+alter table deleted_events alter column location_longitude type FLOAT8;
+alter table deleted_events alter column location_latitude drop NOT NULL;
+alter table deleted_events alter column location_longitude drop NOT NULL;

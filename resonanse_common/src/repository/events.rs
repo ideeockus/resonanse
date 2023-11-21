@@ -1,4 +1,4 @@
-use crate::models::{BaseEvent, EventSubject, EventType, Location};
+use crate::models::{BaseEvent, EventSubject, EventType, Location, ResonanseEventKind};
 use crate::EventSubjectFilter;
 use chrono::NaiveDateTime;
 use log::debug;
@@ -6,21 +6,25 @@ use sqlx::{PgPool, Result};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-#[derive(Clone)]
-pub struct CreateBaseEvent {
-    pub is_private: bool,
-    pub is_commercial: bool,
-    pub title: String,
-    pub description: String,
-    pub subject: EventSubject,
-    pub datetime: NaiveDateTime,
-    // pub timezone: chrono_tz::Tz,
-    pub location: Location,
-    pub creator_id: i64,
-    pub event_type: EventType,
-    pub picture: Option<Uuid>,
-    pub contact_info: Option<String>,
-}
+// #[derive(Clone)]
+// pub struct CreateBaseEvent {
+//     pub is_private: bool,
+//     pub is_commercial: bool,
+//     pub event_kind: ResonanseEventKind,
+//     pub title: String,
+//     pub description: String,
+//     pub brief_description: Option<String>,
+//     pub subject: EventSubject,
+//     pub datetime_from: NaiveDateTime,
+//     pub datetime_to: Option<NaiveDateTime>,
+//     // pub timezone: chrono_tz::Tz,
+//     pub location: Option<Location>,
+//     pub location_title: Option<String>,
+//     pub creator_id: i64,
+//     pub event_type: EventType,
+//     pub picture: Option<Uuid>,
+//     pub contact_info: Option<String>,
+// }
 
 #[derive(Debug)]
 pub struct EventsRepository {
@@ -32,28 +36,32 @@ impl EventsRepository {
         Self { db_pool: pool }
     }
 
-    pub async fn create_event(&self, event: CreateBaseEvent) -> Result<BaseEvent> {
+    pub async fn create_event(&self, event: BaseEvent) -> Result<BaseEvent> {
+        // fill all event except id nad creation_time
         let created_event: BaseEvent = sqlx::query_as(
             r#"insert into resonanse_events
             (
-            id, is_private, is_commercial, title, description, subject,
-            datetime, location_latitude, location_longitude,
+            id, is_private, is_commercial, event_kind, title, description, brief_description,
+            subject, datetime_from, datetime_to, location_latitude, location_longitude,
             location_title, creator_id, event_type, picture, contact_info
             )
-            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
             returning *
             "#,
         )
         .bind(Uuid::new_v4())
         .bind(event.is_private)
         .bind(event.is_commercial)
+        .bind(event.event_kind)
         .bind(event.title)
         .bind(event.description)
+        .bind(event.brief_description)
         .bind(event.subject as i32)
-        .bind(event.datetime)
-        .bind(event.location.latitude)
-        .bind(event.location.longitude)
-        .bind(event.location.title)
+        .bind(event.datetime_from)
+        .bind(event.datetime_to)
+        .bind(event.location.as_ref().and_then(|geo| Some(geo.latitude)))
+        .bind(event.location.as_ref().and_then(|geo| Some(geo.longitude)))
+        .bind(event.location_title)
         .bind(event.creator_id)
         .bind(event.event_type)
         .bind(event.picture)
@@ -100,8 +108,8 @@ impl EventsRepository {
         let events: Result<Vec<BaseEvent>> = sqlx::query_as(
             r#"select *
             from resonanse_events
-            where datetime >= current_date
-            order by datetime
+            where datetime_from >= current_date
+            order by datetime_from
             "#,
         )
         .fetch_all(&self.db_pool)
@@ -128,8 +136,8 @@ impl EventsRepository {
         let events: Result<Vec<BaseEvent>> = sqlx::query_as(
             r#"select *
             from resonanse_events
-            where is_private=false and datetime >= current_date
-            order by datetime
+            where is_private=false and datetime_from >= current_date
+            order by datetime_from
             offset $1 rows
             fetch next $2 rows only
             "#,
@@ -167,8 +175,8 @@ impl EventsRepository {
         let query_str = format!(
             r#"select *
             from resonanse_events
-            WHERE subject IN ( { } ) and is_private=false and datetime >= current_date
-            order by datetime
+            WHERE subject IN ( { } ) and is_private=false and datetime_from >= current_date
+            order by datetime_from
             offset ${} rows
             fetch next ${} rows only
             "#,
@@ -211,26 +219,38 @@ impl EventsRepository {
         let _deleted_event: BaseEvent = sqlx::query_as(
             r#"insert into deleted_events
             (
-            id, is_private, is_commercial, title, description, subject,
-            datetime, location_latitude, location_longitude,
-            location_title, creator_id, updater_id, event_type, picture, contact_info
+            id, is_private, is_commercial, event_kind, title, description, brief_description,
+            subject, datetime_from, datetime_to, location_latitude, location_longitude,
+            location_title, creator_id, event_type, picture, contact_info
             )
-            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
             returning *
             "#,
         )
         .bind(deleting_event.id)
         .bind(deleting_event.is_private)
         .bind(deleting_event.is_commercial)
+        .bind(deleting_event.event_kind)
         .bind(deleting_event.title)
         .bind(deleting_event.description)
+        .bind(deleting_event.brief_description)
         .bind(deleting_event.subject as i32)
-        .bind(deleting_event.datetime)
-        .bind(deleting_event.location.latitude)
-        .bind(deleting_event.location.longitude)
-        .bind(deleting_event.location.title)
+        .bind(deleting_event.datetime_from)
+        .bind(deleting_event.datetime_to)
+        .bind(
+            deleting_event
+                .location
+                .as_ref()
+                .and_then(|geo| Some(geo.latitude)),
+        )
+        .bind(
+            deleting_event
+                .location
+                .as_ref()
+                .and_then(|geo| Some(geo.longitude)),
+        )
+        .bind(deleting_event.location_title)
         .bind(deleting_event.creator_id)
-        .bind(deleted_by_id)
         .bind(deleting_event.event_type)
         .bind(deleting_event.picture)
         .bind(deleting_event.contact_info)

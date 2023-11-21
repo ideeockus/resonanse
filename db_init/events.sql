@@ -2,13 +2,16 @@ create table resonanse_events (
     id UUID PRIMARY KEY,
     is_private BOOL NOT NULL,
     is_commercial BOOL NOT NULL,
+    event_kind INT NOT NULL,
     title varchar(255) NOT NULL,
-    description varchar(1023) NOT NULL,
+    description varchar(4095) NOT NULL,
+    brief_description varchar(1023),
     subject INT NOT NULL,
-    datetime TIMESTAMP NOT NULL,
+    datetime_from TIMESTAMP NOT NULL,
+    datetime_to TIMESTAMP,
 --    timezone SMALLINT,
-    location_latitude FLOAT8 NOT NULL,
-    location_longitude FLOAT8 NOT NULL,
+    location_latitude FLOAT8,
+    location_longitude FLOAT8,
     location_title varchar(255),
     creator_id BIGINT NOT NULL REFERENCES user_accounts (id),
     event_type INT NOT NULL,
@@ -16,4 +19,3 @@ create table resonanse_events (
     contact_info varchar(255),
     creation_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-

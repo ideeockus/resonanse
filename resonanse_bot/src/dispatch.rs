@@ -33,6 +33,7 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
             case![BaseState::CreateEvent {
                 state,
                 filling_event,
+                last_edit_msg_id,
             }]
             .endpoint(handle_create_event_state_message),
         )
@@ -44,6 +45,7 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
             case![BaseState::CreateEvent {
                 state,
                 filling_event,
+                last_edit_msg_id
             }]
             .endpoint(handle_create_event_state_callback),
         )

@@ -6,7 +6,6 @@ pub mod models;
 pub mod repository;
 
 mod configuration;
-mod i18n;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right

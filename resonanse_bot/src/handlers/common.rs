@@ -5,7 +5,6 @@ use log::debug;
 use teloxide::types::ParseMode;
 use teloxide::Bot;
 
-
 pub async fn handle_start_state(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     // log_request("got contact (start state) message", &msg);
 

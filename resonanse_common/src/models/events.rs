@@ -5,9 +5,8 @@ use chrono::NaiveDateTime;
 use log::debug;
 use sqlx::postgres::PgRow;
 use sqlx::{FromRow, Row};
-use uuid::Uuid;
-use crate::i18n::MyI18N;
 use strum_macros;
+use uuid::Uuid;
 
 #[derive(Clone, Copy, Debug, sqlx::Type)]
 #[repr(i32)]
@@ -28,7 +27,6 @@ impl Default for EventType {
 pub struct Location {
     pub latitude: f64,
     pub longitude: f64,
-    pub title: Option<String>,
 }
 
 impl Location {
@@ -36,8 +34,17 @@ impl Location {
         Self {
             latitude,
             longitude,
-            title: None,
         }
+    }
+
+    pub fn try_from_ll(latitude: Option<f64>, longitude: Option<f64>) -> Option<Self> {
+        let latitude = latitude?;
+        let longitude = longitude?;
+
+        Some(Self {
+            latitude,
+            longitude,
+        })
     }
 
     pub fn get_yandex_map_link_to(&self) -> String {
@@ -63,12 +70,21 @@ impl Location {
         Some(Self {
             latitude,
             longitude,
-            title: None,
         })
     }
 }
 
-#[derive(Clone, Copy, Debug, sqlx::Type, Eq, Hash, PartialEq, strum_macros::EnumString, strum_macros::Display)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    sqlx::Type,
+    Eq,
+    Hash,
+    PartialEq,
+    strum_macros::EnumString,
+    strum_macros::Display,
+)]
 #[repr(i32)]
 pub enum EventSubject {
     #[strum(serialize = "event_subject.other")]
@@ -157,6 +173,12 @@ impl EventSubjectFilter {
             *f = !*f;
         }
     }
+
+    pub fn get_filters(&self) -> HashMap<EventSubject, bool> {
+        let mut filters = self.0.clone();
+        filters.remove(&EventSubject::Other);
+        filters
+    }
 }
 
 impl Default for EventSubjectFilter {
@@ -165,13 +187,21 @@ impl Default for EventSubjectFilter {
     }
 }
 
-#[derive(Clone, Copy, Debug, sqlx::Type, Eq, Hash, PartialEq, strum_macros::EnumString)]
+#[derive(Clone, Copy, Debug, sqlx::Type, Eq, Hash, PartialEq, strum_macros::EnumString, strum_macros::Display,)]
 #[repr(i32)]
 /// Kind of resonanse event
 pub enum ResonanseEventKind {
+    #[strum(serialize = "event_kind.announcement")]
     Announcement = 0,
+    #[strum(serialize = "event_kind.user_offer")]
     UserOffer = 1,
     // Private = 2,
+}
+
+impl Default for ResonanseEventKind {
+    fn default() -> Self {
+        Self::UserOffer
+    }
 }
 
 // impl MyI18N for ResonanseEventKind {
@@ -243,13 +273,17 @@ pub struct BaseEvent {
     pub id: Uuid,
     pub is_private: bool,
     pub is_commercial: bool,
+    pub event_kind: ResonanseEventKind,
     pub title: String,
     pub description: String,
+    pub brief_description: Option<String>,
     // markdown (?)
     pub subject: EventSubject,
-    pub datetime: NaiveDateTime,
+    pub datetime_from: NaiveDateTime,
+    pub datetime_to: Option<NaiveDateTime>,
     // pub timezone: chrono_tz::Tz,
-    pub location: Location,
+    pub location: Option<Location>,
+    pub location_title: String,
     pub creator_id: i64,
     pub event_type: EventType,
     pub picture: Option<Uuid>,
@@ -263,15 +297,18 @@ impl FromRow<'_, PgRow> for BaseEvent {
             id: row.try_get::<_, &str>("id")?,
             is_private: row.try_get::<_, &str>("is_private")?,
             is_commercial: row.try_get::<_, &str>("is_commercial")?,
+            event_kind: row.try_get::<_, &str>("event_kind")?,
             title: row.try_get::<_, &str>("title")?,
             description: row.try_get::<_, &str>("description")?,
+            brief_description: None,
             subject: row.try_get::<_, &str>("subject")?,
-            datetime: row.try_get::<_, &str>("datetime")?,
-            location: Location {
-                latitude: row.try_get::<_, &str>("location_latitude")?,
-                longitude: row.try_get::<_, &str>("location_longitude")?,
-                title: row.try_get::<_, &str>("location_title")?,
-            },
+            datetime_from: row.try_get::<_, &str>("datetime_from")?,
+            datetime_to: row.try_get::<_, &str>("datetime_to")?,
+            location: Location::try_from_ll(
+                row.try_get::<_, &str>("location_latitude")?,
+                row.try_get::<_, &str>("location_longitude")?,
+            ),
+            location_title: row.try_get::<_, &str>("location_title")?,
             creator_id: row.try_get::<_, &str>("creator_id")?,
             event_type: row.try_get::<_, &str>("event_type")?,
             picture: row.try_get::<_, &str>("picture")?,

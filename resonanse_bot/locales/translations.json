@@ -63,6 +63,98 @@
   },
   "hello_msg": {
     "ru": "*Привет\\!*\n\nТут ты моожешь выбрать _интересное событие_\\.\n/get\\_events\n\nЕсли ничего подходящего не нашел, можешь _создать свое_\n/create\\_event\n\nТакже эти команды доступны из меню бота, которое находится снизу\\.\nКоманда *Resonanse* будет рада любому фидбеку, так что если есть что сказать\n/send\\_feedback\n\n"
+  },
+
+  "actions": {
+    "create_event.new_event": {
+      "ru": "Заполните данные о том, куда предлагаете пойти\\."
+    },
+    "create_event.filling_event_stub": {
+      "ru": "Чтобы увидеть превью, нужно добавить следующие данные:\n%{missed_data}"
+    },
+    "create_event.event_template": {
+      "ru": "*%{event_title}*\n%{event_description}\n\n\uD83D\uDCA1 Тематика: _%{event_subject}_\n\uD83D\uDCC5 Дата: _%{event_datetime}_\n%{event_location}\n%{event_contact_info}\n"
+    },
+    "create_event.fill_event": {
+      "event_title": {
+        "ru": "Введите название события"
+      },
+      "subject": {
+        "ru": "Выберите тематику события"
+      },
+      "description": {
+        "ru": "Введите описание события"
+      },
+      "brief_description": {
+        "ru": "Можете изменить превью\\-описание события"
+      },
+      "datetime_from": {
+        "ru": "Введите дату и время в формате дд\\.мм\\.гггг чч:мм\\. Например: `%{dt_example}`"
+      },
+      "datetime_to": {
+        "ru": "Введите дату и время в формате дд\\.мм\\.гггг чч:мм\\. Например: `%{dt_example}`"
+      },
+      "geo": {
+        "ru": "Отправьте Геометку \\(Прикрепить вложение \\-\\> локация\\)\\. Или ссылку в Yandex\\.Map \\(не сокращенную, в ней должны быть указаны координаты\\)"
+      },
+      "location_title": {
+        "ru": "Введите название или адрес места"
+      },
+      "picture": {
+        "ru": "Добавьте изображение или постер"
+      },
+      "contact": {
+        "ru": "Укажите контакт для связи\\. Например, юзернейм (как @resonanse_app)"
+      },
+      "event_kind": {
+        "ru": "Выберите тип события"
+      },
+      "finalize_public": {
+        "ru": "Событие опубликовано\\. Также вы можете поделиться им по ссылке: %{event_link}"
+      }
+    }
+  },
+
+  "keyboards": {
+    "fill_event.title_btn": {
+      "ru": "Название"
+    },
+    "fill_event.subject_btn": {
+      "ru": "Тематика"
+    },
+    "fill_event.description_btn": {
+      "ru": "Описание"
+    },
+    "fill_event.datetime": {
+      "ru": "Время"
+    },
+    "fill_event.datetime_from": {
+      "ru": "Время начала"
+    },
+    "fill_event.datetime_to": {
+      "ru": "Время завершения"
+    },
+    "fill_event.location": {
+      "ru": "Место"
+    },
+    "fill_event.location_geo": {
+      "ru": "Геометка"
+    },
+    "fill_event.location_title": {
+      "ru": "Место"
+    },
+    "fill_event.picture": {
+      "ru": "Постер"
+    },
+    "fill_event.kind": {
+      "ru": "Тип события"
+    },
+    "fill_event.contact_data": {
+      "ru": "Контакт"
+    },
+    "fill_event.finalize": {
+      "ru": "\uD83D\uDFE3 Отправить! \uD83D\uDFE3"
+    }
   }
 }
 

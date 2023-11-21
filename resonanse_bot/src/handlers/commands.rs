@@ -1,21 +1,24 @@
 use std::str::FromStr;
 
+use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::{ParseMode, ReplyMarkup};
 use teloxide::utils::command::parse_command;
-use teloxide::Bot;
 use uuid::Uuid;
 
 use resonanse_common::EventSubjectFilter;
 
+use crate::{ACCOUNTS_REPOSITORY, keyboards};
+use crate::data_structs::FillingEvent;
 use crate::data_translators::fill_base_account_from_teloxide_user;
-use crate::handlers::{log_request, FillingEvent, HandlerResult, MyDialogue};
+use crate::handlers::{HandlerResult, log_request, MyDialogue};
 use crate::high_logics::send_event_post;
-use crate::keyboards::get_inline_kb_set_subject_filter;
+use crate::keyboards::{get_inline_kb_edit_new_event, get_inline_kb_set_subject_filter};
 use crate::states::{BaseState, CreateEventState};
-use crate::ACCOUNTS_REPOSITORY;
 
-const CREATE_EVENT_TEXT_MD: &str = "Введите название события";
+// const CREATE_EVENT_TEXT_MD: &str = r#"
+//
+// "#;
 const GET_EVENTS_TEXT_MD: &str = "Выбери, что тебе интересно";
 // pub const HELLO_MESSAGE_MD: &str = r#"
 // *Привет\!*
@@ -77,14 +80,28 @@ pub async fn about_command(bot: Bot, msg: Message) -> HandlerResult {
 pub async fn create_event_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     log_request("got create_event command", &msg);
 
-    let mut message = bot.send_message(msg.chat.id, CREATE_EVENT_TEXT_MD);
+    let mut message = bot.send_message(msg.chat.id, t!("actions.create_event.new_event"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
+    let filling_event = FillingEvent::new();
+
+    let mut message = bot.send_message(
+        msg.chat.id,
+        filling_event.get_missed_data_hint(),
+    );
+    message.parse_mode = Some(ParseMode::MarkdownV2);
+    message.reply_markup = Some(ReplyMarkup::InlineKeyboard(
+        keyboards::get_make_event_keyboard()
+    ));
+    let sent_msg: Message = message.await?;
+
+
     dialogue
         .update(BaseState::CreateEvent {
-            state: CreateEventState::Name,
-            filling_event: FillingEvent::new(),
+            state: CreateEventState::Idle,
+            filling_event,
+            last_edit_msg_id: sent_msg.id,
         })
         .await?;
 
@@ -121,10 +138,7 @@ pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) ->
 pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     log_request("got send_feedback_command command", &msg);
 
-    let mut message = bot.send_message(
-        msg.chat.id,
-        t!("feedback_msg"),
-    );
+    let mut message = bot.send_message(msg.chat.id, t!("feedback_msg"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
