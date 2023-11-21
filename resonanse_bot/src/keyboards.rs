@@ -127,8 +127,13 @@ pub fn get_inline_kb_edit_new_event(
     InlineKeyboardMarkup::new(buttons)
 }
 
-pub fn get_inline_kb_event_message(map_link: Option<String>) -> InlineKeyboardMarkup {
+pub const INLINE_WANT_TO_GO_BTN: &str = "keyboards.want_go_to_event_vtn";
+pub fn get_inline_kb_event_message(
+    map_link: Option<String>,
+    // want_go_url: String,
+) -> InlineKeyboardMarkup {
     let mut buttons = vec![];
+    let mut buttons_first_row = vec![];
 
     if let Some(map_link) = map_link {
         let map_link_btn = InlineKeyboardButton::new(
@@ -136,8 +141,15 @@ pub fn get_inline_kb_event_message(map_link: Option<String>) -> InlineKeyboardMa
             InlineKeyboardButtonKind::Url(map_link.parse().unwrap()),
         );
 
-        buttons.push(vec![map_link_btn]);
+        buttons_first_row.push(map_link_btn);
     }
+
+    // buttons_first_row.push(
+    //     InlineKeyboardButton::new(
+    //         t!(INLINE_WANT_TO_GO_BTN),
+    //         InlineKeyboardButtonKind::Url(want_go_url.parse().unwrap()),
+    //     ));
+    buttons.push(buttons_first_row);
 
     InlineKeyboardMarkup::new(buttons)
 }

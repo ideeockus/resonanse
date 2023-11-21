@@ -1694,6 +1694,8 @@ dependencies = [
  "reqwest",
  "resonanse_common",
  "rust-i18n",
+ "serde",
+ "serde_json",
  "teloxide",
  "tokio",
  "uuid",

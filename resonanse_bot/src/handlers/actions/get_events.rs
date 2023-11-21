@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use log::debug;
+use serde::de::Unexpected::Str;
 use teloxide::prelude::*;
 use teloxide::types::{Message, ParseMode, ReplyMarkup};
 use teloxide::utils::markdown;
@@ -207,7 +208,21 @@ pub async fn get_choose_event_text(
             .iter()
             .map(|event| {
                 event_i += 1;
-                format!("/event\\_{}\t*{}*", event_i, markdown::escape(&event.title),)
+
+                debug!("event.brief_description {:?}", event.brief_description);
+                let event_brief_description_text = match event.brief_description.as_deref() {
+                    Some(brief_desc) => format!(
+                            "\n_{}_",
+                            markdown::escape(brief_desc),
+                        ),
+                    None => String::new(),
+                };
+
+                format!(
+                "/event\\_{}\t*{}*{}", event_i,
+                markdown::escape(&event.title),
+                event_brief_description_text,
+            )
             })
             .collect::<Vec<String>>()
             .join("\n\n")

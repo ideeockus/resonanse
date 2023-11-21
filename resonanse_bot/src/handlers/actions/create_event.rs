@@ -4,9 +4,9 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use log::{debug, warn};
-use teloxide::Bot;
+use teloxide::{Bot, RequestError};
 use teloxide::prelude::*;
-use teloxide::types::{MediaKind, MediaLocation, MediaVenue, MessageCommon, MessageId, ParseMode, ReplyMarkup};
+use teloxide::types::{MediaKind, MediaLocation, MediaVenue, MessageCommon, MessageId, ParseMode, ReplyMarkup, True};
 use teloxide::types::MessageKind::Common;
 use teloxide::types::ParseMode::MarkdownV2;
 use teloxide::utils::markdown;
@@ -161,8 +161,8 @@ pub async fn handle_fill_event_field_callback(
                 "handle_fill_event_field_callback unknown callback data: {:?}",
                 q.data
             );
-            bot.send_message(q.from.id, "unknown create event handler")
-                .await?;
+            // bot.send_message(q.from.id, "unknown create event handler")
+            //     .await?;
             return Err(Box::new(BotHandlerError::UnknownHandler));
         }
     };
@@ -242,7 +242,7 @@ pub async fn handle_create_event_state_message(
             );
             bot.send_message(msg.chat.id, "unknown create event handler")
                 .await?;
-            return Err(Box::try_from(BotHandlerError::UnknownHandler).unwrap());
+            return Err(Box::new(BotHandlerError::UnknownHandler));
         }
     }
 
@@ -283,7 +283,9 @@ pub async fn handle_create_event_state_callback(
                 q.clone(),
             ).await {
         Ok(v) => return Ok(v),
-        Err(err) => ()
+        Err(err) => {
+            warn!("handle_fill_event_field_callback error: {:?}", err);
+        }
     }
 
     match create_event_state {
@@ -346,7 +348,7 @@ pub async fn update_filling_message(
     last_edit_msg_id: MessageId,
 ) -> HandlerResult {
     let sent_event_message: Message = match BaseEvent::try_from(filling_event.clone()) {
-        Ok(base_event) => {
+        Ok(base_event) if filling_event.is_ready() => {
             let event_message = prepare_event_msg_with_base_event(
                 &bot,
                 chat_id,
@@ -361,7 +363,7 @@ pub async fn update_filling_message(
                 EventPostMessageRequest::Text(req) => req.await?,
             }
         }
-        Err(_) => {
+        _ => {
             let missed_data_hint = filling_event.get_missed_data_hint();
             let mut message = bot.send_message(chat_id, missed_data_hint);
             message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -370,7 +372,12 @@ pub async fn update_filling_message(
         }
     };
 
-    bot.delete_message(chat_id, last_edit_msg_id).await?;
+    match bot.delete_message(chat_id, last_edit_msg_id).await {
+        Ok(_) => {}
+        Err(err) => {
+            debug!("error on deleting message {} from chat {}: {:?}", last_edit_msg_id, chat_id, err);
+        }
+    };
 
     dialogue
         .update(BaseState::CreateEvent {
@@ -761,9 +768,6 @@ pub async fn handle_event_finalisation_callback(
         Some(v) => v,
     };
 
-    bot.delete_message(msg.chat.id, msg.id).await?;
-    dialogue.update(BaseState::Idle).await?;
-
     let tg_user = q.from;
 
     let created_event = match publish_event(filling_event.clone(), &tg_user).await {
@@ -781,6 +785,8 @@ pub async fn handle_event_finalisation_callback(
             return Ok(());
         }
     };
+    bot.delete_message(msg.chat.id, msg.id).await?;
+    dialogue.update(BaseState::Idle).await?;
 
     let tg_event_deep_link = build_event_deep_link(created_event.id);
     if filling_event.is_private {

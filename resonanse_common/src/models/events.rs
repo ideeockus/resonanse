@@ -300,7 +300,7 @@ impl FromRow<'_, PgRow> for BaseEvent {
             event_kind: row.try_get::<_, &str>("event_kind")?,
             title: row.try_get::<_, &str>("title")?,
             description: row.try_get::<_, &str>("description")?,
-            brief_description: None,
+            brief_description: row.try_get::<_, &str>("brief_description")?,
             subject: row.try_get::<_, &str>("subject")?,
             datetime_from: row.try_get::<_, &str>("datetime_from")?,
             datetime_to: row.try_get::<_, &str>("datetime_to")?,

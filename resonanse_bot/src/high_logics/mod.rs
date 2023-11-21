@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use std::convert::Infallible;
 use std::env;
 use std::error::Error;
 
-use log::debug;
+use log::{debug, warn};
+use reqwest::Response;
 use teloxide::prelude::*;
 use teloxide::types::ReplyMarkup;
 use uuid::Uuid;
@@ -37,9 +39,46 @@ pub async fn publish_event<I>(
         .map_err(|e| BotHandlerError::UnfilledEvent) {
         Ok(v) => v,
         Err(err) => {
-            return Err(Box::new(err))
+            return Err(Box::new(err));
         }
     };
+
+    // todo: is this check necessary ?
+    if create_base_event.picture.is_none() {
+        return Err(Box::new(BotHandlerError::UnfilledEvent))
+    }
+
+    // make brief event description
+    // todo move exter api calls to another module
+    let client = reqwest::Client::new();
+    let instance_data = SberSummarizatorInstance::new(
+        create_base_event.description.clone()
+    );
+    let req_json_data = HashMap::from([
+        ("instances", [instance_data])
+    ]);
+    match client
+        .post("https://api.aicloud.sbercloud.ru/public/v2/summarizator/predict")
+        .json(&req_json_data)
+        .send()
+        .await {
+        Ok(resp) => {
+            let j = resp.json::<serde_json::Value>().await;
+            debug!("j {:?}", j);
+            if let Ok(v) = j {
+                if let Some(prediction_best) = v.
+                    get("prediction_best")
+                    .and_then(|v| v.get("bertscore"))
+                    .and_then(|v| v.as_str()) {
+                    create_base_event.brief_description = Some(prediction_best.to_string());
+                }
+            }
+        },
+        Err(err) => {
+            warn!("cannot summarize description: {:?}", err);
+        }
+    }
+
     create_base_event.creator_id = account.id;
     let created_event = EVENTS_REPOSITORY
         .get()
@@ -69,9 +108,7 @@ pub async fn publish_event<I>(
                 manager_bot,
                 ChatId(tg_channel_to_post),
                 created_event.clone(),
-                Some(ReplyMarkup::InlineKeyboard(get_inline_kb_event_message(
-                    created_event.location.as_ref().map(|loc| loc.get_yandex_map_link_to()),
-                ))),
+                construct_created_event_kb(&created_event),
             ) {
                 EventPostMessageRequest::WithPoster(f) => f.await?,
                 EventPostMessageRequest::Text(f) => f.await?,
@@ -98,13 +135,37 @@ pub async fn send_event_post(
     //     None => None,
     //     Some(location) => Some(),
     // };
-    let event_post_message_request = prepare_event_msg_with_base_event(bot, chat_id, created_event.clone(), Some(ReplyMarkup::InlineKeyboard(get_inline_kb_event_message(
-        created_event.location.map(|loc| loc.get_yandex_map_link_to()),
-    ))));
+    let event_post_message_request = prepare_event_msg_with_base_event(bot, chat_id, created_event.clone(),
+    construct_created_event_kb(&created_event));
     match event_post_message_request {
         EventPostMessageRequest::WithPoster(f) => f.await?,
         EventPostMessageRequest::Text(f) => f.await?,
     };
 
     Ok(())
+}
+
+pub fn construct_created_event_kb(created_event: &BaseEvent) -> Option<ReplyMarkup> {
+    Some(ReplyMarkup::InlineKeyboard(get_inline_kb_event_message(
+        created_event.location.as_ref().map(|loc| loc.get_yandex_map_link_to()),
+    )))
+}
+
+#[derive(serde::Serialize)]
+pub struct SberSummarizatorInstance {
+    text: String,
+    num_beams: i32,
+    num_return_sequences: i32,
+    length_penalty: f64,
+}
+
+impl SberSummarizatorInstance {
+    pub fn new(text: String) -> Self {
+        Self {
+            text,
+            num_beams: 5,
+            num_return_sequences: 3,
+            length_penalty: 0.5,
+        }
+    }
 }

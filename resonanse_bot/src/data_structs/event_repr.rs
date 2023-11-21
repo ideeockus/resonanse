@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use teloxide::payloads::{SendMessage, SendPhoto};
 use teloxide::prelude::*;
 use teloxide::requests::{JsonRequest, MultipartRequest};
@@ -22,17 +23,33 @@ pub fn prepare_event_msg_with_base_event(
     base_event: BaseEvent,
     event_reply_markup: Option<ReplyMarkup>,
 ) -> EventPostMessageRequest {
-    let msg_text = t!(
-        "actions.create_event.event_template",
-        event_title = markdown::escape(&base_event.description),
-        event_description = markdown::escape(&base_event.title),
-        event_subject = markdown::escape(&base_event.subject.to_string()),
-        event_datetime = markdown::escape(
-            &base_event
+    let formatted_data = match base_event.datetime_to {
+        None => {
+            base_event
                 .datetime_from
                 .format(DEFAULT_DATETIME_FORMAT)
                 .to_string()
-        ),
+        }
+        Some(datetime_to) => {
+            format!(
+                "{} - {}",
+                base_event
+                    .datetime_from
+                    .format(DEFAULT_DATETIME_FORMAT)
+                    .to_string(),
+                datetime_to
+                    .format(DEFAULT_DATETIME_FORMAT)
+                    .to_string()
+            )
+        }
+    };
+
+    let msg_text = t!(
+        "actions.create_event.event_template",
+        event_title = markdown::escape(&base_event.title),
+        event_description = markdown::escape(&base_event.description),
+        event_subject = markdown::escape(&t!(&base_event.subject.to_string())),
+        event_datetime = markdown::escape(&formatted_data),
         event_location = {
             format!("📍 Место: _{}_", markdown::escape(&base_event.location_title))
         },
@@ -57,7 +74,9 @@ pub fn prepare_event_msg_with_base_event(
             EventPostMessageRequest::WithPoster(msg)
         }
         None => {
-            let msg = bot.send_message(chat_id, msg_text);
+            let mut msg = bot.send_message(chat_id, msg_text);
+            msg.parse_mode = Some(ParseMode::MarkdownV2);
+            msg.reply_markup = event_reply_markup;
 
             EventPostMessageRequest::Text(msg)
         }
