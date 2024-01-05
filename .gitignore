@@ -4,3 +4,4 @@ tg_downloads
 resonanse_storage
 **/venv/**
 scripts
+**/__pycache__/*
