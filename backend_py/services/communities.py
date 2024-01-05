@@ -82,7 +82,7 @@ async def update_community(community_id: int, updated_info: CreateCommunityReque
 
 
 # Удаление сообщества
-@app.delete("/api/communities/{community_id}", response_model=dict)
+@app.delete("/api/communities/{community_id}", response_model=dict, tags=[OpenApiTags.COMMUNITIES])
 async def delete_community(community_id: int, db: Session = Depends(get_db)):
     community = db.query(CommunityDB).filter(CommunityDB.id == community_id).first()
     if community:
