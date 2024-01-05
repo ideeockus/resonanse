@@ -1,12 +1,12 @@
 import os
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from account import UserAccountDB
 from backend_py.db.base import Base
-from community import CommunityDB
+from .account import UserAccountDB
+from .community import CommunityDB
+from .event import EventDB
 
 DATABASE_URL = os.environ['DATABASE_URL']
 

@@ -3,6 +3,7 @@
 # если это необходимо
 # Например, app = FastAPI(title="My API", version="1.0")
 from backend_py.app import app
+import services
 
 if __name__ == "__main__":
     import uvicorn

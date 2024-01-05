@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker, Session, relationship
 from pydantic import BaseModel
 from datetime import datetime
 
-from backend_py.app import app
+from backend_py.app import app, OpenApiTags
 from backend_py.db import Base, get_db
 from backend_py.db.event import EventDB
 
@@ -16,34 +16,18 @@ from backend_py.db.event import EventDB
 class CreateEventRequest(BaseModel):
     title: str
     description: str
-    short_description: str
+    short_description: str | None
     category: str
     location: str
     start_date: datetime
     end_date: datetime
     online: bool
-    event_marked_on_map: bool
-    distance_from_user: Optional[float]
-    registration_list_visible: bool
-    participant_chat: bool
-    reward: Optional[str]
     attendance_confirmation_days_before: Optional[int]
-    similar_events: Optional[List[str]]
-    attendance_confirmation: bool
     chat_link: str
-    organizer_profile_link: str
-    community_profile_link: str
-    poster_image_link: str
-    age_limit: Optional[int]
+    organizer_id: int
+    community_id: int
+    poster_image_link: str | None
     paid: bool
-    event_limit: Optional[int]
-    low_priority: bool
-    rejected: bool
-    waiting_for_queue: bool
-    awaiting_turn: bool
-    community_registration_list_visible: bool
-    queue_position: Optional[int]
-    user_account_id: int
 
 
 # Модель Pydantic для ответа с информацией о событии
@@ -57,30 +41,32 @@ class EventInfo(BaseModel):
     online: bool
     location: str
     poster_image_link: str
-    age_limit: Optional[int]
     paid: bool
-    event_limit: Optional[int]
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
 
 # Создание события
-@app.post("/api/events", response_model=EventInfo)
+@app.post("/api/events", response_model=EventInfo,  tags=[OpenApiTags.EVENTS])
 async def create_event(event_info: CreateEventRequest, db: Session = Depends(get_db)):
-    event = EventDB(**event_info.dict())
+    event = EventDB(**event_info.model_dump())
     db.add(event)
     db.commit()
     db.refresh(event)
-    return EventInfo.from_orm(event)
+    return EventInfo.model_validate(event)
 
 
 # Получение списка всех событий
-@app.get("/api/events", response_model=List[EventInfo])
+@app.get("/api/events", response_model=List[EventInfo], tags=[OpenApiTags.EVENTS])
 async def get_all_events(db: Session = Depends(get_db)):
     events = db.query(EventDB).all()
     return [EventInfo.from_orm(event) for event in events]
 
 
 # Получение информации о конкретном событии
-@app.get("/api/events/{event_id}", response_model=EventInfo)
+@app.get("/api/events/{event_id}", response_model=EventInfo, tags=[OpenApiTags.EVENTS])
 async def get_event(event_id: int, db: Session = Depends(get_db)):
     event = db.query(EventDB).filter(EventDB.id == event_id).first()
     if event is None:
@@ -89,7 +75,7 @@ async def get_event(event_id: int, db: Session = Depends(get_db)):
 
 
 # Обновление информации о событии
-@app.put("/api/events/{event_id}", response_model=EventInfo)
+@app.put("/api/events/{event_id}", response_model=EventInfo, tags=[OpenApiTags.EVENTS])
 async def update_event(event_id: int, updated_info: CreateEventRequest, db: Session = Depends(get_db)):
     event = db.query(EventDB).filter(EventDB.id == event_id).first()
     if event is None:
@@ -105,7 +91,7 @@ async def update_event(event_id: int, updated_info: CreateEventRequest, db: Sess
 
 
 # Удаление события
-@app.delete("/api/events/{event_id}")
+@app.delete("/api/events/{event_id}", tags=[OpenApiTags.EVENTS])
 async def delete_event(event_id: int, db: Session = Depends(get_db)):
     event = db.query(EventDB).filter(EventDB.id == event_id).first()
     if event is None:

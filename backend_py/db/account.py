@@ -33,7 +33,7 @@ class UserAccountDB(Base):
     instagram = Column(String, nullable=True)
     password_hash = Column(String)
     user_type = Column(Integer)
-
-    # Добавляем внешний ключ для связи с событиями и сообществами
-    events = relationship("EventDB", order_by="EventDB.id", back_populates="user_account")
-    communities = relationship("CommunityDB", order_by="CommunityDB.id", back_populates="user_account")
+    #
+    # # Добавляем внешний ключ для связи с событиями и сообществами
+    # events = relationship("EventDB", order_by="EventDB.id", back_populates="user_accounts")
+    # communities = relationship("CommunityDB", order_by="CommunityDB.id", back_populates="user_accounts")

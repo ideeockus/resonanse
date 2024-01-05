@@ -1,7 +1,6 @@
 from fastapi.testclient import TestClient
 
-# Импортируем экземпляр FastAPI (app) из основного файла (main.py)
-from main import app
+from backend_py.app import app
 
 # Создаем тестового клиента для приложения
 client = TestClient(app)

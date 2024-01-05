@@ -4,7 +4,7 @@ from fastapi import HTTPException, Depends, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from backend_py.app import app
+from backend_py.app import app, OpenApiTags
 from backend_py.db import UserAccountDB, get_db
 
 
@@ -44,9 +44,13 @@ class AccountInfo(BaseModel):
     about: str
     user_type: int
 
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
 
 # Обновление информации об аккаунте
-@app.put("/api/accounts/{account_id}", response_model=AccountInfo)
+@app.put("/api/accounts/{account_id}", response_model=AccountInfo, tags=[OpenApiTags.ACCOUNTS])
 async def update_account(account_id: int, updated_info: UpdateAccountRequest, db: Session = Depends(get_db)):
     account = db.query(UserAccountDB).filter(UserAccountDB.id == account_id).first()
     if account is None:
@@ -62,16 +66,16 @@ async def update_account(account_id: int, updated_info: UpdateAccountRequest, db
 
 
 # Получение информации об аккаунте
-@app.get("/api/accounts/{account_id}", response_model=AccountInfo)
+@app.get("/api/accounts/{account_id}", response_model=AccountInfo, tags=[OpenApiTags.ACCOUNTS])
 async def get_account(account_id: int, db: Session = Depends(get_db)):
     account = db.query(UserAccountDB).filter(UserAccountDB.id == account_id).first()
     if account is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-    return AccountInfo.from_orm(account)
+    return AccountInfo.model_validate(account)
 
 
 # Удаление аккаунта
-@app.delete("/api/accounts/{account_id}")
+@app.delete("/api/accounts/{account_id}", tags=[OpenApiTags.ACCOUNTS])
 async def delete_account(account_id: int, db: Session = Depends(get_db)):
     account = db.query(UserAccountDB).filter(UserAccountDB.id == account_id).first()
     if account is None:
