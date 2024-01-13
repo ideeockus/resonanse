@@ -50,3 +50,11 @@ app = FastAPI(
     # },
     openapi_tags=tags_metadata,
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Список разрешенных источников (доменов)
+    allow_credentials=True,
+    allow_methods=["*"], # Разрешение всех методов
+    allow_headers=["*"], # Разрешение всех заголовков
+)

@@ -1,88 +1,272 @@
-/* styles.css */
-body, html {
-    margin: 0;
-    padding: 0;
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f4;
+* {
+    box-sizing:border-box;
 }
-
-.app-container {
-    max-width: 600px;
-    margin: auto;
-    background-color: #fff;
-    min-height: 100vh;
-    border-radius: 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    overflow: hidden;
+body {
+    margin:0;
 }
-
-.app-header {
-    background-color: #ffffff;
-    padding: 20px;
-    text-align: center;
-    border-bottom: 1px solid #e5e5e5;
+.gjs-grid-column {
+    flex:1 1 0%;
+    padding:5px 0;
 }
-
-.app-title {
-    margin: 0;
-    font-size: 24px;
-    color: #333;
+.gjs-link {
+    vertical-align:top;
+    max-width:100%;
+    display:inline-block;
+    text-decoration:none;
+    color:inherit;
 }
-
-.app-location {
-    color: #666;
-    font-size: 16px;
+.gjs-grid-row {
+    display:flex;
+    justify-content:flex-start;
+    align-items:stretch;
+    flex-direction:row;
+    min-height:auto;
+    padding:10px 0;
 }
-
-.members-count {
-    font-size: 14px;
-    color: #888;
-    margin-top: 5px;
-}
-
-.group-settings {
-    font-size: 14px;
-    color: #888;
-    margin-top: 5px;
-    cursor: pointer;
-}
-
-.events-list {
-    padding: 20px;
-}
-
-.event-item {
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    margin-bottom: 15px;
-    padding: 15px;
-    border-radius: 10px;
-}
-
 .event-title {
-    font-size: 18px;
-    margin: 0;
+    margin:0;
+    color:rgba(29,40,55,1);
+    width: 100%;
+    font-size:1.2rem;
+    text-align:center;
+}
+.gjs-grid-column {
+    flex:1 1 0%;
+    padding:5px 0;
+}
+.gjs-grid-row {
+    display:flex;
+    justify-content:flex-start;
+    align-items:stretch;
+    flex-direction:row;
+    min-height:auto;
+    padding:10px 0;
+}
+.gjs-link {
+    vertical-align:top;
+    max-width:100%;
+    display:inline-block;
+    text-decoration:none;
+    color:inherit;
+    transition:color 0.3s ease 0s;
+}
+#events-container {
+    gap: 20px;
+    justify-content:center;
+    padding-top:20px;
+    padding-bottom:20px;
+    padding-left:10px;
+    padding-right:10px;
+}
+#page-title {
+    font-size:1.3rem;
+    text-align:center;
+    padding: 15px;2
+}
+.event-description {
+    line-height:30px;
+    font-size:1.2rem;
+    padding:10px;
+    max-width:750px;
+    margin-bottom:25px;
+    padding-left:0px;
+    padding-right:0px;
+    text-align: justify;
+}
+#iau9 {
+    font-family:Arial,Helvetica,sans-serif;
+    background-image:linear-gradient(180deg,rgba(59,130,245,0.11),white 14%);
+    background-position:0px 0px;
+    background-size:100% 100%;
+    background-repeat:repeat;
+    background-attachment:scroll;
+    background-origin:padding-box;
+    color:#475569;
+}
+#i466d {
+    color:black;
+    border-top-left-radius:35px;
+    border-top-right-radius:35px;
+    border-bottom-right-radius:35px;
+    border-bottom-left-radius:35px;
+    max-width:100%;
+}
+.event-wrapper {
+    max-width:100vw;
+    align-items:center;
+    display:flex;
+    flex-direction:column;
+    padding: 5px;
+}
+.event-wrapper-row {
+    gap:10px;
+    justify-content:space-between;
+}
+.event-wrapper-left-column {
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:center;
+}
+.gjs-grid-column.feature-item {
+    padding-top:15px;
+    padding-right:15px;
+    padding-bottom:15px;
+    padding-left:15px;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+    min-width:30%;
+}
+.gjs-grid-column.testimonial-item {
+    padding-top:15px;
+    padding-right:15px;
+    padding-bottom:15px;
+    padding-left:15px;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+    min-width:45%;
+    background-color:rgba(247,247,247,0.23);
+    border-top-left-radius:5px;
+    border-top-right-radius:5px;
+    border-bottom-right-radius:5px;
+    border-bottom-left-radius:5px;
+    align-items:flex-start;
+    border-top-width:1px;
+    border-right-width:1px;
+    border-bottom-width:1px;
+    border-left-width:1px;
+    border-top-style:solid;
+    border-right-style:solid;
+    border-bottom-style:solid;
+    border-left-style:solid;
+    border-top-color:rgba(0,0,0,0.06);
+    border-right-color:rgba(0,0,0,0.06);
+    border-bottom-color:rgba(0,0,0,0.06);
+    border-left-color:rgba(0,0,0,0.06);
+}
+#ilriti {
+    max-width:1200px;
+    display:flex;
+    flex-direction:column;
+}
+#iv3be5 {
+    justify-content:center;
+    padding-top:80px;
+    padding-left:20px;
+    padding-right:20px;
+    padding-bottom:80px;
+}
+#im0rle {
+    flex-direction:column;
+}
+#i1hx7l {
+    display:flex;
+    gap:30px;
+    flex:0 1 auto;
+    justify-content:center;
+    margin-top:30px;
+    margin-bottom:30px;
+    align-items:center;
+}
+#i2sl68 {
+    display:block;
+    font-size:1.5em;
+}
+.gjs-button {
+    vertical-align:top;
+    max-width:100%;
+    display:block;
+    text-decoration:none;
+    color:white;
+    padding-right:15px;
+    padding-bottom:10px;
+    padding-left:15px;
+    background-color:#a839d4;
+    border: 2px solid black;
+    border-radius: 15px;
+    padding-top:10px;
+    font-size:1.1rem;
+    text-align:center;
+}
+.gjs-link:hover {
+    color:rgb(36,99,235);
+    text-decoration:underline;
+}
+#ig13e {
+    flex:0 0 auto;
+    font-size:1.2em;
+    max-height:3em;
+}
+@media (max-width:992px) {
+    .gjs-grid-row {
+    flex-direction:column;
+}
+.gjs-grid-row {
+    flex-direction:column;
+}
+}
+
+.gjs-floating-btn {
+    position: fixed; /* Фиксированное позиционирование */
+    right: 20px;    /* Отступ справа */
+    bottom: 20px;   /* Отступ снизу */
+    width: 50px;    /* Ширина кнопки */
+    height: 50px;   /* Высота кнопки */
+    background-color: #a839d4; /* Цвет фона */
+    color: white;   /* Цвет текста */
+    border: none;   /* Без рамки */
+    border-radius: 50%; /* Круглая форма */
+    font-size: 24px; /* Размер шрифта */
+    text-align: center; /* Выравнивание текста по центру */
+    line-height: 50px
+
+
+/* Стили для модального окна */
+/* Основные стили для модального окна */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px; /* Добавлено для предотвращения прилипания к краям */
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    max-width: 90%;
+    width: auto; /* Убедитесь, что ширина адаптируется к содержимому */
+    overflow: auto;
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-btn:hover,
+.close-btn:focus {
     color: #333;
-}
-
-.event-date {
-    font-size: 14px;
-    color: #666;
-}
-
-.add-event-btn {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    width: 50px;
-    height: 50px;
-    background-color: #ff6f61;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 36px;
-    line-height: 50px;
-    text-align: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.25);
     cursor: pointer;
+}
+
+/* Стили для формы внутри модального окна и т.д. */
+
+@media (min-width: 600px) {
+    .modal-content {
+        max-width: 500px; /* Ограничение максимальной ширины для больших экранов */
+    }
 }
