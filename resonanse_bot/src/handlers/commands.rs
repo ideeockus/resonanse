@@ -12,7 +12,7 @@ use crate::data_structs::FillingEvent;
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::handlers::{log_request, HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
-use crate::keyboards::{get_inline_kb_edit_new_event, get_inline_kb_set_subject_filter};
+use crate::keyboards::get_inline_kb_set_subject_filter;
 use crate::states::{BaseState, CreateEventState};
 use crate::{keyboards, ACCOUNTS_REPOSITORY};
 
@@ -51,7 +51,7 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
         }
     }
 
-    let mut message = bot.send_message(msg.chat.id, &t!("hello_msg"));
+    let mut message = bot.send_message(msg.chat.id, t!("hello_msg"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
@@ -70,7 +70,7 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
 pub async fn about_command(bot: Bot, msg: Message) -> HandlerResult {
     log_request("got about_command", &msg);
 
-    let mut message = bot.send_message(msg.chat.id, &t!("hello_msg"));
+    let mut message = bot.send_message(msg.chat.id, t!("hello_msg"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 

@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::ops::RangeInclusive;
 use std::str::FromStr;
 
@@ -8,10 +7,10 @@ use teloxide::prelude::*;
 use teloxide::types::MessageKind::Common;
 use teloxide::types::ParseMode::MarkdownV2;
 use teloxide::types::{
-    MediaKind, MediaLocation, MediaVenue, MessageCommon, MessageId, ParseMode, ReplyMarkup, True,
+    MediaKind, MediaLocation, MediaVenue, MessageCommon, MessageId, ParseMode, ReplyMarkup,
 };
 use teloxide::utils::markdown;
-use teloxide::{Bot, RequestError};
+use teloxide::Bot;
 use uuid::Uuid;
 
 use resonanse_common::file_storage::get_event_image_path_by_uuid;
@@ -26,9 +25,7 @@ use crate::handlers::utils::download_file_by_id;
 use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::publish_event;
 use crate::keyboards;
-use crate::keyboards::{
-    get_inline_kb_choose_event_kind, get_inline_kb_edit_new_event, get_make_event_keyboard,
-};
+use crate::keyboards::{get_inline_kb_choose_event_kind, get_make_event_keyboard};
 use crate::states::{BaseState, CreateEventState};
 use crate::utils::build_event_deep_link;
 
@@ -71,7 +68,7 @@ macro_rules! check_msg_size {
 pub async fn handle_fill_event_field_callback(
     bot: Bot,
     dialogue: MyDialogue,
-    mut filling_event: FillingEvent,
+    filling_event: FillingEvent,
     last_edit_msg_id: MessageId,
     q: CallbackQuery,
 ) -> HandlerResult {
@@ -201,7 +198,7 @@ pub async fn handle_create_event_state_message(
     ),
     msg: Message,
 ) -> HandlerResult {
-    let chat_id = msg.chat.id.clone();
+    let chat_id = msg.chat.id;
     match create_event_state {
         CreateEventState::Idle => {
             bot.send_message(msg.chat.id, "Вы не нажали, что именно хотите заполнить")
@@ -334,7 +331,7 @@ pub async fn update_filling_message(
     let sent_event_message: Message = match BaseEvent::try_from(filling_event.clone()) {
         Ok(base_event) if filling_event.is_ready() => {
             let event_message = prepare_event_msg_with_base_event(
-                &bot,
+                bot,
                 chat_id,
                 base_event,
                 Some(ReplyMarkup::InlineKeyboard(
@@ -677,7 +674,7 @@ pub async fn handle_event_picture(
     let local_file_uuid = Uuid::new_v4();
     let local_file_path = get_event_image_path_by_uuid(local_file_uuid);
 
-    download_file_by_id(&bot, &event_photo_file_id, &local_file_path).await?;
+    download_file_by_id(bot, &event_photo_file_id, &local_file_path).await?;
 
     filling_event.picture = Some(local_file_uuid);
 
@@ -743,7 +740,7 @@ pub async fn handle_event_contact(
 pub async fn handle_event_finalisation_callback(
     bot: Bot,
     dialogue: MyDialogue,
-    mut filling_event: FillingEvent,
+    filling_event: FillingEvent,
     q: CallbackQuery,
 ) -> HandlerResult {
     bot.answer_callback_query(q.id.clone()).await?;

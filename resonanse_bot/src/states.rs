@@ -27,6 +27,7 @@ pub enum CreateEventState {
     EventKind,
     EventTitle,
     Description,
+    #[allow(unused)]
     BriefDescription,
     DatetimeFrom,
     DatetimeTo,
@@ -35,5 +36,6 @@ pub enum CreateEventState {
     Subject,
     Picture,
     ContactInfo,
+    #[allow(unused)]
     Finalisation,
 }

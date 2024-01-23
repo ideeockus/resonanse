@@ -1,21 +1,19 @@
 use std::collections::HashMap;
-use std::convert::Infallible;
+
 use std::env;
 use std::error::Error;
 
 use log::{debug, warn};
-use reqwest::Response;
+
 use teloxide::prelude::*;
 use teloxide::types::ReplyMarkup;
 use uuid::Uuid;
 
-use resonanse_common::models::{BaseEvent, Location};
+use resonanse_common::models::BaseEvent;
 // use resonanse_common::repository::CreateBaseEvent;
 
 use crate::config::POSTS_CHANNEL_ID;
-use crate::data_structs::{
-    prepare_event_msg_with_base_event, EventPostMessageRequest, FillingEvent,
-};
+use crate::data_structs::{prepare_event_msg_with_base_event, EventPostMessageRequest};
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::errors::BotHandlerError;
 use crate::keyboards::get_inline_kb_event_message;
@@ -38,7 +36,7 @@ where
 
     let mut create_base_event: BaseEvent = match new_event
         .try_into()
-        .map_err(|e| BotHandlerError::UnfilledEvent)
+        .map_err(|_e| BotHandlerError::UnfilledEvent)
     {
         Ok(v) => v,
         Err(err) => {

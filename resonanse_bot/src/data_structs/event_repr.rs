@@ -1,4 +1,3 @@
-use chrono::NaiveDateTime;
 use teloxide::payloads::{SendMessage, SendPhoto};
 use teloxide::prelude::*;
 use teloxide::requests::{JsonRequest, MultipartRequest};
@@ -10,7 +9,6 @@ use resonanse_common::file_storage::get_event_image_path_by_uuid;
 use resonanse_common::models::BaseEvent;
 
 use crate::config::DEFAULT_DATETIME_FORMAT;
-use crate::keyboards::get_inline_kb_event_message;
 
 pub enum EventPostMessageRequest {
     WithPoster(MultipartRequest<SendPhoto>),
@@ -31,11 +29,8 @@ pub fn prepare_event_msg_with_base_event(
         Some(datetime_to) => {
             format!(
                 "{} - {}",
-                base_event
-                    .datetime_from
-                    .format(DEFAULT_DATETIME_FORMAT)
-                    .to_string(),
-                datetime_to.format(DEFAULT_DATETIME_FORMAT).to_string()
+                base_event.datetime_from.format(DEFAULT_DATETIME_FORMAT),
+                datetime_to.format(DEFAULT_DATETIME_FORMAT)
             )
         }
     };

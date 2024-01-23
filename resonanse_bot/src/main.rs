@@ -89,6 +89,7 @@ fn setup_i18n_locales() {
     info!("default rust_i18n locale: {:?}", rust_i18n::locale());
 }
 
+#[allow(unused)]
 fn run_migrations() {
     info!("running sqlx migrate");
 }

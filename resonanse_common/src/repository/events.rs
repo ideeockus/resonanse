@@ -4,8 +4,8 @@ use log::debug;
 use sqlx::{PgPool, Result};
 use uuid::Uuid;
 
-use crate::EventSubjectFilter;
 use crate::models::{BaseEvent, EventSubject};
+use crate::EventSubjectFilter;
 
 // #[derive(Clone)]
 // pub struct CreateBaseEvent {
@@ -60,8 +60,8 @@ impl EventsRepository {
         .bind(event.subject as i32)
         .bind(event.datetime_from)
         .bind(event.datetime_to)
-        .bind(event.location.as_ref().and_then(|geo| Some(geo.latitude)))
-        .bind(event.location.as_ref().and_then(|geo| Some(geo.longitude)))
+        .bind(event.location.as_ref().map(|geo| geo.latitude))
+        .bind(event.location.as_ref().map(|geo| geo.longitude))
         .bind(event.location_title)
         .bind(event.creator_id)
         .bind(event.event_type)
@@ -214,7 +214,7 @@ impl EventsRepository {
         event
     }
 
-    pub async fn delete_event(&self, event_uuid: Uuid, deleted_by_id: i64) -> Result<()> {
+    pub async fn delete_event(&self, event_uuid: Uuid, _deleted_by_id: i64) -> Result<()> {
         let deleting_event = self.get_event_by_uuid(event_uuid).await?;
 
         let _deleted_event: BaseEvent = sqlx::query_as(
@@ -238,18 +238,8 @@ impl EventsRepository {
         .bind(deleting_event.subject as i32)
         .bind(deleting_event.datetime_from)
         .bind(deleting_event.datetime_to)
-        .bind(
-            deleting_event
-                .location
-                .as_ref()
-                .and_then(|geo| Some(geo.latitude)),
-        )
-        .bind(
-            deleting_event
-                .location
-                .as_ref()
-                .and_then(|geo| Some(geo.longitude)),
-        )
+        .bind(deleting_event.location.as_ref().map(|geo| geo.latitude))
+        .bind(deleting_event.location.as_ref().map(|geo| geo.longitude))
         .bind(deleting_event.location_title)
         .bind(deleting_event.creator_id)
         .bind(deleting_event.event_type)

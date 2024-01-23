@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use log::debug;
-use serde::de::Unexpected::Str;
+
 use teloxide::prelude::*;
 use teloxide::types::{Message, ParseMode, ReplyMarkup};
 use teloxide::utils::markdown;

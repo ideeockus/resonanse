@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use chrono::NaiveDateTime;
 use log::debug;
-use sqlx::{FromRow, Row};
 use sqlx::postgres::PgRow;
+use sqlx::{FromRow, Row};
 use strum_macros;
 use uuid::Uuid;
 
