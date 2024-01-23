@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <title>Лента Событий</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1 class="page-title">Resonanse Events</h1>
+  <div id="events-container" class="gjs-grid-column">
+    <div class="gjs-grid-column event-wrapper">
+      <div class="gjs-grid-row event-wrapper-row">
+        <div class="gjs-grid-column event-wrapper-left-column">
+          <h2 class="event-title">Feature Text</h2>
+          <p class="event-description">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+            eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        </div>
+        <div id="event-image" class="gjs-grid-column"><img src="https://images.pexels.com/photos/2121640/pexels-photo-2121640.jpeg?auto=compress&cs=tinysrgb&w=500&dpr=2" id="i466d"/>
+        </div>
+      </div>
+      <button id="event-action-button" class="gjs-button">Врезануться</button>
+    </div>
+  </div>
+  <div id="iv3be5" class="gjs-grid-row">
+    <div id="ilriti" class="gjs-grid-column">
+      <div id="im0rle" class="gjs-grid-row">
+        <div id="i1hx7l" class="gjs-grid-column">
+          <img id="ig13e" src="resources/resonanse_logo.svg"/>
+          <a id="i2sl68" href="https://t.me/resonanse_chat" class="gjs-link">Contact Us<br/></a></div>
+      </div>
+    </div>
+  </div>
+
+   <!-- Модальное окно для создания события -->
+    <div id="event-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Создать событие</h2>
+            <form id="create-event-form">
+                <input type="text" id="event-title-input" placeholder="Название события" required><br>
+                <textarea id="event-description-input" placeholder="Описание события" required></textarea><br>
+                <input type="text" id="event-short-description-input" placeholder="Краткое описание события" required><br>
+                <input type="text" id="event-category-input" placeholder="Категория события" required><br>
+                <input type="text" id="event-location-input" placeholder="Местоположение события" required><br>
+                <input type="datetime-local" id="event-start-date-input" required><br>
+                <input type="datetime-local" id="event-end-date-input" required><br>
+                <label for="event-online-input">Онлайн событие:</label><input type="checkbox" id="event-online-input"><br>
+                <input type="number" id="event-attendance-confirmation-days-input" placeholder="Дни подтверждения участия" required><br>
+                <input type="text" id="event-chat-link-input" placeholder="Ссылка на чат события"><br>
+                <input type="number" id="event-organizer-id-input" placeholder="ID организатора" required><br>
+                <input type="number" id="event-community-id-input" placeholder="ID сообщества" required><br>
+                <input type="text" id="event-poster-image-link-input" placeholder="Ссылка на изображение постера события"><br>
+                <label for="event-paid-input">Платное событие:</label>
+                <input type="checkbox" id="event-paid-input"><br>
+                <button type="submit">Создать событие</button>
+            </form>
+        </div>
+    </div>
+
+
+  <button id="create-event-btn" class="gjs-floating-btn">+</button>
+
+  <script src="script.js"></script>
+</body>
+

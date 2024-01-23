@@ -1,23 +1,18 @@
-use crate::handlers::*;
 use log::debug;
+use teloxide::types::ParseMode;
 use teloxide::Bot;
-use crate::states::BaseState;
 
-const HELLO_MSG: &str = r#"
-Привет!
-"#;
+use crate::handlers::*;
+use crate::states::BaseState;
+use crate::utils::repr_user_as_str;
 
 pub async fn handle_start_state(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
-    log_request("got contact (start state) message", &msg);
+    // log_request("got contact (start state) message", &msg);
 
-    dialogue
-        .update(BaseState::Idle)
-        .await?;
+    dialogue.update(BaseState::Idle).await?;
 
-    let message = bot.send_message(
-        msg.chat.id,
-        HELLO_MSG,
-    );
+    let mut message = bot.send_message(msg.chat.id, t!("hello_msg"));
+    message.parse_mode = Some(ParseMode::MarkdownV2);
     // message.reply_markup = Some(base_keyboard());
     message.await?;
 
@@ -35,11 +30,16 @@ pub async fn invalid_state_callback(bot: Bot, q: CallbackQuery) -> HandlerResult
 }
 
 pub async fn invalid_state(bot: Bot, msg: Message) -> HandlerResult {
-    log_request("got message, but state invalid", &msg);
+    // log_request("got message, but state invalid", &msg);
+    debug!(
+        "unhandled message from {}",
+        repr_user_as_str(msg.from()),
+        // msg
+    );
 
     bot.send_message(
         msg.chat.id,
-        "If you got stacked, please read User Guide. Just press /help",
+        "Если ты застрял, можешь вернуться и почитать мини-гайд /start",
     )
     .await?;
 
