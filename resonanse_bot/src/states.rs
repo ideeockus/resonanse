@@ -1,6 +1,6 @@
-use teloxide::types::MessageId;
 use crate::data_structs::FillingEvent;
 use resonanse_common::EventSubjectFilter;
+use teloxide::types::MessageId;
 
 #[derive(Clone, Default)]
 pub enum BaseState {

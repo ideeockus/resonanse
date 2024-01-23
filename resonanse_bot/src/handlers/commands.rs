@@ -1,20 +1,20 @@
 use std::str::FromStr;
 
-use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::{ParseMode, ReplyMarkup};
 use teloxide::utils::command::parse_command;
+use teloxide::Bot;
 use uuid::Uuid;
 
 use resonanse_common::EventSubjectFilter;
 
-use crate::{ACCOUNTS_REPOSITORY, keyboards};
 use crate::data_structs::FillingEvent;
 use crate::data_translators::fill_base_account_from_teloxide_user;
-use crate::handlers::{HandlerResult, log_request, MyDialogue};
+use crate::handlers::{log_request, HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_edit_new_event, get_inline_kb_set_subject_filter};
 use crate::states::{BaseState, CreateEventState};
+use crate::{keyboards, ACCOUNTS_REPOSITORY};
 
 // const CREATE_EVENT_TEXT_MD: &str = r#"
 //
@@ -86,16 +86,12 @@ pub async fn create_event_command(bot: Bot, dialogue: MyDialogue, msg: Message) 
 
     let filling_event = FillingEvent::new();
 
-    let mut message = bot.send_message(
-        msg.chat.id,
-        filling_event.get_missed_data_hint(),
-    );
+    let mut message = bot.send_message(msg.chat.id, filling_event.get_missed_data_hint());
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.reply_markup = Some(ReplyMarkup::InlineKeyboard(
-        keyboards::get_make_event_keyboard()
+        keyboards::get_make_event_keyboard(),
     ));
     let sent_msg: Message = message.await?;
-
 
     dialogue
         .update(BaseState::CreateEvent {

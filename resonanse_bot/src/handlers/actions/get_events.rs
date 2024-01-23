@@ -211,18 +211,16 @@ pub async fn get_choose_event_text(
 
                 debug!("event.brief_description {:?}", event.brief_description);
                 let event_brief_description_text = match event.brief_description.as_deref() {
-                    Some(brief_desc) => format!(
-                            "\n_{}_",
-                            markdown::escape(brief_desc),
-                        ),
+                    Some(brief_desc) => format!("\n_{}_", markdown::escape(brief_desc),),
                     None => String::new(),
                 };
 
                 format!(
-                "/event\\_{}\t*{}*{}", event_i,
-                markdown::escape(&event.title),
-                event_brief_description_text,
-            )
+                    "/event\\_{}\t*{}*{}",
+                    event_i,
+                    markdown::escape(&event.title),
+                    event_brief_description_text,
+                )
             })
             .collect::<Vec<String>>()
             .join("\n\n")

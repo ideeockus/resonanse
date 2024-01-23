@@ -4,25 +4,31 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use log::{debug, warn};
-use teloxide::{Bot, RequestError};
 use teloxide::prelude::*;
-use teloxide::types::{MediaKind, MediaLocation, MediaVenue, MessageCommon, MessageId, ParseMode, ReplyMarkup, True};
 use teloxide::types::MessageKind::Common;
 use teloxide::types::ParseMode::MarkdownV2;
+use teloxide::types::{
+    MediaKind, MediaLocation, MediaVenue, MessageCommon, MessageId, ParseMode, ReplyMarkup, True,
+};
 use teloxide::utils::markdown;
+use teloxide::{Bot, RequestError};
 use uuid::Uuid;
 
 use resonanse_common::file_storage::get_event_image_path_by_uuid;
 use resonanse_common::models::{BaseEvent, EventSubject, Location, ResonanseEventKind};
 
 use crate::config::DEFAULT_DATETIME_FORMAT;
-use crate::data_structs::{EventPostMessageRequest, FillingEvent, prepare_event_msg_with_base_event};
+use crate::data_structs::{
+    prepare_event_msg_with_base_event, EventPostMessageRequest, FillingEvent,
+};
 use crate::errors::BotHandlerError;
-use crate::handlers::{HandlerResult, MyDialogue};
 use crate::handlers::utils::download_file_by_id;
+use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::publish_event;
 use crate::keyboards;
-use crate::keyboards::{get_inline_kb_choose_event_kind, get_inline_kb_edit_new_event, get_make_event_keyboard};
+use crate::keyboards::{
+    get_inline_kb_choose_event_kind, get_inline_kb_edit_new_event, get_make_event_keyboard,
+};
 use crate::states::{BaseState, CreateEventState};
 use crate::utils::build_event_deep_link;
 
@@ -34,7 +40,6 @@ const TITLE_LIMIT: RangeInclusive<usize> = 5..=100;
 const DESCRIPTION_LIMIT: RangeInclusive<usize> = 15..=764;
 const PLACE_TITLE_LIMIT: RangeInclusive<usize> = 0..=40;
 const CONTACT_LIMIT: RangeInclusive<usize> = 3..=40;
-
 
 macro_rules! reject_user_answer {
     ($bot: ident, $chat_id: expr, $text:expr) => {
@@ -99,7 +104,7 @@ pub async fn handle_fill_event_field_callback(
                 CreateEventState::DatetimeFrom,
                 t!(
                     "actions.create_event.fill_event.datetime_from",
-                    dt_example=cur_dt
+                    dt_example = cur_dt
                 ),
                 None,
             )
@@ -114,7 +119,7 @@ pub async fn handle_fill_event_field_callback(
                 CreateEventState::DatetimeTo,
                 t!(
                     "actions.create_event.fill_event.datetime_from",
-                    dt_example=cur_dt
+                    dt_example = cur_dt
                 ),
                 None,
             )
@@ -145,17 +150,12 @@ pub async fn handle_fill_event_field_callback(
             t!("actions.create_event.fill_event.event_kind"),
             Some(get_inline_kb_choose_event_kind()),
         ),
-        Some(keyboards::FILL_EVENT_FINALIZE_BTN_ID) =>
-            return handle_event_finalisation_callback(
-                bot,
-                dialogue,
-                filling_event,
-                q,
-            ).await,
+        Some(keyboards::FILL_EVENT_FINALIZE_BTN_ID) => {
+            return handle_event_finalisation_callback(bot, dialogue, filling_event, q).await
+        }
         // CreateEventState::Finalisation,
         // t!("actions.create_event.fill_event.finalize"),
         // None,
-
         _ => {
             warn!(
                 "handle_fill_event_field_callback unknown callback data: {:?}",
@@ -177,10 +177,7 @@ pub async fn handle_fill_event_field_callback(
 
     if reply_markup.is_some() {
         if let Some(msg) = q.message {
-            let mut edit_message = bot.edit_message_reply_markup(
-                q.from.id,
-                msg.id,
-            );
+            let mut edit_message = bot.edit_message_reply_markup(q.from.id, msg.id);
             edit_message.reply_markup = reply_markup;
             edit_message.await?;
         }
@@ -197,22 +194,21 @@ pub async fn handle_fill_event_field_callback(
 pub async fn handle_create_event_state_message(
     bot: Bot,
     dialogue: MyDialogue,
-    (create_event_state, mut filling_event, last_edit_msg_id): (CreateEventState, FillingEvent, MessageId),
+    (create_event_state, mut filling_event, last_edit_msg_id): (
+        CreateEventState,
+        FillingEvent,
+        MessageId,
+    ),
     msg: Message,
 ) -> HandlerResult {
     let chat_id = msg.chat.id.clone();
     match create_event_state {
         CreateEventState::Idle => {
-            bot.send_message(
-                msg.chat.id,
-                "Вы не нажали, что именно хотите заполнить",
-            )
+            bot.send_message(msg.chat.id, "Вы не нажали, что именно хотите заполнить")
                 .await?;
             return Ok(());
         }
-        CreateEventState::EventTitle => {
-            handle_event_name(&bot, msg, &mut filling_event).await?
-        }
+        CreateEventState::EventTitle => handle_event_name(&bot, msg, &mut filling_event).await?,
         // CreateEventState::Publicity => (),
         CreateEventState::Description => {
             handle_event_description(&bot, msg, &mut filling_event).await?
@@ -228,9 +224,7 @@ pub async fn handle_create_event_state_message(
             handle_event_place_title(&bot, msg, &mut filling_event).await?
         }
         // CreateEventState::Subject => handle_event_subject,
-        CreateEventState::Picture => {
-            handle_event_picture(&bot, msg, &mut filling_event).await?
-        }
+        CreateEventState::Picture => handle_event_picture(&bot, msg, &mut filling_event).await?,
         CreateEventState::ContactInfo => {
             handle_event_contact(&bot, msg, &mut filling_event).await?
         }
@@ -246,14 +240,7 @@ pub async fn handle_create_event_state_message(
         }
     }
 
-    update_filling_message(
-        &bot,
-        dialogue,
-        filling_event,
-        chat_id,
-        last_edit_msg_id,
-    ).await?;
-
+    update_filling_message(&bot, dialogue, filling_event, chat_id, last_edit_msg_id).await?;
 
     Ok(())
 
@@ -263,7 +250,11 @@ pub async fn handle_create_event_state_message(
 pub async fn handle_create_event_state_callback(
     bot: Bot,
     dialogue: MyDialogue,
-    (create_event_state, mut filling_event, last_edit_msg_id): (CreateEventState, FillingEvent, MessageId),
+    (create_event_state, mut filling_event, last_edit_msg_id): (
+        CreateEventState,
+        FillingEvent,
+        MessageId,
+    ),
     q: CallbackQuery,
 ) -> HandlerResult {
     let msg = match &q.message {
@@ -276,12 +267,14 @@ pub async fn handle_create_event_state_callback(
     let chat_id = msg.chat.id;
 
     match handle_fill_event_field_callback(
-                bot.clone(),
-                dialogue.clone(),
-                filling_event.clone(),
-                last_edit_msg_id,
-                q.clone(),
-            ).await {
+        bot.clone(),
+        dialogue.clone(),
+        filling_event.clone(),
+        last_edit_msg_id,
+        q.clone(),
+    )
+    .await
+    {
         Ok(v) => return Ok(v),
         Err(err) => {
             warn!("handle_fill_event_field_callback error: {:?}", err);
@@ -297,16 +290,12 @@ pub async fn handle_create_event_state_callback(
         // CreateEventState::Description => handle_event_description,,
         // CreateEventState::Datetime => handle_event_datetime,
         // CreateEventState::Geo => handle_event_geo,
-        CreateEventState::Subject => {
-            handle_event_subject(&bot, &mut filling_event, q).await?
-        }
+        CreateEventState::Subject => handle_event_subject(&bot, &mut filling_event, q).await?,
         // CreateEventState::Picture => handle_event_picture,
         // CreateEventState::Finalisation => {
         //     handle_event_finalisation_callback(bot, dialogue, filling_event, q).await
         // }
-        CreateEventState::EventKind => {
-            handle_event_kind(&bot, &mut filling_event, q).await?
-        }
+        CreateEventState::EventKind => handle_event_kind(&bot, &mut filling_event, q).await?,
         _ => {
             // return handle_fill_event_field_callback(
             //     bot, dialogue, filling_event,
@@ -323,13 +312,7 @@ pub async fn handle_create_event_state_callback(
         }
     }
 
-    update_filling_message(
-        &bot,
-        dialogue,
-        filling_event,
-        chat_id,
-        last_edit_msg_id,
-    ).await?;
+    update_filling_message(&bot, dialogue, filling_event, chat_id, last_edit_msg_id).await?;
 
     // dialogue
     //     .update(BaseState::CreateEvent {
@@ -342,7 +325,8 @@ pub async fn handle_create_event_state_callback(
 }
 
 pub async fn update_filling_message(
-    bot: &Bot, dialogue: MyDialogue,
+    bot: &Bot,
+    dialogue: MyDialogue,
     filling_event: FillingEvent,
     chat_id: ChatId,
     last_edit_msg_id: MessageId,
@@ -354,7 +338,7 @@ pub async fn update_filling_message(
                 chat_id,
                 base_event,
                 Some(ReplyMarkup::InlineKeyboard(
-                    keyboards::get_make_event_keyboard()
+                    keyboards::get_make_event_keyboard(),
                 )),
             );
 
@@ -375,7 +359,10 @@ pub async fn update_filling_message(
     match bot.delete_message(chat_id, last_edit_msg_id).await {
         Ok(_) => {}
         Err(err) => {
-            debug!("error on deleting message {} from chat {}: {:?}", last_edit_msg_id, chat_id, err);
+            debug!(
+                "error on deleting message {} from chat {}: {:?}",
+                last_edit_msg_id, chat_id, err
+            );
         }
     };
 
@@ -512,20 +499,20 @@ pub async fn handle_event_geo(
     debug!("provided msg: {:?}", msg);
     let location = match msg.kind {
         Common(MessageCommon {
-                   media_kind: MediaKind::Location(MediaLocation { location, .. }),
-                   ..
-               }) => Location::from_ll(location.latitude, location.longitude),
+            media_kind: MediaKind::Location(MediaLocation { location, .. }),
+            ..
+        }) => Location::from_ll(location.latitude, location.longitude),
         Common(MessageCommon {
-                   media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
-                   ..
-               }) => Location {
+            media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
+            ..
+        }) => Location {
             latitude: venue.location.latitude,
             longitude: venue.location.longitude,
         },
         Common(MessageCommon {
-                   media_kind: MediaKind::Text(media_text),
-                   ..
-               }) => {
+            media_kind: MediaKind::Text(media_text),
+            ..
+        }) => {
             let plain_text = media_text.text;
             match Location::parse_from_yandex_map_link(&plain_text) {
                 Some(loc) => loc,
@@ -773,13 +760,7 @@ pub async fn handle_event_finalisation_callback(
     let created_event = match publish_event(filling_event.clone(), &tg_user).await {
         Ok(v) => v,
         Err(err) => {
-            bot.send_message(
-                msg.chat.id,
-                format!(
-                    "Событие не создано. Ошибка: {}",
-                    err
-                ),
-            )
+            bot.send_message(msg.chat.id, format!("Событие не создано. Ошибка: {}", err))
                 .await?;
 
             return Ok(());
@@ -797,16 +778,16 @@ pub async fn handle_event_finalisation_callback(
                 tg_event_deep_link
             ),
         )
-            .await?;
+        .await?;
     } else {
         bot.send_message(
             msg.chat.id,
             t!(
                 "actions.create_event.fill_event.finalize_public",
-                event_link=tg_event_deep_link
+                event_link = tg_event_deep_link
             ),
         )
-            .await?;
+        .await?;
     }
 
     Ok(())

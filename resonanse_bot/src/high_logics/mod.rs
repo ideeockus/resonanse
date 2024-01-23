@@ -13,18 +13,20 @@ use resonanse_common::models::{BaseEvent, Location};
 // use resonanse_common::repository::CreateBaseEvent;
 
 use crate::config::POSTS_CHANNEL_ID;
-use crate::data_structs::{prepare_event_msg_with_base_event, EventPostMessageRequest, FillingEvent};
+use crate::data_structs::{
+    prepare_event_msg_with_base_event, EventPostMessageRequest, FillingEvent,
+};
 use crate::data_translators::fill_base_account_from_teloxide_user;
+use crate::errors::BotHandlerError;
 use crate::keyboards::get_inline_kb_event_message;
 use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY, MANAGER_BOT};
-use crate::errors::BotHandlerError;
 
 pub async fn publish_event<I>(
     new_event: I,
     creator_tg_user: &teloxide::types::User,
 ) -> Result<BaseEvent, Box<dyn Error + Send + Sync>>
-    where
-        BaseEvent: TryFrom<I>,
+where
+    BaseEvent: TryFrom<I>,
 {
     // save to db
     let user_account = fill_base_account_from_teloxide_user(creator_tg_user);
@@ -36,7 +38,8 @@ pub async fn publish_event<I>(
 
     let mut create_base_event: BaseEvent = match new_event
         .try_into()
-        .map_err(|e| BotHandlerError::UnfilledEvent) {
+        .map_err(|e| BotHandlerError::UnfilledEvent)
+    {
         Ok(v) => v,
         Err(err) => {
             return Err(Box::new(err));
@@ -45,35 +48,33 @@ pub async fn publish_event<I>(
 
     // todo: is this check necessary ?
     if create_base_event.picture.is_none() {
-        return Err(Box::new(BotHandlerError::UnfilledEvent))
+        return Err(Box::new(BotHandlerError::UnfilledEvent));
     }
 
     // make brief event description
     // todo move exter api calls to another module
     let client = reqwest::Client::new();
-    let instance_data = SberSummarizatorInstance::new(
-        create_base_event.description.clone()
-    );
-    let req_json_data = HashMap::from([
-        ("instances", [instance_data])
-    ]);
+    let instance_data = SberSummarizatorInstance::new(create_base_event.description.clone());
+    let req_json_data = HashMap::from([("instances", [instance_data])]);
     match client
         .post("https://api.aicloud.sbercloud.ru/public/v2/summarizator/predict")
         .json(&req_json_data)
         .send()
-        .await {
+        .await
+    {
         Ok(resp) => {
             let j = resp.json::<serde_json::Value>().await;
             debug!("j {:?}", j);
             if let Ok(v) = j {
-                if let Some(prediction_best) = v.
-                    get("prediction_best")
+                if let Some(prediction_best) = v
+                    .get("prediction_best")
                     .and_then(|v| v.get("bertscore"))
-                    .and_then(|v| v.as_str()) {
+                    .and_then(|v| v.as_str())
+                {
                     create_base_event.brief_description = Some(prediction_best.to_string());
                 }
             }
-        },
+        }
         Err(err) => {
             warn!("cannot summarize description: {:?}", err);
         }
@@ -135,8 +136,12 @@ pub async fn send_event_post(
     //     None => None,
     //     Some(location) => Some(),
     // };
-    let event_post_message_request = prepare_event_msg_with_base_event(bot, chat_id, created_event.clone(),
-    construct_created_event_kb(&created_event));
+    let event_post_message_request = prepare_event_msg_with_base_event(
+        bot,
+        chat_id,
+        created_event.clone(),
+        construct_created_event_kb(&created_event),
+    );
     match event_post_message_request {
         EventPostMessageRequest::WithPoster(f) => f.await?,
         EventPostMessageRequest::Text(f) => f.await?,
@@ -147,7 +152,10 @@ pub async fn send_event_post(
 
 pub fn construct_created_event_kb(created_event: &BaseEvent) -> Option<ReplyMarkup> {
     Some(ReplyMarkup::InlineKeyboard(get_inline_kb_event_message(
-        created_event.location.as_ref().map(|loc| loc.get_yandex_map_link_to()),
+        created_event
+            .location
+            .as_ref()
+            .map(|loc| loc.get_yandex_map_link_to()),
     )))
 }
 

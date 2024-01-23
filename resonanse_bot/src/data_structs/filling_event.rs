@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
-use resonanse_common::models::{BaseEvent, EventSubject, Location, ResonanseEventKind};
 use crate::errors::BotHandlerError;
+use resonanse_common::models::{BaseEvent, EventSubject, Location, ResonanseEventKind};
 // use resonanse_common::repository::CreateBaseEvent;
 
 #[derive(Clone, Default)]
@@ -50,18 +50,20 @@ impl FillingEvent {
             self.location_title.is_some(),
             self.picture.is_some(),
             self.contact_info.is_some(),
-        ].into_iter().all(
-            |is_field_some| is_field_some
-        )
+        ]
+        .into_iter()
+        .all(|is_field_some| is_field_some)
     }
 
     pub fn get_missed_data_hint(&self) -> String {
         if self.is_ready() {
             return "Данные готовы, но превью почему-то не отоброжается\
-            Пожалуйста, сообщите об этом через /send_feedback".to_string()
+            Пожалуйста, сообщите об этом через /send_feedback"
+                .to_string();
         }
 
-        let mut missed_data_hint = "Чтобы увидеть превью, нужно указать следующие данные:\n".to_string();
+        let mut missed_data_hint =
+            "Чтобы увидеть превью, нужно указать следующие данные:\n".to_string();
         for (is_field_missed, hint_text) in [
             (self.title.is_none(), "Название"),
             (self.description.is_none(), "Описание"),
@@ -70,7 +72,9 @@ impl FillingEvent {
             (self.location_title.is_none(), "Название места"),
             (self.picture.is_none(), "Изображение или постер"),
             (self.contact_info.is_none(), "Контакт для связи"),
-        ].into_iter() {
+        ]
+        .into_iter()
+        {
             if is_field_missed {
                 missed_data_hint.push_str("\n\\-");
                 missed_data_hint.push_str(hint_text);
@@ -122,9 +126,7 @@ impl TryFrom<FillingEvent> for BaseEvent {
             description: value.description.ok_or(BotHandlerError::UnfilledEvent)?,
             brief_description: value.brief_description,
             subject: value.subject.ok_or(BotHandlerError::UnfilledEvent)?,
-            datetime_from: value
-                .datetime_from
-                .ok_or(BotHandlerError::UnfilledEvent)?,
+            datetime_from: value.datetime_from.ok_or(BotHandlerError::UnfilledEvent)?,
             // timezone: chrono_tz::Tz::Europe__Moscow,
             datetime_to: value.datetime_to,
             location: value.geo_position,
@@ -158,5 +160,3 @@ impl TryFrom<FillingEvent> for BaseEvent {
 //         }
 //     }
 // }
-
-

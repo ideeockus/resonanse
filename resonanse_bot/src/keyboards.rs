@@ -1,9 +1,9 @@
+use crate::states::CreateEventState::EventKind;
 use resonanse_common::models::{EventSubject, ResonanseEventKind};
 use resonanse_common::EventSubjectFilter;
 use teloxide::types::{
     InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, ReplyMarkup,
 };
-use crate::states::CreateEventState::EventKind;
 
 macro_rules! kb_button_from_enum {
     ($s:expr) => {
@@ -51,12 +51,10 @@ pub fn get_inline_kb_choose_subject() -> InlineKeyboardMarkup {
 }
 
 pub fn get_inline_kb_choose_event_kind() -> InlineKeyboardMarkup {
-    let buttons = [
-        vec![
-            kb_button_from_enum!(ResonanseEventKind::Announcement),
-            kb_button_from_enum!(ResonanseEventKind::UserOffer),
-        ],
-    ];
+    let buttons = [vec![
+        kb_button_from_enum!(ResonanseEventKind::Announcement),
+        kb_button_from_enum!(ResonanseEventKind::UserOffer),
+    ]];
 
     InlineKeyboardMarkup::new(buttons)
 }

@@ -24,12 +24,10 @@ pub fn prepare_event_msg_with_base_event(
     event_reply_markup: Option<ReplyMarkup>,
 ) -> EventPostMessageRequest {
     let formatted_data = match base_event.datetime_to {
-        None => {
-            base_event
-                .datetime_from
-                .format(DEFAULT_DATETIME_FORMAT)
-                .to_string()
-        }
+        None => base_event
+            .datetime_from
+            .format(DEFAULT_DATETIME_FORMAT)
+            .to_string(),
         Some(datetime_to) => {
             format!(
                 "{} - {}",
@@ -37,9 +35,7 @@ pub fn prepare_event_msg_with_base_event(
                     .datetime_from
                     .format(DEFAULT_DATETIME_FORMAT)
                     .to_string(),
-                datetime_to
-                    .format(DEFAULT_DATETIME_FORMAT)
-                    .to_string()
+                datetime_to.format(DEFAULT_DATETIME_FORMAT).to_string()
             )
         }
     };
@@ -51,7 +47,10 @@ pub fn prepare_event_msg_with_base_event(
         event_subject = markdown::escape(&t!(&base_event.subject.to_string())),
         event_datetime = markdown::escape(&formatted_data),
         event_location = {
-            format!("📍 Место: _{}_", markdown::escape(&base_event.location_title))
+            format!(
+                "📍 Место: _{}_",
+                markdown::escape(&base_event.location_title)
+            )
         },
         event_contact_info = match base_event.contact_info.as_deref() {
             None => "".to_string(),

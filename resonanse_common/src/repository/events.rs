@@ -1,10 +1,11 @@
-use crate::models::{BaseEvent, EventSubject, EventType, Location, ResonanseEventKind};
-use crate::EventSubjectFilter;
-use chrono::NaiveDateTime;
+use std::collections::HashMap;
+
 use log::debug;
 use sqlx::{PgPool, Result};
-use std::collections::HashMap;
 use uuid::Uuid;
+
+use crate::EventSubjectFilter;
+use crate::models::{BaseEvent, EventSubject};
 
 // #[derive(Clone)]
 // pub struct CreateBaseEvent {

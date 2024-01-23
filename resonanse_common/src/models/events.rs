@@ -1,10 +1,9 @@
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
 
 use chrono::NaiveDateTime;
 use log::debug;
-use sqlx::postgres::PgRow;
 use sqlx::{FromRow, Row};
+use sqlx::postgres::PgRow;
 use strum_macros;
 use uuid::Uuid;
 
@@ -187,7 +186,17 @@ impl Default for EventSubjectFilter {
     }
 }
 
-#[derive(Clone, Copy, Debug, sqlx::Type, Eq, Hash, PartialEq, strum_macros::EnumString, strum_macros::Display,)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    sqlx::Type,
+    Eq,
+    Hash,
+    PartialEq,
+    strum_macros::EnumString,
+    strum_macros::Display,
+)]
 #[repr(i32)]
 /// Kind of resonanse event
 pub enum ResonanseEventKind {
