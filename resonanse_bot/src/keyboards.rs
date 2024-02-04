@@ -125,6 +125,10 @@ pub fn get_inline_kb_choose_event_kind() -> InlineKeyboardMarkup {
 
 #[allow(unused)]
 pub const INLINE_WANT_TO_GO_BTN: &str = "keyboards.want_go_to_event_btn";
+pub const INLINE_MAP_BTN: &str = "keyboards.event_map_btn";
+pub const INLINE_LIKE_EVENT_BTN: &str = "keyboards.like_event_btn";
+pub const INLINE_DISLIKE_EVENT_BTN: &str = "keyboards.dislike_event_btn";
+
 pub fn get_inline_kb_event_message(
     map_link: Option<String>,
     // want_go_url: String,
@@ -132,14 +136,26 @@ pub fn get_inline_kb_event_message(
     let mut buttons = vec![];
     let mut buttons_first_row = vec![];
 
+    let like_btn = InlineKeyboardButton::new(
+        t!(INLINE_LIKE_EVENT_BTN),
+        InlineKeyboardButtonKind::CallbackData(INLINE_LIKE_EVENT_BTN.to_string()),
+    );
+    let dislike_btn = InlineKeyboardButton::new(
+        t!(INLINE_DISLIKE_EVENT_BTN),
+        InlineKeyboardButtonKind::CallbackData(INLINE_DISLIKE_EVENT_BTN.to_string()),
+    );
+
+    buttons_first_row.push(like_btn);
     if let Some(map_link) = map_link {
         let map_link_btn = InlineKeyboardButton::new(
-            "Карта",
+            t!(INLINE_MAP_BTN),
             InlineKeyboardButtonKind::Url(map_link.parse().unwrap()),
         );
 
         buttons_first_row.push(map_link_btn);
     }
+    buttons_first_row.push(dislike_btn);
+
 
     // buttons_first_row.push(
     //     InlineKeyboardButton::new(

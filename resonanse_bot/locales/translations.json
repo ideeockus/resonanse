@@ -8,7 +8,6 @@
     "en": "Let's Together",
     "ru": "Давай вместе"
   },
-
   "event_subject.other": {
     "en": "Other",
     "ru": "Другое"
@@ -45,7 +44,6 @@
     "en": "Charity",
     "ru": "Добро"
   },
-
   "event_page": {
     "page_title": {
       "ru": "_Страница %{page_num}_\nВыбери интересное событие и нажми на его идентификатор\n\n%{page_data}"
@@ -57,14 +55,12 @@
       "ru": "сюда ⏩"
     }
   },
-
   "feedback_msg": {
     "ru": "Введите отзыв, предложение или другую полезную обратную связь"
   },
   "hello_msg": {
     "ru": "*Привет\\!*\n\nТут ты моожешь выбрать _интересное событие_\\.\n/get\\_events\n\nЕсли ничего подходящего не нашел, можешь _создать свое_\n/create\\_event\n\nТакже эти команды доступны из меню бота, которое находится снизу\\.\nКоманда *Resonanse* будет рада любому фидбеку, так что если есть что сказать\n/send\\_feedback\n\n"
   },
-
   "actions": {
     "create_event.new_event": {
       "ru": "Заполните данные о том, куда предлагаете пойти\\."
@@ -114,7 +110,6 @@
       }
     }
   },
-
   "keyboards": {
     "fill_event.title_btn": {
       "ru": "Название"
@@ -150,14 +145,22 @@
       "ru": "Тип события"
     },
     "fill_event.contact_data": {
-      "ru": "Контакт"
+      "ru": "Организатор"
     },
     "fill_event.finalize": {
       "ru": "\uD83D\uDFE3 Отправить! \uD83D\uDFE3"
     },
-
-    "want_go_to_event_vtn": {
+    "want_go_to_event_btn": {
       "ru": "Хочу пойти"
+    },
+    "event_map_btn": {
+      "ru": "Карта"
+    },
+    "like_event_btn": {
+      "ru": "\uD83D\uDC4D"
+    },
+    "dislike_event_btn": {
+      "ru": "\uD83D\uDC4E"
     }
   }
 }
