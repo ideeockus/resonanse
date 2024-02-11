@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from enum import Enum
 
+from starlette.middleware.cors import CORSMiddleware
+
 
 class OpenApiTags(Enum):
     AUTH = "auth"

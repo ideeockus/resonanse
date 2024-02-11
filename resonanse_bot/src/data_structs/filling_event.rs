@@ -121,6 +121,8 @@ impl TryFrom<FillingEvent> for BaseEvent {
             id: Uuid::nil(),
             is_private: false,
             is_commercial: false,
+            is_online: false,
+            is_paid: false,
             event_kind: value.event_kind,
             title: value.title.ok_or(BotHandlerError::UnfilledEvent)?,
             description: value.description.ok_or(BotHandlerError::UnfilledEvent)?,

@@ -2,6 +2,8 @@ create table resonanse_events (
     id UUID PRIMARY KEY,
     is_private BOOL NOT NULL,
     is_commercial BOOL NOT NULL,
+    is_online BOOL NOT NULL,
+    is_paid BOOL NOT NULL,
     event_kind INT NOT NULL,
     title varchar(255) NOT NULL,
     description varchar(4095) NOT NULL,
@@ -17,5 +19,6 @@ create table resonanse_events (
     event_type INT NOT NULL,
     picture UUID,
     contact_info varchar(255),
-    creation_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    creation_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    attendance_confirmation_days_before INT
 );

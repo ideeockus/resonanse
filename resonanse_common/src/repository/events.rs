@@ -42,17 +42,19 @@ impl EventsRepository {
         let created_event: BaseEvent = sqlx::query_as(
             r#"insert into resonanse_events
             (
-            id, is_private, is_commercial, event_kind, title, description, brief_description,
+            id, is_private, is_commercial, is_online, is_paid, event_kind, title, description, brief_description,
             subject, datetime_from, datetime_to, location_latitude, location_longitude,
             location_title, creator_id, event_type, picture, contact_info
             )
-            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
             returning *
             "#,
         )
         .bind(Uuid::new_v4())
         .bind(event.is_private)
         .bind(event.is_commercial)
+        .bind(event.is_online)
+        .bind(event.is_paid)
         .bind(event.event_kind)
         .bind(event.title)
         .bind(event.description)

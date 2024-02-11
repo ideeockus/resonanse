@@ -162,6 +162,11 @@
     "dislike_event_btn": {
       "ru": "\uD83D\uDC4E"
     }
+  },
+  "web_app": {
+    "run_app": {
+      "ru": "Запустить WebApp"
+    }
   }
 }
 

@@ -1,3 +1,4 @@
+use std::env;
 use std::str::FromStr;
 
 use teloxide::prelude::*;
@@ -12,9 +13,10 @@ use crate::data_structs::FillingEvent;
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::handlers::{log_request, HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
-use crate::keyboards::get_inline_kb_set_subject_filter;
+use crate::keyboards::{get_inline_kb_run_web_app, get_inline_kb_set_subject_filter};
 use crate::states::{BaseState, CreateEventState};
 use crate::{keyboards, ACCOUNTS_REPOSITORY};
+use crate::config::DONATION_URL;
 
 // const CREATE_EVENT_TEXT_MD: &str = r#"
 //
@@ -131,6 +133,18 @@ pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) ->
     Ok(())
 }
 
+pub async fn run_web_app_command(bot: Bot, msg: Message) -> HandlerResult {
+    log_request("got run_web_app_command", &msg);
+
+    let mut message = bot.send_message(msg.chat.id, GET_EVENTS_TEXT_MD);
+    message.reply_markup = Some(ReplyMarkup::InlineKeyboard(
+        get_inline_kb_run_web_app(),
+    ));
+    message.await?;
+
+    Ok(())
+}
+
 pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     log_request("got send_feedback_command command", &msg);
 
@@ -139,6 +153,16 @@ pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message)
     message.await?;
 
     dialogue.update(BaseState::SendFeedback).await?;
+
+    Ok(())
+}
+
+pub async fn send_donation_command(bot: Bot, msg: Message) -> HandlerResult {
+    log_request("got send_donation_command command", &msg);
+
+    let donation_url = env::var(DONATION_URL)?;
+    let message = bot.send_message(msg.chat.id, donation_url);
+    message.await?;
 
     Ok(())
 }

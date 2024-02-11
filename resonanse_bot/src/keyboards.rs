@@ -1,7 +1,9 @@
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup};
+use std::env;
+use teloxide::types::{InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, WebAppInfo};
 
 use resonanse_common::models::{EventSubject, ResonanseEventKind};
 use resonanse_common::EventSubjectFilter;
+use crate::config::WEB_APP_URL;
 
 macro_rules! kb_button_from_enum {
     ($s:expr) => {
@@ -182,6 +184,19 @@ pub fn get_inline_kb_events_page() -> InlineKeyboardMarkup {
     );
 
     let buttons = [vec![button_left, button_right]];
+
+    InlineKeyboardMarkup::new(buttons)
+}
+
+pub fn get_inline_kb_run_web_app() -> InlineKeyboardMarkup {
+    let web_app_url = url::Url::parse(env::var(WEB_APP_URL).unwrap().as_str()).unwrap();
+
+    let web_app_btn = InlineKeyboardButton::new(
+        t!("web_app.run_app"),
+        InlineKeyboardButtonKind::WebApp(WebAppInfo { url: web_app_url }),
+    );
+
+    let buttons = [[web_app_btn]];
 
     InlineKeyboardMarkup::new(buttons)
 }
