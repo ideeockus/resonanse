@@ -1,9 +1,11 @@
 use std::env;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, WebAppInfo};
+use teloxide::types::{
+    InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, WebAppInfo,
+};
 
+use crate::config::WEB_APP_URL;
 use resonanse_common::models::{EventSubject, ResonanseEventKind};
 use resonanse_common::EventSubjectFilter;
-use crate::config::WEB_APP_URL;
 
 macro_rules! kb_button_from_enum {
     ($s:expr) => {
@@ -157,7 +159,6 @@ pub fn get_inline_kb_event_message(
         buttons_first_row.push(map_link_btn);
     }
     buttons_first_row.push(dislike_btn);
-
 
     // buttons_first_row.push(
     //     InlineKeyboardButton::new(

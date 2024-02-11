@@ -1,5 +1,4 @@
-// export const baseURL = "https://resonanse.ru/"
-export const baseURL = "http://localhost:8000/"
+export const baseURL = "https://resonanse.ru/"
 
 
 const appAPI = {

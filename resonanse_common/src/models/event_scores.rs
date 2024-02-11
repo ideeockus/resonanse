@@ -1,7 +1,6 @@
-use sqlx::{FromRow, Row};
 use sqlx::postgres::PgRow;
+use sqlx::{FromRow, Row};
 use uuid::Uuid;
-
 
 #[derive(Debug, Clone)]
 #[repr(i64)]

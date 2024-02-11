@@ -1,6 +1,6 @@
+use crate::models::{EventScore, EventScoreType};
 use sqlx::{PgPool, Result};
 use uuid::Uuid;
-use crate::models::{EventScore, EventScoreType};
 
 #[derive(Debug)]
 pub struct EventScoresRepository {
@@ -11,7 +11,12 @@ impl EventScoresRepository {
     pub fn new(pool: PgPool) -> Self {
         Self { db_pool: pool }
     }
-    pub async fn set_event_score_by_user(&self, event_id: Uuid, user_id: i64, score: EventScoreType) -> Result<EventScore> {
+    pub async fn set_event_score_by_user(
+        &self,
+        event_id: Uuid,
+        user_id: i64,
+        score: EventScoreType,
+    ) -> Result<EventScore> {
         let event_score: EventScore = sqlx::query_as(
             r#"insert into user_likes
             (
@@ -23,11 +28,11 @@ impl EventScoresRepository {
             returning *
             "#,
         )
-            .bind(event_id)
-            .bind(user_id)
-            .bind(score as i64)
-            .fetch_one(&self.db_pool)
-            .await?;
+        .bind(event_id)
+        .bind(user_id)
+        .bind(score as i64)
+        .fetch_one(&self.db_pool)
+        .await?;
 
         Ok(event_score)
     }
@@ -43,9 +48,9 @@ impl EventScoresRepository {
                 WHERE user_id = $1
                 "#,
         )
-            .bind(user_id)
-            .fetch_all(&self.db_pool)
-            .await?;
+        .bind(user_id)
+        .fetch_all(&self.db_pool)
+        .await?;
 
         Ok(event_scores)
     }

@@ -1,7 +1,7 @@
 pub use accounts::*;
-pub use events::*;
 pub use event_scores::*;
+pub use events::*;
 
 mod accounts;
-mod events;
 mod event_scores;
+mod events;

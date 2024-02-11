@@ -9,6 +9,7 @@ use uuid::Uuid;
 
 use resonanse_common::EventSubjectFilter;
 
+use crate::config::DONATION_URL;
 use crate::data_structs::FillingEvent;
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::handlers::{log_request, HandlerResult, MyDialogue};
@@ -16,7 +17,6 @@ use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_run_web_app, get_inline_kb_set_subject_filter};
 use crate::states::{BaseState, CreateEventState};
 use crate::{keyboards, ACCOUNTS_REPOSITORY};
-use crate::config::DONATION_URL;
 
 // const CREATE_EVENT_TEXT_MD: &str = r#"
 //
@@ -137,9 +137,7 @@ pub async fn run_web_app_command(bot: Bot, msg: Message) -> HandlerResult {
     log_request("got run_web_app_command", &msg);
 
     let mut message = bot.send_message(msg.chat.id, GET_EVENTS_TEXT_MD);
-    message.reply_markup = Some(ReplyMarkup::InlineKeyboard(
-        get_inline_kb_run_web_app(),
-    ));
+    message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_run_web_app()));
     message.await?;
 
     Ok(())

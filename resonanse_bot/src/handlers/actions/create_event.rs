@@ -512,7 +512,6 @@ pub async fn handle_event_geo(
 
     filling_event.geo_position = Some(location);
 
-
     Ok(())
 }
 
