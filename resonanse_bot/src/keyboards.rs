@@ -2,6 +2,7 @@ use std::env;
 use teloxide::types::{
     InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, WebAppInfo,
 };
+use uuid::Uuid;
 
 use crate::config::WEB_APP_URL;
 use resonanse_common::models::{EventSubject, ResonanseEventKind};
@@ -134,6 +135,7 @@ pub const INLINE_LIKE_EVENT_BTN: &str = "keyboards.like_event_btn";
 pub const INLINE_DISLIKE_EVENT_BTN: &str = "keyboards.dislike_event_btn";
 
 pub fn get_inline_kb_event_message(
+    event_id: Uuid,
     map_link: Option<String>,
     // want_go_url: String,
 ) -> InlineKeyboardMarkup {
@@ -142,11 +144,11 @@ pub fn get_inline_kb_event_message(
 
     let like_btn = InlineKeyboardButton::new(
         t!(INLINE_LIKE_EVENT_BTN),
-        InlineKeyboardButtonKind::CallbackData(INLINE_LIKE_EVENT_BTN.to_string()),
+        InlineKeyboardButtonKind::CallbackData(format!("{}{}", INLINE_LIKE_EVENT_BTN, event_id)),
     );
     let dislike_btn = InlineKeyboardButton::new(
         t!(INLINE_DISLIKE_EVENT_BTN),
-        InlineKeyboardButtonKind::CallbackData(INLINE_DISLIKE_EVENT_BTN.to_string()),
+        InlineKeyboardButtonKind::CallbackData(format!("{}{}", INLINE_DISLIKE_EVENT_BTN, event_id)),
     );
 
     buttons_first_row.push(like_btn);

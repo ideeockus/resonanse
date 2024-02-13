@@ -1,35 +1,32 @@
+from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, Depends, status
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, JSON, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session, relationship
+from fastapi import HTTPException, Depends, status
 from pydantic import BaseModel, field_validator
-from datetime import datetime
+from sqlalchemy.orm import Session
 
 from backend_py.app import app, OpenApiTags
-from backend_py.db import Base, get_db
+from backend_py.db import get_db
 from backend_py.db.event import EventDB
-from backend_py.models.event import LocationCoords
 
 
 # Модель Pydantic для запроса создания события
 class CreateEventRequest(BaseModel):
+    is_online: bool
+    is_paid: bool
     title: str
     description: str
-    short_description: str | None
-    category: str
-    location: str
-    start_date: datetime
-    end_date: datetime
-    online: bool
+    brief_description: str | None
+    subject: str
+    location_title: str
+    datetime_from: datetime
+    datetime_to: datetime
     attendance_confirmation_days_before: Optional[int]
-    chat_link: str
-    organizer_id: int
-    community_id: int
-    poster_image_link: str | None
-    paid: bool
+    contact_info: str
+    creator_id: int
+    # community_id: int
+    picture: UUID | None
 
 
 # Модель Pydantic для ответа с информацией о событии
@@ -94,8 +91,10 @@ async def create_event(event_info: CreateEventRequest, db: Session = Depends(get
 # Получение списка всех событий
 @app.get("/api/events", response_model=List[EventInfo], tags=[OpenApiTags.EVENTS])
 async def get_all_events(db: Session = Depends(get_db)):
-    events = db.query(EventDB).all()
-    return [EventInfo.from_orm(event) for event in events]
+    today_date = datetime.now().date()
+    # Фильтруем события, начинающиеся после полуночи текущего дня
+    events = db.query(EventDB).filter(EventDB.datetime_from >= today_date).all()
+    return [EventInfo.model_validate(event) for event in events]
 
 
 # Получение информации о конкретном событии
@@ -104,8 +103,7 @@ async def get_event(event_id: UUID, db: Session = Depends(get_db)):
     event = db.query(EventDB).filter(EventDB.id == event_id).first()
     if event is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    return EventInfo.from_orm(event)
-
+    return EventInfo.model_validate(event)
 
 # Обновление информации о событии
 # @app.put("/api/events/{event_id}", response_model=EventInfo, tags=[OpenApiTags.EVENTS])

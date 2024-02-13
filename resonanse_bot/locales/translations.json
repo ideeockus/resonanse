@@ -161,6 +161,12 @@
     },
     "dislike_event_btn": {
       "ru": "\uD83D\uDC4E"
+    },
+    "liked_event_btn": {
+      "ru": "\uD83D\uDC4D+"
+    },
+    "disliked_event_btn": {
+      "ru": "\uD83D\uDC4E+"
     }
   },
   "web_app": {

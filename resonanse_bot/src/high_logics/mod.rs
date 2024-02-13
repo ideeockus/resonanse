@@ -150,6 +150,7 @@ pub async fn send_event_post(
 
 pub fn construct_created_event_kb(created_event: &BaseEvent) -> Option<ReplyMarkup> {
     Some(ReplyMarkup::InlineKeyboard(get_inline_kb_event_message(
+        created_event.id,
         created_event
             .location
             .as_ref()
