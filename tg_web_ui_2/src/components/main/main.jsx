@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import appAPI, { baseURL } from "../../api/service";
+import appAPI from "../../api/service";
 import Loader from "../helpers/loader/loader";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
@@ -17,30 +17,60 @@ const Main = () => {
       try {
         const response = await appAPI.getEvents();
         if (response) {
-          const goodsWithImages = await Promise.all(
-            response.map(async (good) => {
-              try {
-                const file = await appAPI.getImage(good.picture);
-                if (!file) return { ...good, picture: null };
-                const localUrl = URL.createObjectURL(file);
-                return { ...good, picture: localUrl };
-              } catch (e) {
-                //console.log(e);
-                return { ...good, picture: null };
-              }
-            })
-          );
-          setGoods(goodsWithImages);
+          setGoods(response);
         } else {
-          return toast.error("Ошибка при запросе событий");
+          toast.error("Ошибка при запросе событий");
         }
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error(error);
       }
     };
 
     fetchEvents();
   }, []);
+
+  const [loadedImages, setLoadedImages] = useState({});
+
+  const handleImageLoad = async (good) => {
+    try {
+      if (!loadedImages[good.id]) {
+        const file = await appAPI.getImage(good.picture);
+        if (file) {
+          const imageUrl = URL.createObjectURL(file);
+          setGoods((prevGoods) => {
+            const updatedGoods = prevGoods.map((item) => {
+              if (item.id === good.id) {
+                return { ...item, poster_image_link: imageUrl };
+              }
+              return item;
+            });
+            return updatedGoods;
+          });
+          setLoadedImages((prevState) => ({
+            ...prevState,
+            [good.id]: true,
+          }));
+        } else {
+          setGoods((prevGoods) => {
+            const updatedGoods = prevGoods.map((item) => {
+              if (item.id === good.id) {
+                return { ...item, poster_image_link: null };
+              }
+              return item;
+            });
+            return updatedGoods;
+          });
+          setLoadedImages((prevState) => ({
+            ...prevState,
+            [good.id]: true,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
 
   useEffect(() => {
     if (!goods) return;
@@ -57,8 +87,6 @@ const Main = () => {
     }
   }, [goods, search]);
 
-  if (filteredGoods === null) return <Loader />;
-  console.log(filteredGoods);
   return (
     <div className="container" style={{ paddingTop: "10px" }}>
       <div className="search_block">
@@ -104,39 +132,37 @@ const Main = () => {
         </label>
       </div>
       <div className="catalog">
-        {filteredGoods && filteredGoods.length !== 0 ? (
-          filteredGoods.map((good) => {
-            return (
-              <div
-                className="cart"
-                key={good.id}
-                onClick={() => nav(`/good/${good.id}`)}
-              >
-                <img
-                  src={
-                    good.picture
-                      ? good.picture
-                      : "/event.jpg"
-                  }
-                  className="image"
-                />
-                <div className="info">
-                  <div className="title">{good.title}</div>
-                  <div className="date">
-                    📅{" "}
-                    {format(new Date(good.datetime_from), "dd MMMM yyyy", {
-                      locale: ru,
-                    })}
-                  </div>
-                  <div className="time">
-                    ⏰ {format(new Date(good.datetime_from), "HH:mm")}
-                  </div>
+        {filteredGoods === null ? (
+          <Loader />
+        ) : (
+          filteredGoods.map((good) => (
+            <div
+              className="cart"
+              key={good.id}
+              onClick={() => nav(`/good/${good.id}`)}
+            >
+              <img
+                src={
+                  good.poster_image_link ? good.poster_image_link : "/event.jpg"
+                }
+                className="image"
+                onLoad={() => handleImageLoad(good)}
+                alt={good.title}
+              />
+              <div className="info">
+                <div className="title">{good.title}</div>
+                <div className="date">
+                  📅{" "}
+                  {format(new Date(good.datetime_from), "dd MMMM yyyy", {
+                    locale: ru,
+                  })}
+                </div>
+                <div className="time">
+                  ⏰ {format(new Date(good.datetime_from), "HH:mm")}
                 </div>
               </div>
-            );
-          })
-        ) : (
-          <div className="not-found">Событий не найдено</div>
+            </div>
+          ))
         )}
       </div>
     </div>

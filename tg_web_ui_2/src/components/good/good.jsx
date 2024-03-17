@@ -20,11 +20,11 @@ const Good = () => {
       }
       try {
         const file = await appAPI.getImage(response.picture);
-        if (!file) return setGoodInfo({ ...response, picture: null });
+        if (!file) return setGoodInfo({ ...response, poster_image_link: null });
         const localUrl = URL.createObjectURL(file);
-        setGoodInfo({ ...response, picture: localUrl });
+        setGoodInfo({ ...response, poster_image_link: localUrl });
       } catch (e) {
-        return setGoodInfo({ ...response, picture: null });
+        return setGoodInfo({ ...response, poster_image_link: null });
       }
     }
     fetch();
@@ -43,7 +43,7 @@ const Good = () => {
       <Back />
       <img
         src={
-          goodInfo.picture ? goodInfo.picture : "/event.jpg"
+          goodInfo.poster_image_link ? goodInfo.poster_image_link : "/event.jpg"
         }
         className="good_img"
       />
@@ -63,12 +63,15 @@ const Good = () => {
         <div className="information_date">
           ⏰ {format(new Date(goodInfo.datetime_from), "HH:mm")}
         </div>
-        <div className="information_date">📍 {goodInfo.location_title}</div>
-        {goodInfo.contact && (
+        {goodInfo.location_title && (
+          <div className="information_date">📍 {goodInfo.location_title}</div>
+        )}
+        
+        {goodInfo.contact_info && (
           <div className="information_date">
             ☎️{" "}
             <span /*onClick={() => window.open(`https://t.me/${"kulbabus"}`)}*/>
-              {goodInfo.contact}
+              {goodInfo.contact_info}
             </span>
           </div>
         )}

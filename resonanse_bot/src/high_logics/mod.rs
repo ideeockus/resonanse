@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
 use std::env;
 use std::error::Error;
 
-use log::{debug, warn};
+use log::{debug};
 
 use teloxide::prelude::*;
 use teloxide::types::ReplyMarkup;
@@ -51,32 +49,33 @@ where
 
     // make brief event description
     // todo move exter api calls to another module
-    let client = reqwest::Client::new();
-    let instance_data = SberSummarizatorInstance::new(create_base_event.description.clone());
-    let req_json_data = HashMap::from([("instances", [instance_data])]);
-    match client
-        .post("https://api.aicloud.sbercloud.ru/public/v2/summarizator/predict")
-        .json(&req_json_data)
-        .send()
-        .await
-    {
-        Ok(resp) => {
-            let j = resp.json::<serde_json::Value>().await;
-            debug!("j {:?}", j);
-            if let Ok(v) = j {
-                if let Some(prediction_best) = v
-                    .get("prediction_best")
-                    .and_then(|v| v.get("bertscore"))
-                    .and_then(|v| v.as_str())
-                {
-                    create_base_event.brief_description = Some(prediction_best.to_string());
-                }
-            }
-        }
-        Err(err) => {
-            warn!("cannot summarize description: {:?}", err);
-        }
-    }
+    // THIS EXTERNAL API CALL NOW IS NOT USING
+    // let client = reqwest::Client::new();
+    // let instance_data = SberSummarizatorInstance::new(create_base_event.description.clone());
+    // let req_json_data = HashMap::from([("instances", [instance_data])]);
+    // match client
+    //     .post("https://api.aicloud.sbercloud.ru/public/v2/summarizator/predict")
+    //     .json(&req_json_data)
+    //     .send()
+    //     .await
+    // {
+    //     Ok(resp) => {
+    //         let j = resp.json::<serde_json::Value>().await;
+    //         debug!("j {:?}", j);
+    //         if let Ok(v) = j {
+    //             if let Some(prediction_best) = v
+    //                 .get("prediction_best")
+    //                 .and_then(|v| v.get("bertscore"))
+    //                 .and_then(|v| v.as_str())
+    //             {
+    //                 create_base_event.brief_description = Some(prediction_best.to_string());
+    //             }
+    //         }
+    //     }
+    //     Err(err) => {
+    //         warn!("cannot summarize description: {:?}", err);
+    //     }
+    // }
 
     create_base_event.creator_id = account.id;
     let created_event = EVENTS_REPOSITORY
@@ -167,6 +166,7 @@ pub struct SberSummarizatorInstance {
 }
 
 impl SberSummarizatorInstance {
+    #[allow(unused)]
     pub fn new(text: String) -> Self {
         Self {
             text,
