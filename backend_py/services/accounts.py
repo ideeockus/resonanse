@@ -48,40 +48,40 @@ class AccountInfo(BaseModel):
         orm_mode = True
         from_attributes = True
 
-
-# Обновление информации об аккаунте
-@app.put("/api/accounts/{account_id}", response_model=AccountInfo, tags=[OpenApiTags.ACCOUNTS])
-async def update_account(account_id: int, updated_info: UpdateAccountRequest, db: Session = Depends(get_db)):
-    account = db.query(UserAccountDB).filter(UserAccountDB.id == account_id).first()
-    if account is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-
-    # Обновляем только те поля, которые предоставлены в запросе
-    for field, value in updated_info.dict().items():
-        setattr(account, field, value)
-
-    db.commit()
-    db.refresh(account)
-    return AccountInfo.from_orm(account)
-
-
-# Получение информации об аккаунте
-@app.get("/api/accounts/{account_id}", response_model=AccountInfo, tags=[OpenApiTags.ACCOUNTS])
-async def get_account(account_id: int, db: Session = Depends(get_db)):
-    account = db.query(UserAccountDB).filter(UserAccountDB.id == account_id).first()
-    if account is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-    return AccountInfo.model_validate(account)
-
-
-# Удаление аккаунта
-@app.delete("/api/accounts/{account_id}", tags=[OpenApiTags.ACCOUNTS])
-async def delete_account(account_id: int, db: Session = Depends(get_db)):
-    account = db.query(UserAccountDB).filter(UserAccountDB.id == account_id).first()
-    if account is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-
-    db.delete(account)
-    db.commit()
-
-    return {"message": "Account deleted successfully"}
+#
+# # Обновление информации об аккаунте
+# @app.put("/api/accounts/{account_id}", response_model=AccountInfo, tags=[OpenApiTags.ACCOUNTS])
+# async def update_account(account_id: int, updated_info: UpdateAccountRequest, db: Session = Depends(get_db)):
+#     account = db.query(UserAccountDB).filter(UserAccountDB.id == account_id).first()
+#     if account is None:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+#
+#     # Обновляем только те поля, которые предоставлены в запросе
+#     for field, value in updated_info.dict().items():
+#         setattr(account, field, value)
+#
+#     db.commit()
+#     db.refresh(account)
+#     return AccountInfo.from_orm(account)
+#
+#
+# # Получение информации об аккаунте
+# @app.get("/api/accounts/{account_id}", response_model=AccountInfo, tags=[OpenApiTags.ACCOUNTS])
+# async def get_account(account_id: int, db: Session = Depends(get_db)):
+#     account = db.query(UserAccountDB).filter(UserAccountDB.id == account_id).first()
+#     if account is None:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+#     return AccountInfo.model_validate(account)
+#
+#
+# # Удаление аккаунта
+# @app.delete("/api/accounts/{account_id}", tags=[OpenApiTags.ACCOUNTS])
+# async def delete_account(account_id: int, db: Session = Depends(get_db)):
+#     account = db.query(UserAccountDB).filter(UserAccountDB.id == account_id).first()
+#     if account is None:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+#
+#     db.delete(account)
+#     db.commit()
+#
+#     return {"message": "Account deleted successfully"}

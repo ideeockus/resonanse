@@ -1,27 +1,34 @@
-from sqlalchemy import Column, Integer, String, Boolean, JSON, DateTime, Float, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Boolean, JSON, DateTime, UUID, Float, ForeignKey, func
 from sqlalchemy.orm import relationship
 
 from backend_py.db.base import Base
 
 
 class EventDB(Base):
-    __tablename__ = 'events'
+    __tablename__ = 'resonanse_events'
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
+    id = Column(UUID, primary_key=True, index=True)
+    is_private = Column(Boolean, nullable=False)
+    is_commercial = Column(Boolean, nullable=False)
+    is_online = Column(Boolean, nullable=False)
+    is_paid = Column(Boolean, nullable=False)
+    event_kind = Column(Integer, nullable=False)
+    title = Column(String)
     description = Column(String)
-    short_description = Column(String)
-    category = Column(String)
-    location = Column(String)
-    start_date = Column(DateTime(timezone=True), server_default=func.now())  # should it be now() ?
-    end_date = Column(DateTime(timezone=True), server_default=func.now())
-    online = Column(Boolean)
+    brief_description = Column(String)
+    subject = Column(String)
+    datetime_from = Column(DateTime(timezone=True))
+    datetime_to = Column(DateTime(timezone=True), nullable=True)
+    location_latitude = Column(Float)
+    location_longitude = Column(Float)
+    location_title = Column(String)
+    creator_id = Column(Integer, ForeignKey('user_accounts.id'))
+    # community_id = Column(Integer, ForeignKey('communities.id'))
+    event_type = Column(Integer, nullable=False)
+    picture = Column(String, nullable=True)
+    contact_info = Column(String)
+    # chat_link = Column(String)
+    creation_time = Column(DateTime(timezone=True), server_default=func.now())
     attendance_confirmation_days_before = Column(Integer, nullable=True)
-    chat_link = Column(String)
-    organizer_id = Column(Integer, ForeignKey('user_accounts.id'))
-    community_id = Column(Integer, ForeignKey('communities.id'))
-    poster_image_link = Column(String, nullable=True)
-    paid = Column(Boolean)
-
     # organizer = relationship('UserAccountDB', back_populates='organized_events', foreign_keys=[organizer_id])
     # community = relationship('CommunityDB', back_populates='events')

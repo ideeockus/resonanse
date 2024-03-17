@@ -3,6 +3,7 @@ use teloxide::types::ParseMode;
 use teloxide::Bot;
 
 use crate::handlers::*;
+use crate::keyboards;
 use crate::states::BaseState;
 use crate::utils::repr_user_as_str;
 
@@ -21,6 +22,16 @@ pub async fn handle_start_state(bot: Bot, dialogue: MyDialogue, msg: Message) ->
 
 pub async fn invalid_state_callback(bot: Bot, q: CallbackQuery) -> HandlerResult {
     debug!("got invalid callback");
+
+    if let Some(keyboards::INLINE_LIKE_EVENT_BTN | keyboards::INLINE_DISLIKE_EVENT_BTN) =
+        q.data.as_deref()
+    {
+        // handle_like()
+        debug!("got like or dislike for event");
+        bot.answer_callback_query(q.id).await?;
+        return Ok(());
+    }
+
     if let Some(msg) = q.message {
         bot.delete_message(q.from.id, msg.id).await?;
     }

@@ -42,33 +42,35 @@ impl EventsRepository {
         let created_event: BaseEvent = sqlx::query_as(
             r#"insert into resonanse_events
             (
-            id, is_private, is_commercial, event_kind, title, description, brief_description,
+            id, is_private, is_commercial, is_online, is_paid, event_kind, title, description, brief_description,
             subject, datetime_from, datetime_to, location_latitude, location_longitude,
             location_title, creator_id, event_type, picture, contact_info
             )
-            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
             returning *
             "#,
         )
-        .bind(Uuid::new_v4())
-        .bind(event.is_private)
-        .bind(event.is_commercial)
-        .bind(event.event_kind)
-        .bind(event.title)
-        .bind(event.description)
-        .bind(event.brief_description)
-        .bind(event.subject as i32)
-        .bind(event.datetime_from)
-        .bind(event.datetime_to)
-        .bind(event.location.as_ref().map(|geo| geo.latitude))
-        .bind(event.location.as_ref().map(|geo| geo.longitude))
-        .bind(event.location_title)
-        .bind(event.creator_id)
-        .bind(event.event_type)
-        .bind(event.picture)
-        .bind(event.contact_info)
-        .fetch_one(&self.db_pool)
-        .await?;
+            .bind(Uuid::new_v4())
+            .bind(event.is_private)
+            .bind(event.is_commercial)
+            .bind(event.is_online)
+            .bind(event.is_paid)
+            .bind(event.event_kind)
+            .bind(event.title)
+            .bind(event.description)
+            .bind(event.brief_description)
+            .bind(event.subject as i32)
+            .bind(event.datetime_from)
+            .bind(event.datetime_to)
+            .bind(event.location.as_ref().map(|geo| geo.latitude))
+            .bind(event.location.as_ref().map(|geo| geo.longitude))
+            .bind(event.location_title)
+            .bind(event.creator_id)
+            .bind(event.event_type)
+            .bind(event.picture)
+            .bind(event.contact_info)
+            .fetch_one(&self.db_pool)
+            .await?;
 
         Ok(created_event)
     }
@@ -113,8 +115,8 @@ impl EventsRepository {
             order by datetime_from
             "#,
         )
-        .fetch_all(&self.db_pool)
-        .await;
+            .fetch_all(&self.db_pool)
+            .await;
 
         events
     }
@@ -126,9 +128,9 @@ impl EventsRepository {
             where title like $1
             "#,
         )
-        .bind(format!("%{}%", title))
-        .fetch_all(&self.db_pool)
-        .await;
+            .bind(format!("%{}%", title))
+            .fetch_all(&self.db_pool)
+            .await;
 
         events
     }
@@ -143,10 +145,10 @@ impl EventsRepository {
             fetch next $2 rows only
             "#,
         )
-        .bind(page * page_size)
-        .bind(page_size)
-        .fetch_all(&self.db_pool)
-        .await;
+            .bind(page * page_size)
+            .bind(page_size)
+            .fetch_all(&self.db_pool)
+            .await;
 
         events
     }
@@ -207,9 +209,9 @@ impl EventsRepository {
             where id=$1
             "#,
         )
-        .bind(uuid)
-        .fetch_one(&self.db_pool)
-        .await;
+            .bind(uuid)
+            .fetch_one(&self.db_pool)
+            .await;
 
         event
     }
@@ -220,33 +222,35 @@ impl EventsRepository {
         let _deleted_event: BaseEvent = sqlx::query_as(
             r#"insert into deleted_events
             (
-            id, is_private, is_commercial, event_kind, title, description, brief_description,
+            id, is_private, is_commercial, is_online, is_paid, event_kind, title, description, brief_description,
             subject, datetime_from, datetime_to, location_latitude, location_longitude,
             location_title, creator_id, event_type, picture, contact_info
             )
-            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
             returning *
             "#,
         )
-        .bind(deleting_event.id)
-        .bind(deleting_event.is_private)
-        .bind(deleting_event.is_commercial)
-        .bind(deleting_event.event_kind)
-        .bind(deleting_event.title)
-        .bind(deleting_event.description)
-        .bind(deleting_event.brief_description)
-        .bind(deleting_event.subject as i32)
-        .bind(deleting_event.datetime_from)
-        .bind(deleting_event.datetime_to)
-        .bind(deleting_event.location.as_ref().map(|geo| geo.latitude))
-        .bind(deleting_event.location.as_ref().map(|geo| geo.longitude))
-        .bind(deleting_event.location_title)
-        .bind(deleting_event.creator_id)
-        .bind(deleting_event.event_type)
-        .bind(deleting_event.picture)
-        .bind(deleting_event.contact_info)
-        .fetch_one(&self.db_pool)
-        .await?;
+            .bind(deleting_event.id)
+            .bind(deleting_event.is_private)
+            .bind(deleting_event.is_commercial)
+            .bind(deleting_event.is_online)
+            .bind(deleting_event.is_paid)
+            .bind(deleting_event.event_kind)
+            .bind(deleting_event.title)
+            .bind(deleting_event.description)
+            .bind(deleting_event.brief_description)
+            .bind(deleting_event.subject as i32)
+            .bind(deleting_event.datetime_from)
+            .bind(deleting_event.datetime_to)
+            .bind(deleting_event.location.as_ref().map(|geo| geo.latitude))
+            .bind(deleting_event.location.as_ref().map(|geo| geo.longitude))
+            .bind(deleting_event.location_title)
+            .bind(deleting_event.creator_id)
+            .bind(deleting_event.event_type)
+            .bind(deleting_event.picture)
+            .bind(deleting_event.contact_info)
+            .fetch_one(&self.db_pool)
+            .await?;
 
         let result = sqlx::query(
             r#"
@@ -254,9 +258,9 @@ impl EventsRepository {
             where id=$1
             "#,
         )
-        .bind(event_uuid)
-        .execute(&self.db_pool)
-        .await?;
+            .bind(event_uuid)
+            .execute(&self.db_pool)
+            .await?;
 
         debug!("delete_events result {:?}", result);
 
@@ -270,10 +274,10 @@ impl EventsRepository {
             values ($1, $2)
             "#,
         )
-        .bind(post_id)
-        .bind(event_id)
-        .execute(&self.db_pool)
-        .await?;
+            .bind(post_id)
+            .bind(event_id)
+            .execute(&self.db_pool)
+            .await?;
         debug!("event_tg_table result {:?}", result);
 
         Ok(())
@@ -286,8 +290,8 @@ impl EventsRepository {
             group by subject
             "#,
         )
-        .fetch_all(&self.db_pool)
-        .await;
+            .fetch_all(&self.db_pool)
+            .await;
 
         Ok(HashMap::new())
     }
