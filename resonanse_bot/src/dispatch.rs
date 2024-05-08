@@ -1,9 +1,10 @@
-use crate::commands::Command;
-use crate::handlers::*;
-use crate::states::*;
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dispatching::{dialogue, UpdateHandler};
 use teloxide::prelude::*;
+
+use crate::commands::Command;
+use crate::handlers::*;
+use crate::states::*;
 
 pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'static>> {
     use dptree::case;
@@ -14,7 +15,9 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
         .branch(case![Command::About].endpoint(about_command))
         .branch(case![Command::CreateEvent].endpoint(create_event_command))
         .branch(case![Command::GetEvents].endpoint(get_events_command))
-        .branch(case![Command::SendFeedback].endpoint(send_feedback_command));
+        .branch(case![Command::RunWebApp].endpoint(run_web_app_command))
+        .branch(case![Command::SendFeedback].endpoint(send_feedback_command))
+        .branch(case![Command::SendDonation].endpoint(send_donation_command));
 
     let message_handler = Update::filter_message()
         .map_async(log_msg_handler)
@@ -41,6 +44,7 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
 
     let callback_query_handler = Update::filter_callback_query()
         .map_async(log_callback_handler)
+        .branch(dptree::filter(score_event_handler).endpoint(handle_score_event_callback))
         .branch(
             case![BaseState::CreateEvent {
                 state,

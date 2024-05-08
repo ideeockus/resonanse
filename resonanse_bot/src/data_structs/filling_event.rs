@@ -70,15 +70,17 @@ impl FillingEvent {
             (self.subject.is_none(), "Тематика"),
             (self.datetime_from.is_none(), "Дата и время начала"),
             (self.location_title.is_none(), "Название места"),
-            (self.picture.is_none(), "Изображение или постер"),
-            (self.contact_info.is_none(), "Контакт для связи"),
+            (self.picture.is_none(), "Постер"),
+            (self.contact_info.is_none(), "Организатор"),
         ]
         .into_iter()
         {
             if is_field_missed {
-                missed_data_hint.push_str("\n\\-");
-                missed_data_hint.push_str(hint_text);
+                missed_data_hint.push_str("\n[ ]\\-");
+            } else {
+                missed_data_hint.push_str("\n[✅]\\-");
             }
+            missed_data_hint.push_str(hint_text);
         }
 
         missed_data_hint
@@ -121,6 +123,8 @@ impl TryFrom<FillingEvent> for BaseEvent {
             id: Uuid::nil(),
             is_private: false,
             is_commercial: false,
+            is_online: false,
+            is_paid: false,
             event_kind: value.event_kind,
             title: value.title.ok_or(BotHandlerError::UnfilledEvent)?,
             description: value.description.ok_or(BotHandlerError::UnfilledEvent)?,

@@ -14,8 +14,12 @@ pub enum Command {
     CreateEvent,
     #[command(description = "Список")]
     GetEvents,
+    #[command(description = "Запусить WebApp")]
+    RunWebApp,
     #[command(description = "Обратная связь")]
     SendFeedback,
+    #[command(description = "Внести donation")]
+    SendDonation,
     // #[command(description = "Выбор события", parse_with = accept_two_digits)]
     // Event{event_num: i64},
 }

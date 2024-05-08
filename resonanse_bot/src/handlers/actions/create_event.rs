@@ -471,19 +471,6 @@ pub async fn handle_event_datetime(
 
     *filling_dt = Some(event_dt);
 
-    // dialogue
-    //     .update(BaseState::CreateEvent {
-    //         state: CreateEventState::Idle,
-    //         filling_event,
-    //     })
-    //     .await?;
-    //
-    // let message = bot.send_message(
-    //     msg.chat.id,
-    //     "",
-    // );
-    // message.await?;
-
     Ok(())
 }
 
@@ -524,17 +511,6 @@ pub async fn handle_event_geo(
     };
 
     filling_event.geo_position = Some(location);
-
-    // dialogue
-    //     .update(BaseState::CreateEvent {
-    //         state: CreateEventState::Idle,
-    //         filling_event,
-    //     })
-    //     .await?;
-    //
-    // let mut message = bot.send_message(msg.chat.id, "Выберите тематику");
-    // message.reply_markup = Some(get_inline_kb_choose_subject());
-    // message.await?;
 
     Ok(())
 }

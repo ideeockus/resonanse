@@ -1,5 +1,10 @@
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup};
+use std::env;
+use teloxide::types::{
+    InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, WebAppInfo,
+};
+use uuid::Uuid;
 
+use crate::config::WEB_APP_URL;
 use resonanse_common::models::{EventSubject, ResonanseEventKind};
 use resonanse_common::EventSubjectFilter;
 
@@ -125,21 +130,37 @@ pub fn get_inline_kb_choose_event_kind() -> InlineKeyboardMarkup {
 
 #[allow(unused)]
 pub const INLINE_WANT_TO_GO_BTN: &str = "keyboards.want_go_to_event_btn";
+pub const INLINE_MAP_BTN: &str = "keyboards.event_map_btn";
+pub const INLINE_LIKE_EVENT_BTN: &str = "keyboards.like_event_btn";
+pub const INLINE_DISLIKE_EVENT_BTN: &str = "keyboards.dislike_event_btn";
+
 pub fn get_inline_kb_event_message(
+    event_id: Uuid,
     map_link: Option<String>,
     // want_go_url: String,
 ) -> InlineKeyboardMarkup {
     let mut buttons = vec![];
     let mut buttons_first_row = vec![];
 
+    let like_btn = InlineKeyboardButton::new(
+        t!(INLINE_LIKE_EVENT_BTN),
+        InlineKeyboardButtonKind::CallbackData(format!("{}{}", INLINE_LIKE_EVENT_BTN, event_id)),
+    );
+    let dislike_btn = InlineKeyboardButton::new(
+        t!(INLINE_DISLIKE_EVENT_BTN),
+        InlineKeyboardButtonKind::CallbackData(format!("{}{}", INLINE_DISLIKE_EVENT_BTN, event_id)),
+    );
+
+    buttons_first_row.push(like_btn);
     if let Some(map_link) = map_link {
         let map_link_btn = InlineKeyboardButton::new(
-            "Карта",
+            t!(INLINE_MAP_BTN),
             InlineKeyboardButtonKind::Url(map_link.parse().unwrap()),
         );
 
         buttons_first_row.push(map_link_btn);
     }
+    buttons_first_row.push(dislike_btn);
 
     // buttons_first_row.push(
     //     InlineKeyboardButton::new(
@@ -166,6 +187,19 @@ pub fn get_inline_kb_events_page() -> InlineKeyboardMarkup {
     );
 
     let buttons = [vec![button_left, button_right]];
+
+    InlineKeyboardMarkup::new(buttons)
+}
+
+pub fn get_inline_kb_run_web_app() -> InlineKeyboardMarkup {
+    let web_app_url = url::Url::parse(env::var(WEB_APP_URL).unwrap().as_str()).unwrap();
+
+    let web_app_btn = InlineKeyboardButton::new(
+        t!("web_app.run_app"),
+        InlineKeyboardButtonKind::WebApp(WebAppInfo { url: web_app_url }),
+    );
+
+    let buttons = [[web_app_btn]];
 
     InlineKeyboardMarkup::new(buttons)
 }
