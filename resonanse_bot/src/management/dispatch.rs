@@ -28,7 +28,6 @@ pub fn manager_schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync
 
 fn get_managers_ids() -> Vec<i64> {
     let managers_ids_str = env::var(MANAGER_TG_IDS).unwrap_or("".to_string());
-    // debug!("managers_ids_str: {:?}", managers_ids_str);
     let managers_ids = managers_ids_str
         .split(',')
         .filter_map(|mng_id_str| mng_id_str.parse::<i64>().ok())

@@ -8,9 +8,9 @@ pub fn fill_base_account_from_teloxide_user(user: &teloxide::types::User) -> Bas
     let user_data = UserData {
         first_name: user.first_name.clone(),
         last_name: user.last_name.clone().unwrap_or("".to_string()),
-        city: "Saint-Petersburg".to_string(),
+        city: None,
+        description: None,
         headline: None,
-        about: "".to_string(),
         goals: None,
         interests: None,
         language: None,
@@ -22,7 +22,6 @@ pub fn fill_base_account_from_teloxide_user(user: &teloxide::types::User) -> Bas
         books: None,
         food: None,
         worldview: None,
-        alcohol: None,
     };
 
     let tg_user_id = match user.id.0.cmp(&(i64::MAX as u64)) {
@@ -37,8 +36,8 @@ pub fn fill_base_account_from_teloxide_user(user: &teloxide::types::User) -> Bas
         email: None,
         phone: None,
         telegram: UserTgData {
-            username: user.username.clone(),
-            user_id: tg_user_id,
+            tg_username: user.username.clone(),
+            tg_user_id,
         },
         instagram: None,
     };

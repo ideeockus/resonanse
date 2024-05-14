@@ -1,15 +1,29 @@
-use crate::models::{EventScore, EventScoreType};
+use std::fmt::{Debug, Formatter};
 use sqlx::{PgPool, Result};
 use uuid::Uuid;
 
-#[derive(Debug)]
-pub struct EventScoresRepository {
+use crate::models::{EventScore, EventScoreType};
+use crate::UserInteraction;
+
+pub struct EventInteractionRepository {
     db_pool: PgPool,
+    clickhouse_client: clickhouse::Client,
 }
 
-impl EventScoresRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { db_pool: pool }
+impl Debug for EventInteractionRepository {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EventScoresRepository")
+            .field("db_pool", &self.db_pool)
+            .finish()
+    }
+}
+
+impl EventInteractionRepository {
+    pub fn new(pool: PgPool, clickhouse_client: clickhouse::Client) -> Self {
+        Self {
+            db_pool: pool,
+            clickhouse_client,
+        }
     }
     pub async fn set_event_score_by_user(
         &self,
@@ -28,11 +42,19 @@ impl EventScoresRepository {
             returning *
             "#,
         )
-        .bind(event_id)
-        .bind(user_id)
-        .bind(score as i64)
-        .fetch_one(&self.db_pool)
-        .await?;
+            .bind(event_id)
+            .bind(user_id)
+            .bind(score as i64)
+            .fetch_one(&self.db_pool)
+            .await?;
+
+        let mut insert = self.clickhouse_client.insert("users_interactions")?;
+        insert.write(&UserInteraction{
+            user_id,
+            event_id,
+            interaction_type: score.to_string(),
+            interaction_dt: chrono::offset::Local::now().naive_local(),
+        }).await?;
 
         Ok(event_score)
     }
@@ -48,10 +70,26 @@ impl EventScoresRepository {
                 WHERE user_id = $1
                 "#,
         )
-        .bind(user_id)
-        .fetch_all(&self.db_pool)
-        .await?;
+            .bind(user_id)
+            .fetch_all(&self.db_pool)
+            .await?;
 
         Ok(event_scores)
+    }
+
+    pub async fn add_event_click(
+        &self,
+        user_id: i64,
+        event_id: Uuid,
+    ) -> Result<(), sqlx::Error> {
+        let mut insert = self.clickhouse_client.insert("users_interactions")?;
+        insert.write(&UserInteraction{
+            user_id,
+            event_id,
+            interaction_type: "click".to_string(),
+            interaction_dt: chrono::offset::Local::now().naive_local(),
+        }).await?;
+
+        Ok(())
     }
 }

@@ -1,4 +1,4 @@
-pub use models::EventSubjectFilter;
+pub use models::{EventSubjectFilter, UserInteraction};
 pub use sqlx::PgPool;
 
 pub mod file_storage;

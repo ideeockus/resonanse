@@ -39,20 +39,20 @@ pub fn prepare_event_msg_with_base_event(
         "actions.create_event.event_template",
         event_title = markdown::escape(&base_event.title),
         event_description = markdown::escape(&base_event.description),
-        event_subject = markdown::escape(&t!(&base_event.subject.to_string())),
         event_datetime = markdown::escape(&formatted_data),
         event_location = {
             format!(
                 "📍 Место: _{}_",
-                markdown::escape(&base_event.location_title)
+                markdown::escape(&base_event.venue.title)
             )
         },
-        event_contact_info = match base_event.contact_info.as_deref() {
+        event_contact_info = match base_event.contact.as_deref() {
             None => "".to_string(),
             Some(contact_info) => format!("Контакт: _{}_", markdown::escape(contact_info)),
         },
     );
 
+    // todo add picture resolver
     match base_event.picture {
         Some(picture_uuid) => {
             let event_image_input_file =
@@ -60,9 +60,6 @@ pub fn prepare_event_msg_with_base_event(
             let mut msg = bot.send_photo(chat_id, event_image_input_file);
             msg.caption = Some(msg_text);
             msg.parse_mode = Some(ParseMode::MarkdownV2);
-            // msg.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_event_message(
-            //     Some(base_event.location.get_yandex_map_link_to()),
-            // )));
             msg.reply_markup = event_reply_markup;
 
             EventPostMessageRequest::WithPoster(msg)

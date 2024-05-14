@@ -10,13 +10,18 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
     use dptree::case;
 
     let command_handler = teloxide::filter_command::<Command, _>()
-        // .branch(case![Command::Help].endpoint(help))
         .branch(case![Command::Start].endpoint(start_command))
-        .branch(case![Command::About].endpoint(about_command))
+        .branch(case![Command::Help].endpoint(help_command))
+        .branch(case![Command::SendFeedback].endpoint(send_feedback_command))
+
         .branch(case![Command::CreateEvent].endpoint(create_event_command))
         .branch(case![Command::GetEvents].endpoint(get_events_command))
+
+        .branch(case![Command::City].endpoint(set_user_city_command))
+        .branch(case![Command::SetDescription].endpoint(set_user_description_command))
+        .branch(case![Command::GetDigest].endpoint(handle_get_digest_command))
+
         .branch(case![Command::RunWebApp].endpoint(run_web_app_command))
-        .branch(case![Command::SendFeedback].endpoint(send_feedback_command))
         .branch(case![Command::SendDonation].endpoint(send_donation_command));
 
     let message_handler = Update::filter_message()
@@ -24,6 +29,8 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
         .branch(command_handler)
         .branch(case![BaseState::Start].endpoint(handle_start_state))
         .branch(case![BaseState::SendFeedback].endpoint(handle_send_feedback))
+        .branch(case![BaseState::SetCity].endpoint(handle_set_city))
+        .branch(case![BaseState::SetDescription].endpoint(handle_set_description))
         .branch(
             case![BaseState::GetEventList {
                 page_size,

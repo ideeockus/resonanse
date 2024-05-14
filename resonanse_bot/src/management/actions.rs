@@ -26,8 +26,6 @@ fn get_managers_ids() -> Vec<i64> {
 }
 
 pub async fn delete_event_command(bot: Bot, msg: Message) -> HandlerResult {
-    debug!("got delete_event_command {:?}", &msg);
-
     // CHECK FOR MANAGER RIGHTS
     if !get_managers_ids().contains(&msg.chat.id.0) {
         return Ok(());
@@ -74,37 +72,28 @@ pub async fn delete_event_command(bot: Bot, msg: Message) -> HandlerResult {
 }
 
 pub async fn get_stats_command(bot: Bot, msg: Message) -> HandlerResult {
-    debug!("got get_stats_command {:?}", &msg);
-
     let count_accounts = ACCOUNTS_REPOSITORY
         .get()
         .ok_or("Cannot get accounts repository")?
         .count_accounts()
         .await?;
 
-    // todo
-    let _count_events_by_subject = EVENTS_REPOSITORY
+    let count_events = EVENTS_REPOSITORY
         .get()
         .ok_or("Cannot get events repository")?
-        .count_events_by_subject()
+        .count_events()
         .await?;
 
-    // let all_events = events_uuids_map
-    //     .iter()
-    //     .map(|be| {
-    //         format!(
-    //             "*{}* \\- `{}`",
-    //             markdown::escape(&be.title),
-    //             markdown::escape(&be.id.to_string())
-    //         )
-    //     })
-    //     .collect::<Vec<String>>()
-    //     .join("\n");
+    let statistics = vec![
+        ("Количество пользователей", count_accounts.to_string()),
+    ];
+
+    let statistics_message =
 
     let mut message = bot.send_message(
         msg.chat.id,
         format!(
-            "\\[пока статистика только такая\\]\nКоличество пользователей: {}\n\n",
+            "\\[Статистика\\]\n: {}\n\n",
             count_accounts,
         ),
     );
@@ -120,8 +109,6 @@ pub async fn search_event_command(
     msg: Message,
     searching_event_title: String,
 ) -> HandlerResult {
-    debug!("got search_event_command {:?}", &msg);
-
     // CHECK FOR MANAGER RIGHTS
     if !get_managers_ids().contains(&msg.chat.id.0) {
         return Ok(());

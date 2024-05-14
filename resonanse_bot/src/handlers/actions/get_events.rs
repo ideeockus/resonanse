@@ -56,7 +56,6 @@ pub async fn handle_get_events_callback(
     (page_size, page_num, events_filter): (i64, i64, EventSubjectFilter),
     q: CallbackQuery,
 ) -> HandlerResult {
-    debug!("got handle_get_events__callback callback");
     bot.answer_callback_query(q.id.clone()).await?;
 
     match q.data.as_deref() {
@@ -81,8 +80,6 @@ pub async fn handle_events_filter_callback(
     (page_size, page_num, mut events_filter): (i64, i64, EventSubjectFilter),
     q: CallbackQuery,
 ) -> HandlerResult {
-    debug!("got handle_events_filter_callback callback");
-
     let msg = match q.message {
         None => {
             bot.send_message(q.from.id, "Unknown message").await?;
@@ -134,7 +131,6 @@ pub async fn handle_page_callback(
     (page_size, page_num, events_filter): (i64, i64, EventSubjectFilter),
     q: CallbackQuery,
 ) -> HandlerResult {
-    debug!("got handle_page_callback callback");
     let page_num = page_num as u32;
 
     let msg = match q.message {

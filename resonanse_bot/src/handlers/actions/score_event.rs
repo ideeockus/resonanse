@@ -1,14 +1,14 @@
 use log::debug;
-use teloxide::prelude::*;
 use teloxide::Bot;
+use teloxide::prelude::*;
 use uuid::Uuid;
 
 use resonanse_common::models::EventScoreType;
-use resonanse_common::repository::{AccountsRepository, EventScoresRepository};
+use resonanse_common::repository::{AccountsRepository, EventInteractionRepository};
 
+use crate::{EVENTS_INTERACTION_REPOSITORY, keyboards};
 use crate::config::POSTGRES_DB_URL;
 use crate::handlers::HandlerResult;
-use crate::keyboards;
 
 pub fn score_event_handler(q: CallbackQuery) -> bool {
     let q_data = q.data.unwrap_or_default();
@@ -17,8 +17,6 @@ pub fn score_event_handler(q: CallbackQuery) -> bool {
 }
 
 pub async fn handle_score_event_callback(bot: Bot, q: CallbackQuery) -> HandlerResult {
-    debug!("got handle_score_event_callback callback");
-
     bot.answer_callback_query(q.id).await?;
     let msg = match q.message {
         None => {
@@ -30,7 +28,10 @@ pub async fn handle_score_event_callback(bot: Bot, q: CallbackQuery) -> HandlerR
 
     let conn_url = std::env::var(POSTGRES_DB_URL).unwrap();
     let pool = resonanse_common::PgPool::connect(&conn_url).await?;
-    let events_score_repository = EventScoresRepository::new(pool.clone());
+
+
+    let events_score_repository = EVENTS_INTERACTION_REPOSITORY.get()
+        .ok_or("Cannot get events interactions repository")?;
     let accounts_repository = AccountsRepository::new(pool.clone());
 
     let user_account = accounts_repository

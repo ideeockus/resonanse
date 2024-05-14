@@ -17,6 +17,8 @@ pub enum BaseState {
         page_num: i64,
         events_filter: EventSubjectFilter,
     },
+    SetCity,
+    SetDescription,
     SendFeedback,
 }
 

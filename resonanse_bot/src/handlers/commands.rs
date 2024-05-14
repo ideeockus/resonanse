@@ -13,33 +13,14 @@ use crate::{ACCOUNTS_REPOSITORY, keyboards};
 use crate::config::DONATION_URL;
 use crate::data_structs::FillingEvent;
 use crate::data_translators::fill_base_account_from_teloxide_user;
-use crate::handlers::{HandlerResult, log_request, MyDialogue};
+use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_run_web_app, get_inline_kb_set_subject_filter};
 use crate::states::{BaseState, CreateEventState};
 
-// const CREATE_EVENT_TEXT_MD: &str = r#"
-//
-// "#;
-// const GET_EVENTS_TEXT_MD: &str = "Выбери, что тебе интересно";
-// pub const HELLO_MESSAGE_MD: &str = r#"
-// *Привет\!*
-//
-// Тут ты моожешь выбрать _интересное событие_\.
-// /get\_events
-//
-// Если ничего подходящего не нашел, можешь _создать свое_
-// /create\_event
-//
-// Также эти команды доступны из меню бота, которое находится снизу\.
-// Команда *Resonanse* будет рада любому фидбеку, так что если есть что сказать
-// /send\_feedback
-//
-// "#;
+
 
 pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
-    log_request("got start_command", &msg);
-
     if let Some(command_text) = msg.text() {
         if let Some((_command, params)) = parse_command(command_text, "") {
             if let Some(first_param) = params.first() {
@@ -69,10 +50,8 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
     Ok(())
 }
 
-pub async fn about_command(bot: Bot, msg: Message) -> HandlerResult {
-    log_request("got about_command", &msg);
-
-    let mut message = bot.send_message(msg.chat.id, t!("hello_msg"));
+pub async fn help_command(bot: Bot, msg: Message) -> HandlerResult {
+    let mut message = bot.send_message(msg.chat.id, t!("help_msg"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
@@ -80,8 +59,6 @@ pub async fn about_command(bot: Bot, msg: Message) -> HandlerResult {
 }
 
 pub async fn create_event_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
-    log_request("got create_event command", &msg);
-
     let mut message = bot.send_message(msg.chat.id, t!("actions.create_event.new_event"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
@@ -107,8 +84,6 @@ pub async fn create_event_command(bot: Bot, dialogue: MyDialogue, msg: Message) 
 }
 
 pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
-    log_request("got get_events command", &msg);
-
     const DEFAULT_PAGE_SIZE: i64 = 10;
 
     let (page, page_size) = (0i64, DEFAULT_PAGE_SIZE);
@@ -133,9 +108,32 @@ pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) ->
     Ok(())
 }
 
-pub async fn run_web_app_command(bot: Bot, msg: Message) -> HandlerResult {
-    log_request("got run_web_app_command", &msg);
 
+pub async fn set_user_city_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
+    dialogue
+        .update(BaseState::SetCity)
+        .await?;
+
+    let mut message = bot.send_message(msg.chat.id, t!("actions.set_city.prompt"));
+    message.parse_mode = Some(ParseMode::MarkdownV2);
+    message.await?;
+
+    Ok(())
+}
+
+pub async fn set_user_description_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
+    dialogue
+        .update(BaseState::SetDescription)
+        .await?;
+
+    let mut message = bot.send_message(msg.chat.id, t!("actions.set_description.prompt"));
+    message.parse_mode = Some(ParseMode::MarkdownV2);
+    message.await?;
+
+    Ok(())
+}
+
+pub async fn run_web_app_command(bot: Bot, msg: Message) -> HandlerResult {
     let mut message = bot.send_message(msg.chat.id, t!("choose_category_msg"));
     message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_run_web_app()));
     message.await?;
@@ -144,8 +142,6 @@ pub async fn run_web_app_command(bot: Bot, msg: Message) -> HandlerResult {
 }
 
 pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
-    log_request("got send_feedback_command command", &msg);
-
     let mut message = bot.send_message(msg.chat.id, t!("feedback_msg"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
@@ -156,8 +152,6 @@ pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message)
 }
 
 pub async fn send_donation_command(bot: Bot, msg: Message) -> HandlerResult {
-    log_request("got send_donation_command command", &msg);
-
     let donation_url = env::var(DONATION_URL)?;
     let donation_msg = t!(
         "donation_msg",

@@ -41,11 +41,9 @@ pub async fn invalid_state_callback(bot: Bot, q: CallbackQuery) -> HandlerResult
 }
 
 pub async fn invalid_state(bot: Bot, msg: Message) -> HandlerResult {
-    // log_request("got message, but state invalid", &msg);
     debug!(
         "unhandled message from {}",
         repr_user_as_str(msg.from()),
-        // msg
     );
 
     bot.send_message(
