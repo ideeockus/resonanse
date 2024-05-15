@@ -15,6 +15,7 @@ pub const POSTS_CHANNEL_ID: &str = "POSTS_CHANNEL_ID";
 // user ids that able to manage service
 pub const MANAGER_TG_IDS: &str = "MANAGER_TG_IDS";
 pub const POSTGRES_DB_URL: &str = "POSTGRES_DB_URL";
+pub const RABBITMQ_HOST: &str = "RABBITMQ_HOST";
 
 pub const CLICKHOUSE_DB_URL: &str = "CLICKHOUSE_DB_URL";
 pub const CLICKHOUSE_USERNAME: &str = "CLICKHOUSE_USERNAME";
@@ -33,6 +34,7 @@ pub fn check_all_mandatory_envs_is_ok() {
     env::var(POSTS_CHANNEL_ID).unwrap();
 
     env::var(POSTGRES_DB_URL).unwrap();
+    env::var(RABBITMQ_HOST).unwrap();
 
     env::var(CLICKHOUSE_DB_URL).unwrap();
     env::var(CLICKHOUSE_USERNAME).unwrap();

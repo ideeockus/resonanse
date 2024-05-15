@@ -9,13 +9,13 @@ use resonanse_common::models::{BaseEvent, EventSubject, Venue, ResonanseEventKin
 /// This struct is used during event filling process
 pub struct FillingEvent {
     pub title: Option<String>,
-    pub is_private: bool,
     pub event_kind: ResonanseEventKind,
     pub subject: Option<EventSubject>,
     pub description: Option<String>,
     pub brief_description: Option<String>,
     pub datetime_from: Option<chrono::NaiveDateTime>,
     pub datetime_to: Option<chrono::NaiveDateTime>,
+    pub city: Option<String>,
     pub geo_position: Option<Venue>,
     pub location_title: Option<String>,
     pub picture: Option<Uuid>,
@@ -24,16 +24,19 @@ pub struct FillingEvent {
 }
 
 impl FillingEvent {
-    pub fn new() -> Self {
+    pub fn new(
+        city: Option<String>,
+        creator_id: i64,
+    ) -> Self {
         FillingEvent {
             title: None,
-            is_private: false,
             event_kind: ResonanseEventKind::UserOffer,
             subject: None,
             description: None,
             brief_description: None,
             datetime_from: None,
             datetime_to: None,
+            city,
             geo_position: None,
             location_title: None,
             picture: None,

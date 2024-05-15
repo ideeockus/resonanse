@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use chrono::NaiveDateTime;
 use log::debug;
+use serde::Deserialize;
 use sqlx::{FromRow, Row};
 use sqlx::postgres::PgRow;
 use strum_macros;
@@ -23,7 +24,7 @@ impl Default for EventType {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Venue {
     pub title: Option<String>,
     pub address: Option<String>,
@@ -32,11 +33,20 @@ pub struct Venue {
 }
 
 impl Venue {
-    pub fn get_yandex_map_link_to(&self) -> String {
-        format!(
+    pub fn from_ll(latitude: f64, longitude: f64) -> Self {
+        Self {
+            title: None,
+            address: None,
+            latitude: Some(latitude),
+            longitude: Some(longitude),
+        }
+    }
+
+    pub fn get_yandex_map_link_to(&self) -> Option<String> {
+        Some(format!(
             "https://yandex.ru/maps/?pt={},{}&z=15",
-            self.longitude, self.latitude
-        )
+            self.longitude?, self.latitude?
+        ))
     }
 
     pub fn parse_from_yandex_map_link(link_str: &str) -> Option<Self> {
@@ -58,6 +68,22 @@ impl Venue {
             latitude: Some(latitude),
             longitude: Some(longitude),
         })
+    }
+
+    pub fn get_name(&self) -> String {
+        match (
+            self.title.as_deref(),
+            self.address.as_deref(),
+        ) {
+            (None, None) => "".to_string(),
+            (None, Some(addr)) => addr.to_string(),
+            (Some(title), None) => title.to_string(),
+            (Some(tittle), Some(addr)) => format!(
+                "{}, {}",
+                tittle,
+                addr,
+            )
+        }
     }
 }
 
@@ -166,14 +192,14 @@ impl Default for ResonanseEventKind {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct BaseEvent {
     pub id: Uuid,
     pub title: String,
     pub description: Option<String>,
     pub datetime_from: NaiveDateTime,
     pub datetime_to: Option<NaiveDateTime>,
-    pub city: String,
+    pub city: Option<String>,
     pub venue: Venue,
     pub image_url: Option<String>,
     pub local_image_path: Option<String>,
@@ -184,6 +210,17 @@ pub struct BaseEvent {
     pub service_id: String,
     pub service_type: Option<String>,
     pub service_data: Option<Value>,
+}
+
+impl BaseEvent {
+    pub fn get_description_up_to(&self, n: usize) -> String {
+        let description = self.description.as_deref().unwrap_or_default();
+        let n = std::cmp::min(n, description.chars().count());
+        format!(
+            "{}...",
+            &description[0..n]
+        )
+    }
 }
 
 impl FromRow<'_, PgRow> for BaseEvent {

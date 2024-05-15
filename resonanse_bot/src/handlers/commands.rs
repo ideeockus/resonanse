@@ -63,7 +63,13 @@ pub async fn create_event_command(bot: Bot, dialogue: MyDialogue, msg: Message) 
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
-    let filling_event = FillingEvent::new();
+    let accounts_repo = ACCOUNTS_REPOSITORY.get()
+        .ok_or("Cannot get accounts repository")?;
+    let user_account = accounts_repo.get_user_by_tg_id(msg.chat.id.0).await?;
+    let filling_event = FillingEvent::new(
+        user_account.user_data.city,
+        user_account.id,
+    );
 
     let mut message = bot.send_message(msg.chat.id, filling_event.get_missed_data_hint());
     message.parse_mode = Some(ParseMode::MarkdownV2);

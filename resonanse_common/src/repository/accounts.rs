@@ -46,6 +46,20 @@ impl AccountsRepository {
         Ok(account)
     }
 
+    pub async fn get_user_city(&self, tg_user_id: i64) -> Result<Option<String>> {
+        let user_city: Option<String> = sqlx::query(
+            r#"select city from user_accounts
+                where tg_user_id=$1
+            "#,
+        )
+            .bind(tg_user_id)
+            .fetch_one(&self.db_pool)
+            .await?
+            .try_get::<_, usize>(0)?;
+
+        Ok(user_city)
+    }
+
     pub async fn get_account_id_by_tg_user_id(&self, tg_user_id: i64) -> Result<i64> {
         debug!("searching account_id by tg_user_id {}", tg_user_id);
         let account_id: Result<i64> = sqlx::query(

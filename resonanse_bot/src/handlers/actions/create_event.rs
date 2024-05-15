@@ -146,7 +146,7 @@ pub async fn handle_fill_event_field_callback(
             Some(keyboards::get_inline_kb_choose_event_kind()),
         ),
         Some(keyboards::FILL_EVENT_FINALIZE_BTN_ID) => {
-            return handle_event_finalisation_callback(bot, dialogue, filling_event, q).await
+            return handle_event_finalisation_callback(bot, dialogue, filling_event, q).await;
         }
         _ => {
             warn!(
@@ -257,7 +257,7 @@ pub async fn handle_create_event_state_callback(
         last_edit_msg_id,
         q.clone(),
     )
-    .await
+        .await
     {
         Ok(v) => return Ok(v),
         Err(err) => {
@@ -299,7 +299,7 @@ pub async fn update_filling_message(
                 Some(ReplyMarkup::InlineKeyboard(
                     keyboards::get_make_event_keyboard(),
                 )),
-            );
+            ).await;
 
             match event_message {
                 EventPostMessageRequest::WithPoster(req) => req.await?,
@@ -409,22 +409,22 @@ pub async fn handle_event_geo(
     debug!("provided msg: {:?}", msg);
     let location = match msg.kind {
         Common(MessageCommon {
-            media_kind: MediaKind::Location(MediaLocation { location, .. }),
-            ..
-        }) => Venue::from_ll(location.latitude, location.longitude),
+                   media_kind: MediaKind::Location(MediaLocation { location, .. }),
+                   ..
+               }) => Venue::from_ll(location.latitude, location.longitude),
         Common(MessageCommon {
-            media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
-            ..
-        }) => Venue {
+                   media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
+                   ..
+               }) => Venue {
             title: filling_event.location_title.clone(),
             address: None,
-            latitude: venue.location.latitude,
-            longitude: venue.location.longitude,
+            latitude: Some(venue.location.latitude),
+            longitude: Some(venue.location.longitude),
         },
         Common(MessageCommon {
-            media_kind: MediaKind::Text(media_text),
-            ..
-        }) => {
+                   media_kind: MediaKind::Text(media_text),
+                   ..
+               }) => {
             let plain_text = media_text.text;
             match Venue::parse_from_yandex_map_link(&plain_text) {
                 Some(loc) => loc,
@@ -572,25 +572,33 @@ pub async fn handle_event_finalisation_callback(
     dialogue.update(BaseState::Idle).await?;
 
     let tg_event_deep_link = build_event_deep_link(created_event.id);
-    if filling_event.is_private {
-        bot.send_message(
-            msg.chat.id,
-            format!(
-                "Событие создано. Оно будет доступно только по вашей ссылке: {}",
-                tg_event_deep_link
-            ),
-        )
-        .await?;
-    } else {
-        bot.send_message(
-            msg.chat.id,
-            t!(
+    bot.send_message(
+        msg.chat.id,
+        t!(
                 "actions.create_event.fill_event.finalize_public",
                 event_link = tg_event_deep_link
             ),
-        )
+    )
         .await?;
-    }
+    // if filling_event.is_private {
+    //     bot.send_message(
+    //         msg.chat.id,
+    //         format!(
+    //             "Событие создано. Оно будет доступно только по вашей ссылке: {}",
+    //             tg_event_deep_link
+    //         ),
+    //     )
+    //     .await?;
+    // } else {
+    //     bot.send_message(
+    //         msg.chat.id,
+    //         t!(
+    //             "actions.create_event.fill_event.finalize_public",
+    //             event_link = tg_event_deep_link
+    //         ),
+    //     )
+    //     .await?;
+    // }
 
     Ok(())
 }

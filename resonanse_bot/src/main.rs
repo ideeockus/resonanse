@@ -1,15 +1,20 @@
-use std::sync::OnceLock;
+#[macro_use]
+extern crate rust_i18n;
+
+use std::sync::{Arc, OnceLock};
 
 use env_logger::{Builder, TimestampPrecision};
 use log::{info, LevelFilter};
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dptree;
 use teloxide::prelude::*;
+use tokio::sync::Mutex;
 
 use dispatch::schema;
+use resonanse_common::RecServiceClient;
 use resonanse_common::repository::{AccountsRepository, EventInteractionRepository, EventsRepository};
 
-use crate::config::{check_all_mandatory_envs_is_ok, CLICKHOUSE_DATABASE, CLICKHOUSE_DB_URL, CLICKHOUSE_PASSWORD, CLICKHOUSE_USERNAME, POSTGRES_DB_URL, RESONANSE_BOT_TOKEN};
+use crate::config::{check_all_mandatory_envs_is_ok, CLICKHOUSE_DATABASE, CLICKHOUSE_DB_URL, CLICKHOUSE_PASSWORD, CLICKHOUSE_USERNAME, POSTGRES_DB_URL, RABBITMQ_HOST, RESONANSE_BOT_TOKEN};
 use crate::management::run_resonanse_management_bot_polling;
 use crate::states::BaseState;
 
@@ -27,8 +32,6 @@ mod states;
 mod utils;
 mod external_api;
 
-#[macro_use]
-extern crate rust_i18n;
 i18n!("locales", fallback = "ru");
 
 static MANAGER_BOT: OnceLock<Bot> = OnceLock::new();
@@ -36,6 +39,8 @@ static MANAGER_BOT: OnceLock<Bot> = OnceLock::new();
 static EVENTS_REPOSITORY: OnceLock<EventsRepository> = OnceLock::new();
 static ACCOUNTS_REPOSITORY: OnceLock<AccountsRepository> = OnceLock::new();
 static EVENTS_INTERACTION_REPOSITORY: OnceLock<EventInteractionRepository> = OnceLock::new();
+
+static REC_SERVICE_CLIENT: OnceLock<RecServiceClient> = OnceLock::new();
 
 #[tokio::main]
 async fn main() {
@@ -51,11 +56,11 @@ async fn main() {
 
     let conn_url = std::env::var(POSTGRES_DB_URL).unwrap();
     let pool = resonanse_common::PgPool::connect(&conn_url).await.unwrap();
-    let clickhouse_client  = clickhouse::Client::default()
+    let clickhouse_client = clickhouse::Client::default()
         .with_url(CLICKHOUSE_DB_URL);
-        // .with_user(CLICKHOUSE_USERNAME)
-        // .with_password(CLICKHOUSE_PASSWORD)
-        // .with_database(CLICKHOUSE_DATABASE);
+    // .with_user(CLICKHOUSE_USERNAME)
+    // .with_password(CLICKHOUSE_PASSWORD)
+    // .with_database(CLICKHOUSE_DATABASE);
 
     // initialize repositories
     let events_repository = EventsRepository::new(pool.clone());
@@ -69,6 +74,10 @@ async fn main() {
         clickhouse_client,
     );
     EVENTS_INTERACTION_REPOSITORY.set(events_scores_repository).unwrap();
+
+    // initialize RPC client
+    let rabbitmq_host = std::env::var(RABBITMQ_HOST).unwrap();
+    REC_SERVICE_CLIENT.set(RecServiceClient::new(&rabbitmq_host).await).unwrap();
 
     let resonanse_bot_handle = tokio::spawn(async { run_resonanse_bot_polling().await });
     let _resonanse_management_bot_handle =

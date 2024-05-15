@@ -63,7 +63,7 @@ where
                 ChatId(tg_channel_to_post),
                 created_event.clone(),
                 construct_created_event_kb(&created_event),
-            ) {
+            ).await {
                 EventPostMessageRequest::WithPoster(f) => f.await?,
                 EventPostMessageRequest::Text(f) => f.await?,
             };
@@ -90,7 +90,7 @@ pub async fn send_event_post(
         chat_id,
         created_event.clone(),
         construct_created_event_kb(&created_event),
-    );
+    ).await;
     match event_post_message_request {
         EventPostMessageRequest::WithPoster(f) => f.await?,
         EventPostMessageRequest::Text(f) => f.await?,
@@ -104,8 +104,7 @@ pub fn construct_created_event_kb(created_event: &BaseEvent) -> Option<ReplyMark
         created_event.id,
         created_event
             .venue
-            .as_ref()
-            .map(|loc| loc.get_yandex_map_link_to()),
+            .get_yandex_map_link_to()
     )))
 }
 

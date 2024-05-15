@@ -1,40 +1,47 @@
-use std::path::Path;
+use std::error::Error;
+use std::io;
+use std::path::{Path, PathBuf};
+
 use reqwest;
+use uuid::Uuid;
+use resonanse_common::file_storage::get_event_image_path_by_uuid;
+use resonanse_common::models::BaseEvent;
 
-const RPC_QUEUE_RECOMMENDATION_BY_USER: &str = "recommendations.requests.by_user";
-const RPC_QUEUE_SET_USER_DESCRIPTION: &str = "resonanse_api.requests.set_user_description";
+use futures::StreamExt;
+use tokio::fs::OpenOptions;
 
-pub fn rpc_get_recommendation_by_user(user_id: i64) {
-    // todo rpc get recommendation
-}
-
-pub fn rpc_set_user_description(user_id: i64, description: String) {
-    // todo rpc set description
-}
-
-
-
-// todo check this carefully
-async fn download_image(url: &str, path: &Path) -> Result<(), Error> {
-    // Отправляем GET запрос для скачивания изображения
+async fn download_image(url: &str, path: &Path) -> Result<(), Box<dyn Error>> {
     let response = reqwest::get(url).await?;
 
-    // Проверяем статус ответа
-    if response.status().is_success() {
-        // Открываем файл для записи
-        let mut file = OpenOptions::new().create(true).write(true).open(path).await?;
+    let mut file = OpenOptions::new().create(true).write(true).open(path).await?;
+    let mut bytes_stream = response.bytes_stream();
 
-        // Получаем поток данных из ответа
-        let mut content = response.bytes_stream();
-
-        // Записываем данные в файл
-        while let Some(chunk) = content.next().await {
-            let chunk = chunk?;
-            tokio::io::copy(&mut chunk.as_ref(), &mut file).await?;
-        }
-
-        Ok(())
-    } else {
-        Err(reqwest::Error::new(reqwest::StatusCode::from_u16(response.status().as_u16()).unwrap(), "Failed to download image"))
+    while let Some(chunk) = bytes_stream.next().await {
+        let chunk = chunk?;
+        tokio::io::copy(&mut chunk.as_ref(), &mut file).await?;
     }
+
+    Ok(())
+}
+
+pub async fn resolve_event_picture(
+    event: &mut BaseEvent
+) -> Option<PathBuf>{
+    if let Some(local_path) = event.local_image_path.as_ref() {
+        let local_path = get_event_image_path_by_uuid(local_path);
+        if local_path.exists() {
+            return Some(local_path)
+        }
+    }
+
+    if let Some(image_url) = event.image_url.as_deref() {
+        let picture_uuid = Uuid::new_v4();
+        let local_path = get_event_image_path_by_uuid(picture_uuid);
+        if let Ok(_) = download_image(image_url, &local_path).await {
+            event.local_image_path = Some(picture_uuid.to_string());
+            return Some(local_path)
+        }
+    }
+
+    None
 }

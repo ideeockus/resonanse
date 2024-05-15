@@ -1,20 +1,18 @@
 use std::error::Error;
 
-use log::debug;
-
+use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::{Message, ParseMode, ReplyMarkup};
 use teloxide::utils::markdown;
-use teloxide::Bot;
 
-use resonanse_common::models::EventSubject;
 use resonanse_common::EventSubjectFilter;
+use resonanse_common::models::EventSubject;
 
+use crate::{EVENTS_REPOSITORY, keyboards};
 use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_events_page, get_inline_kb_set_subject_filter};
 use crate::states::BaseState;
-use crate::{keyboards, EVENTS_REPOSITORY};
 
 pub async fn handle_get_events(
     bot: Bot,
@@ -189,19 +187,16 @@ pub async fn get_choose_event_text(
             .map(|event| {
                 event_i += 1;
 
-                debug!("event.brief_description {:?}", event.brief_description);
-                let event_brief_description_text = match event.brief_description.as_deref() {
-                    Some(brief_desc) => format!("\n_{}_", markdown::escape(brief_desc),),
-                    None => String::new(),
-                };
+                let stripped_descr = &event.get_description_up_to(100);
+                let stripped_descr = format!("\n_{}_", markdown::escape(stripped_descr),);
 
                 format!(
                     "/event\\_{}\t*{}*{}\n⏰ {}\n📍 {}",
                     event_i,
                     markdown::escape(&event.title),
-                    markdown::escape(&event_brief_description_text),
+                    markdown::escape(&stripped_descr),
                     markdown::escape(&event.datetime_from.to_string()),
-                    markdown::escape(&event.location_title),
+                    markdown::escape(&event.venue.get_name()),
                 )
             })
             .collect::<Vec<String>>()
