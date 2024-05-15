@@ -2,7 +2,7 @@ use serde_json::json;
 use uuid::Uuid;
 
 use crate::errors::BotHandlerError;
-use resonanse_common::models::{BaseEvent, EventSubject, Venue, ResonanseEventKind};
+use resonanse_common::models::{BaseEvent, EventSubject, ResonanseEventKind, Venue};
 // use resonanse_common::repository::CreateBaseEvent;
 
 #[derive(Clone, Default)]
@@ -24,10 +24,7 @@ pub struct FillingEvent {
 }
 
 impl FillingEvent {
-    pub fn new(
-        city: Option<String>,
-        creator_id: i64,
-    ) -> Self {
+    pub fn new(city: Option<String>, creator_id: i64) -> Self {
         FillingEvent {
             title: None,
             event_kind: ResonanseEventKind::UserOffer,

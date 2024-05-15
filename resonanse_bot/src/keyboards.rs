@@ -2,11 +2,12 @@ use std::env;
 
 use teloxide::types::{
     InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, WebAppInfo,
+    ReplyMarkup,
 };
 use uuid::Uuid;
 
-use resonanse_common::EventSubjectFilter;
 use resonanse_common::models::{EventSubject, ResonanseEventKind};
+use resonanse_common::EventSubjectFilter;
 
 use crate::config::WEB_APP_URL;
 
@@ -214,3 +215,8 @@ pub fn get_make_event_keyboard() -> InlineKeyboardMarkup {
 
     InlineKeyboardMarkup::new(buttons)
 }
+
+// pub fn make_cities_keyboard(cities: Vec<String>) -> ReplyMarkup {
+//     ReplyMarkup::Keyboard(MArkup)
+// get_unique_cities
+// }

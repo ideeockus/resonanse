@@ -7,7 +7,6 @@ pub enum RpcError {
     SerdeJsonError,
 }
 
-
 impl From<sqlx::error::Error> for RpcError {
     fn from(value: sqlx::error::Error) -> Self {
         Self::SqlxError

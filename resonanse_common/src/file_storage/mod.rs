@@ -3,7 +3,6 @@ use log::debug;
 use std::env;
 use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
-use uuid::Uuid;
 
 const BASE_STORAGE_DIR_NAME: &str = "resonanse_storage";
 const EVENT_IMAGES_DIR_NAME: &str = "event_images";

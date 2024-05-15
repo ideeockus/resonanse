@@ -22,7 +22,6 @@ pub const CLICKHOUSE_USERNAME: &str = "CLICKHOUSE_USERNAME";
 pub const CLICKHOUSE_PASSWORD: &str = "CLICKHOUSE_PASSWORD";
 pub const CLICKHOUSE_DATABASE: &str = "CLICKHOUSE_DATABASE";
 
-
 pub const DONATION_URL: &str = "DONATION_URL";
 pub const WEB_APP_URL: &str = "WEB_APP_URL";
 
@@ -37,9 +36,6 @@ pub fn check_all_mandatory_envs_is_ok() {
     env::var(RABBITMQ_HOST).unwrap();
 
     env::var(CLICKHOUSE_DB_URL).unwrap();
-    env::var(CLICKHOUSE_USERNAME).unwrap();
-    env::var(CLICKHOUSE_PASSWORD).unwrap();
-    env::var(CLICKHOUSE_DATABASE).unwrap();
 
     env::var(MANAGER_TG_IDS).unwrap();
 

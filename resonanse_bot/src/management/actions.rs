@@ -82,55 +82,51 @@ pub async fn get_stats_command(bot: Bot, msg: Message) -> HandlerResult {
         .get()
         .ok_or("Cannot get events interaction repository")?;
 
+    let count_accounts = accounts_repo.count_accounts().await?;
+    let count_accounts_with_descriptions = accounts_repo.count_accounts_with_descriptions().await?;
 
-    let count_accounts = accounts_repo
-        .count_accounts()
-        .await?;
-    let count_accounts_with_descriptions = accounts_repo
-        .count_accounts_with_descriptions()
-        .await?;
+    let count_events = events_repo.count_events().await?;
 
-    let count_events = events_repo
-        .count_events()
-        .await?;
-
-    let count_clicks_for_today = events_interaction_repo.count_clicks_for_today()
-        .await?;
-    let count_likes_for_today = events_interaction_repo.count_likes_for_today()
-        .await?;
-    let count_dislikes_for_today = events_interaction_repo.count_dislikes_for_today()
-        .await?;
-    let count_recommendations_for_today = events_interaction_repo.count_recommendations_for_today()
+    let count_clicks_for_today = events_interaction_repo.count_clicks_for_today().await?;
+    let count_likes_for_today = events_interaction_repo.count_likes_for_today().await?;
+    let count_dislikes_for_today = events_interaction_repo.count_dislikes_for_today().await?;
+    let count_recommendations_for_today = events_interaction_repo
+        .count_recommendations_for_today()
         .await?;
 
     let statistics = vec![
         ("Количество пользователей", count_accounts.to_string()),
-        ("Количество пользователей с описанием", count_accounts_with_descriptions.to_string()),
+        (
+            "Количество пользователей с описанием",
+            count_accounts_with_descriptions.to_string(),
+        ),
         ("Количество эвентов в базе", count_events.to_string()),
-
-        ("Количество кликов за день", count_clicks_for_today.to_string()),
-        ("Количество лайков в базе", count_likes_for_today.to_string()),
-        ("Количество дислайков в базе", count_dislikes_for_today.to_string()),
-        ("Выданных рекомендаций в базе", count_recommendations_for_today.to_string()),
+        (
+            "Количество кликов за день",
+            count_clicks_for_today.to_string(),
+        ),
+        (
+            "Количество лайков в базе",
+            count_likes_for_today.to_string(),
+        ),
+        (
+            "Количество дислайков в базе",
+            count_dislikes_for_today.to_string(),
+        ),
+        (
+            "Выданных рекомендаций в базе",
+            count_recommendations_for_today.to_string(),
+        ),
     ];
 
     let mut statistics_message = String::new();
     for (stat_name, stat_value) in statistics {
-        statistics_message.push_str(
-            &format!(
-                "{}: {}\n",
-                stat_name,
-                stat_value,
-            )
-        )
+        statistics_message.push_str(&format!("{}: {}\n", stat_name, stat_value,))
     }
 
     let mut message = bot.send_message(
         msg.chat.id,
-        format!(
-            "\\[Статистика\\]\n: {}\n\n",
-            statistics_message,
-        ),
+        format!("\\[Статистика\\]\n: {}\n\n", statistics_message,),
     );
 
     message.parse_mode = Some(ParseMode::MarkdownV2);

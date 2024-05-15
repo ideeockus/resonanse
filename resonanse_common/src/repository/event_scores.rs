@@ -43,19 +43,21 @@ impl EventInteractionRepository {
             returning *
             "#,
         )
-            .bind(event_id)
-            .bind(user_id)
-            .bind(score.to_string())
-            .fetch_one(&self.db_pool)
-            .await?;
+        .bind(event_id)
+        .bind(user_id)
+        .bind(score.to_string())
+        .fetch_one(&self.db_pool)
+        .await?;
 
         let mut insert = self.clickhouse_client.insert("users_interactions")?;
-        insert.write(&UserInteraction {
-            user_id,
-            event_id,
-            interaction_type: score.to_string(),
-            interaction_dt: chrono::offset::Local::now().naive_local(),
-        }).await?;
+        insert
+            .write(&UserInteraction {
+                user_id,
+                event_id,
+                interaction_type: score.to_string(),
+                interaction_dt: chrono::offset::Local::now().naive_local(),
+            })
+            .await?;
 
         Ok(event_score)
     }
@@ -71,9 +73,9 @@ impl EventInteractionRepository {
                 WHERE user_id = $1
                 "#,
         )
-            .bind(user_id)
-            .fetch_all(&self.db_pool)
-            .await?;
+        .bind(user_id)
+        .fetch_all(&self.db_pool)
+        .await?;
 
         Ok(event_scores)
     }
@@ -84,12 +86,14 @@ impl EventInteractionRepository {
         event_id: Uuid,
     ) -> Result<(), EventScoreError> {
         let mut insert = self.clickhouse_client.insert("users_interactions")?;
-        insert.write(&UserInteraction {
-            user_id,
-            event_id,
-            interaction_type: "click".to_string(),
-            interaction_dt: chrono::offset::Local::now().naive_local(),
-        }).await?;
+        insert
+            .write(&UserInteraction {
+                user_id,
+                event_id,
+                interaction_type: "click".to_string(),
+                interaction_dt: chrono::offset::Local::now().naive_local(),
+            })
+            .await?;
 
         Ok(())
     }
@@ -130,9 +134,7 @@ impl EventInteractionRepository {
 pub enum EventScoreError {
     SqlxError,
     ClickHouseError,
-
 }
-
 
 impl From<sqlx::error::Error> for EventScoreError {
     fn from(value: sqlx::error::Error) -> Self {

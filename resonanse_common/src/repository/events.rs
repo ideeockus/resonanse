@@ -1,11 +1,9 @@
-use std::collections::HashMap;
-
 use log::debug;
 use sqlx::{PgPool, Result, Row};
 use uuid::Uuid;
 
+use crate::models::BaseEvent;
 use crate::EventSubjectFilter;
-use crate::models::{BaseEvent, EventSubject};
 
 #[derive(Debug)]
 pub struct EventsRepository {
@@ -66,8 +64,8 @@ impl EventsRepository {
             order by datetime_from
             "#,
         )
-            .fetch_all(&self.db_pool)
-            .await;
+        .fetch_all(&self.db_pool)
+        .await;
 
         events
     }
@@ -79,32 +77,32 @@ impl EventsRepository {
             where title like $1
             "#,
         )
-            .bind(format!("%{}%", title))
-            .fetch_all(&self.db_pool)
-            .await;
+        .bind(format!("%{}%", title))
+        .fetch_all(&self.db_pool)
+        .await;
 
         events
     }
 
-    pub async fn get_all_public_events(&self, page: i64, page_size: i64) -> Result<Vec<BaseEvent>> {
-        let events: Result<Vec<BaseEvent>> = sqlx::query_as(
-            r#"select *
-            from resonanse_events
-            where is_private=false and datetime_from >= current_date
-            order by datetime_from
-            offset $1 rows
-            fetch next $2 rows only
-            "#,
-        )
-            .bind(page * page_size)
-            .bind(page_size)
-            .fetch_all(&self.db_pool)
-            .await;
+    // pub async fn get_all_public_events(&self, page: i64, page_size: i64) -> Result<Vec<BaseEvent>> {
+    //     let events: Result<Vec<BaseEvent>> = sqlx::query_as(
+    //         r#"select *
+    //         from resonanse_events
+    //         where is_private=false and datetime_from >= current_date
+    //         order by datetime_from
+    //         offset $1 rows
+    //         fetch next $2 rows only
+    //         "#,
+    //     )
+    //     .bind(page * page_size)
+    //     .bind(page_size)
+    //     .fetch_all(&self.db_pool)
+    //     .await;
+    //
+    //     events
+    // }
 
-        events
-    }
-
-    pub async fn get_public_events(
+    pub async fn get_public_events_with_filters(
         &self,
         page: i64,
         page_size: i64,
@@ -153,6 +151,29 @@ impl EventsRepository {
         events
     }
 
+    pub async fn get_public_events(
+        &self,
+        page: i64,
+        page_size: i64,
+    ) -> Result<Vec<BaseEvent>> {
+        let query_str =
+            r#"select *
+            from resonanse_events
+            WHERE datetime_from >= current_date
+            order by datetime_from
+            offset $1 rows
+            fetch next $2 rows only
+            "#;
+        let mut events_query = sqlx::query_as(&query_str);
+
+        let events: Result<Vec<BaseEvent>> = events_query
+            .bind(page * page_size)
+            .bind(page_size)
+            .fetch_all(&self.db_pool)
+            .await;
+        events
+    }
+
     pub async fn get_event_by_uuid(&self, uuid: Uuid) -> Result<BaseEvent> {
         let event: Result<BaseEvent> = sqlx::query_as(
             r#"select *
@@ -160,14 +181,18 @@ impl EventsRepository {
             where id=$1
             "#,
         )
-            .bind(uuid)
-            .fetch_one(&self.db_pool)
-            .await;
+        .bind(uuid)
+        .fetch_one(&self.db_pool)
+        .await;
 
         event
     }
 
-    pub async fn delete_event(&self, event_uuid: Uuid, _deleted_by_id: i64) -> Result<(), sqlx::error::Error> {
+    pub async fn delete_event(
+        &self,
+        event_uuid: Uuid,
+        _deleted_by_id: i64,
+    ) -> Result<(), sqlx::error::Error> {
         let deleting_event = self.get_event_by_uuid(event_uuid).await?;
 
         let _deleted_event: BaseEvent = sqlx::query_as(
@@ -211,11 +236,11 @@ impl EventsRepository {
             r#"
             DELETE FROM resonanse_events
             WHERE id = $1
-            "#
+            "#,
         )
-            .bind(event_uuid)
-            .execute(&self.db_pool)
-            .await?;
+        .bind(event_uuid)
+        .execute(&self.db_pool)
+        .await?;
 
         debug!("delete_events result {:?}", result);
         Ok(())
@@ -228,10 +253,10 @@ impl EventsRepository {
             values ($1, $2)
             "#,
         )
-            .bind(post_id)
-            .bind(event_id)
-            .execute(&self.db_pool)
-            .await?;
+        .bind(post_id)
+        .bind(event_id)
+        .execute(&self.db_pool)
+        .await?;
         debug!("event_tg_table result {:?}", result);
 
         Ok(())
@@ -243,8 +268,25 @@ impl EventsRepository {
             from resonanse_events
             "#,
         )
-            .fetch_one(&self.db_pool)
-            .await?
-            .try_get::<_, usize>(0)
+        .fetch_one(&self.db_pool)
+        .await?
+        .try_get::<_, usize>(0)
+    }
+
+    pub async fn get_unique_cities(&self) -> Result<Vec<String>> {
+        let rows = sqlx::query(
+            r#"
+        SELECT DISTINCT city
+        FROM resonanse_events
+        "#
+        )
+            .fetch_all(&self.db_pool)
+            .await?;
+
+        let cities = rows.iter()
+            .map(|row| row.try_get::<String, _>("city"))
+            .collect::<Result<Vec<String>, _>>()?;
+
+        Ok(cities)
     }
 }

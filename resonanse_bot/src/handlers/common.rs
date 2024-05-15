@@ -41,10 +41,7 @@ pub async fn invalid_state_callback(bot: Bot, q: CallbackQuery) -> HandlerResult
 }
 
 pub async fn invalid_state(bot: Bot, msg: Message) -> HandlerResult {
-    debug!(
-        "unhandled message from {}",
-        repr_user_as_str(msg.from()),
-    );
+    debug!("unhandled message from {}", repr_user_as_str(msg.from()),);
 
     bot.send_message(
         msg.chat.id,

@@ -59,8 +59,7 @@ pub async fn prepare_event_msg_with_base_event(
 
     match event_picture_local_path {
         Some(picture_local_path) => {
-            let event_image_input_file =
-                InputFile::file(picture_local_path);
+            let event_image_input_file = InputFile::file(picture_local_path);
             let mut msg = bot.send_photo(chat_id, event_image_input_file);
             msg.caption = Some(msg_text);
             msg.parse_mode = Some(ParseMode::MarkdownV2);

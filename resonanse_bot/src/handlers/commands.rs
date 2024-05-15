@@ -1,15 +1,14 @@
 use std::env;
 use std::str::FromStr;
 
-use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::{ParseMode, ReplyMarkup};
 use teloxide::utils::command::parse_command;
+use teloxide::Bot;
 use uuid::Uuid;
 
 use resonanse_common::EventSubjectFilter;
 
-use crate::{ACCOUNTS_REPOSITORY, keyboards};
 use crate::config::DONATION_URL;
 use crate::data_structs::FillingEvent;
 use crate::data_translators::fill_base_account_from_teloxide_user;
@@ -17,8 +16,7 @@ use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_run_web_app, get_inline_kb_set_subject_filter};
 use crate::states::{BaseState, CreateEventState};
-
-
+use crate::{keyboards, ACCOUNTS_REPOSITORY};
 
 pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
     if let Some(command_text) = msg.text() {
@@ -34,7 +32,7 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
         }
     }
 
-    let mut message = bot.send_message(msg.chat.id, t!("hello_msg"));
+    let mut message = bot.send_message(msg.chat.id, t!("onboarding.attention_hook"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
@@ -46,6 +44,10 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
             .create_user_by_tg_user_id(new_user_account)
             .await?;
     }
+
+    let mut message = bot.send_message(msg.chat.id, t!("onboarding.instruction"));
+    message.parse_mode = Some(ParseMode::MarkdownV2);
+    message.await?;
 
     Ok(())
 }
@@ -63,13 +65,11 @@ pub async fn create_event_command(bot: Bot, dialogue: MyDialogue, msg: Message) 
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
 
-    let accounts_repo = ACCOUNTS_REPOSITORY.get()
+    let accounts_repo = ACCOUNTS_REPOSITORY
+        .get()
         .ok_or("Cannot get accounts repository")?;
     let user_account = accounts_repo.get_user_by_tg_id(msg.chat.id.0).await?;
-    let filling_event = FillingEvent::new(
-        user_account.user_data.city,
-        user_account.id,
-    );
+    let filling_event = FillingEvent::new(user_account.user_data.city, user_account.id);
 
     let mut message = bot.send_message(msg.chat.id, filling_event.get_missed_data_hint());
     message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -114,11 +114,8 @@ pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) ->
     Ok(())
 }
 
-
 pub async fn set_user_city_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
-    dialogue
-        .update(BaseState::SetCity)
-        .await?;
+    dialogue.update(BaseState::SetCity).await?;
 
     let mut message = bot.send_message(msg.chat.id, t!("actions.set_city.prompt"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -127,10 +124,12 @@ pub async fn set_user_city_command(bot: Bot, dialogue: MyDialogue, msg: Message)
     Ok(())
 }
 
-pub async fn set_user_description_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
-    dialogue
-        .update(BaseState::SetDescription)
-        .await?;
+pub async fn set_user_description_command(
+    bot: Bot,
+    dialogue: MyDialogue,
+    msg: Message,
+) -> HandlerResult {
+    dialogue.update(BaseState::SetDescription).await?;
 
     let mut message = bot.send_message(msg.chat.id, t!("actions.set_description.prompt"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -159,10 +158,7 @@ pub async fn send_feedback_command(bot: Bot, dialogue: MyDialogue, msg: Message)
 
 pub async fn send_donation_command(bot: Bot, msg: Message) -> HandlerResult {
     let donation_url = env::var(DONATION_URL)?;
-    let donation_msg = t!(
-        "donation_msg",
-        donation_link = &donation_url,
-    );
+    let donation_msg = t!("donation_msg", donation_link = &donation_url,);
 
     let message = bot.send_message(msg.chat.id, donation_msg);
     message.await?;

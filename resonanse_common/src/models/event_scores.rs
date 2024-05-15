@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
 use sqlx::postgres::PgRow;
 use sqlx::{FromRow, Row};
+use std::fmt::{Display, Formatter};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]

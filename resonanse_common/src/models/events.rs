@@ -3,10 +3,10 @@ use std::collections::HashMap;
 use chrono::NaiveDateTime;
 use log::debug;
 use serde::Deserialize;
-use sqlx::{FromRow, Row};
-use sqlx::postgres::PgRow;
-use strum_macros;
 use serde_json::Value;
+use sqlx::postgres::PgRow;
+use sqlx::{FromRow, Row};
+use strum_macros;
 use uuid::Uuid;
 
 #[derive(Clone, Copy, Debug, sqlx::Type)]
@@ -71,18 +71,11 @@ impl Venue {
     }
 
     pub fn get_name(&self) -> String {
-        match (
-            self.title.as_deref(),
-            self.address.as_deref(),
-        ) {
+        match (self.title.as_deref(), self.address.as_deref()) {
             (None, None) => "".to_string(),
             (None, Some(addr)) => addr.to_string(),
             (Some(title), None) => title.to_string(),
-            (Some(tittle), Some(addr)) => format!(
-                "{}, {}",
-                tittle,
-                addr,
-            )
+            (Some(tittle), Some(addr)) => format!("{}, {}", tittle, addr,),
         }
     }
 }
@@ -120,13 +113,11 @@ pub enum EventSubject {
     Charity = 8,
 }
 
-
 impl From<EventSubject> for String {
     fn from(value: EventSubject) -> Self {
         value.to_string()
     }
 }
-
 
 #[derive(Clone)]
 pub struct EventSubjectFilter(pub HashMap<EventSubject, bool>);
@@ -216,10 +207,17 @@ impl BaseEvent {
     pub fn get_description_up_to(&self, n: usize) -> String {
         let description = self.description.as_deref().unwrap_or_default();
         let n = std::cmp::min(n, description.chars().count());
-        format!(
-            "{}...",
-            &description[0..n]
-        )
+        // format!("{}...", &description[0..n])
+
+        let mut stripped_description = String::new();
+        for (i, ch) in  description.chars().enumerate() {
+            stripped_description.push(ch);
+            if i >= n {
+                break;
+            }
+        }
+
+        stripped_description
     }
 }
 
@@ -248,8 +246,8 @@ impl FromRow<'_, PgRow> for BaseEvent {
             venue: Venue {
                 title: row.try_get("venue_title")?,
                 address: row.try_get("venue_address")?,
-                latitude: row.try_get("location_latitude")?,
-                longitude: row.try_get("location_longitude")?,
+                latitude: row.try_get("venue_lat")?,
+                longitude: row.try_get("venue_lon")?,
             },
             image_url: row.try_get("image_url")?,
             local_image_path: row.try_get("local_image_path")?,

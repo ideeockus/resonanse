@@ -1,7 +1,7 @@
 use std::env;
 use std::error::Error;
 
-use log::{debug};
+use log::debug;
 use serde_json::json;
 
 use teloxide::prelude::*;
@@ -63,7 +63,9 @@ where
                 ChatId(tg_channel_to_post),
                 created_event.clone(),
                 construct_created_event_kb(&created_event),
-            ).await {
+            )
+            .await
+            {
                 EventPostMessageRequest::WithPoster(f) => f.await?,
                 EventPostMessageRequest::Text(f) => f.await?,
             };
@@ -90,7 +92,8 @@ pub async fn send_event_post(
         chat_id,
         created_event.clone(),
         construct_created_event_kb(&created_event),
-    ).await;
+    )
+    .await;
     match event_post_message_request {
         EventPostMessageRequest::WithPoster(f) => f.await?,
         EventPostMessageRequest::Text(f) => f.await?,
@@ -102,9 +105,7 @@ pub async fn send_event_post(
 pub fn construct_created_event_kb(created_event: &BaseEvent) -> Option<ReplyMarkup> {
     Some(ReplyMarkup::InlineKeyboard(get_inline_kb_event_message(
         created_event.id,
-        created_event
-            .venue
-            .get_yandex_map_link_to()
+        created_event.venue.get_yandex_map_link_to(),
     )))
 }
 

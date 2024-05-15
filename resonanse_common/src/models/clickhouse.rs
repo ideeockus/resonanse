@@ -1,5 +1,5 @@
-use serde::Serialize;
 use clickhouse::Row;
+use serde::Serialize;
 use uuid::Uuid;
 
 #[derive(Row, Serialize)]

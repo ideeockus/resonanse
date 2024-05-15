@@ -14,7 +14,7 @@ use teloxide::Bot;
 use uuid::Uuid;
 
 use resonanse_common::file_storage::get_event_image_path_by_uuid;
-use resonanse_common::models::{BaseEvent, EventSubject, Venue, ResonanseEventKind};
+use resonanse_common::models::{BaseEvent, EventSubject, ResonanseEventKind, Venue};
 
 use crate::config::DEFAULT_DATETIME_FORMAT;
 use crate::data_structs::{
@@ -257,7 +257,7 @@ pub async fn handle_create_event_state_callback(
         last_edit_msg_id,
         q.clone(),
     )
-        .await
+    .await
     {
         Ok(v) => return Ok(v),
         Err(err) => {
@@ -299,7 +299,8 @@ pub async fn update_filling_message(
                 Some(ReplyMarkup::InlineKeyboard(
                     keyboards::get_make_event_keyboard(),
                 )),
-            ).await;
+            )
+            .await;
 
             match event_message {
                 EventPostMessageRequest::WithPoster(req) => req.await?,
@@ -311,7 +312,7 @@ pub async fn update_filling_message(
             let mut message = bot.send_message(chat_id, missed_data_hint);
             message.parse_mode = Some(ParseMode::MarkdownV2);
             message.reply_markup = Some(ReplyMarkup::InlineKeyboard(
-                keyboards::get_make_event_keyboard()
+                keyboards::get_make_event_keyboard(),
             ));
             message.await?
         }
@@ -409,22 +410,22 @@ pub async fn handle_event_geo(
     debug!("provided msg: {:?}", msg);
     let location = match msg.kind {
         Common(MessageCommon {
-                   media_kind: MediaKind::Location(MediaLocation { location, .. }),
-                   ..
-               }) => Venue::from_ll(location.latitude, location.longitude),
+            media_kind: MediaKind::Location(MediaLocation { location, .. }),
+            ..
+        }) => Venue::from_ll(location.latitude, location.longitude),
         Common(MessageCommon {
-                   media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
-                   ..
-               }) => Venue {
+            media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
+            ..
+        }) => Venue {
             title: filling_event.location_title.clone(),
             address: None,
             latitude: Some(venue.location.latitude),
             longitude: Some(venue.location.longitude),
         },
         Common(MessageCommon {
-                   media_kind: MediaKind::Text(media_text),
-                   ..
-               }) => {
+            media_kind: MediaKind::Text(media_text),
+            ..
+        }) => {
             let plain_text = media_text.text;
             match Venue::parse_from_yandex_map_link(&plain_text) {
                 Some(loc) => loc,
@@ -575,11 +576,11 @@ pub async fn handle_event_finalisation_callback(
     bot.send_message(
         msg.chat.id,
         t!(
-                "actions.create_event.fill_event.finalize_public",
-                event_link = tg_event_deep_link
-            ),
+            "actions.create_event.fill_event.finalize_public",
+            event_link = tg_event_deep_link
+        ),
     )
-        .await?;
+    .await?;
     // if filling_event.is_private {
     //     bot.send_message(
     //         msg.chat.id,

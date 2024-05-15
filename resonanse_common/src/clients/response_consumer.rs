@@ -1,9 +1,6 @@
+use amqprs::channel::Channel;
 use std::collections::HashMap;
-use std::future::Future;
-use std::pin::Pin;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-use amqprs::channel::{BasicAckArguments, Channel};
 
 use amqprs::consumer::AsyncConsumer;
 use amqprs::{BasicProperties, Deliver};
@@ -33,11 +30,11 @@ impl ResponseConsumer {
                     return response;
                 }
             }
+            debug!("await_response - wait notification");
             self.notify.notified().await;
         }
     }
 }
-
 
 #[async_trait]
 impl AsyncConsumer for ResponseConsumer {
@@ -51,7 +48,6 @@ impl AsyncConsumer for ResponseConsumer {
         let corr_id = basic_properties.correlation_id().clone();
         let response = content.clone();
 
-
         if let Some(corr_id) = corr_id {
             debug!("got rpc response corr_id {:?}", corr_id);
             let mut responses = self.responses.lock().unwrap();
@@ -60,5 +56,3 @@ impl AsyncConsumer for ResponseConsumer {
         }
     }
 }
-
-

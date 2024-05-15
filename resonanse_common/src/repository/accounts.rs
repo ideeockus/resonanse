@@ -35,7 +35,7 @@ impl AccountsRepository {
 
     pub async fn get_user_by_tg_id(&self, tg_user_id: i64) -> Result<BaseAccount> {
         let account: BaseAccount = sqlx::query_as(
-            r#"select * from user_accounts
+            r#"select * from resonanse_users
                 where tg_user_id=$1
             "#,
         )
@@ -48,14 +48,14 @@ impl AccountsRepository {
 
     pub async fn get_user_city(&self, tg_user_id: i64) -> Result<Option<String>> {
         let user_city: Option<String> = sqlx::query(
-            r#"select city from user_accounts
+            r#"select city from resonanse_users
                 where tg_user_id=$1
             "#,
         )
-            .bind(tg_user_id)
-            .fetch_one(&self.db_pool)
-            .await?
-            .try_get::<_, usize>(0)?;
+        .bind(tg_user_id)
+        .fetch_one(&self.db_pool)
+        .await?
+        .try_get::<_, usize>(0)?;
 
         Ok(user_city)
     }
@@ -64,7 +64,7 @@ impl AccountsRepository {
         debug!("searching account_id by tg_user_id {}", tg_user_id);
         let account_id: Result<i64> = sqlx::query(
             r#"
-            select id from user_accounts
+            select id from resonanse_users
             where tg_user_id=$1
             "#,
         )
@@ -78,7 +78,10 @@ impl AccountsRepository {
         account_id
     }
 
-    pub async fn create_user(&self, account: BaseAccount) -> Result<BaseAccount, sqlx::error::Error> {
+    pub async fn create_user(
+        &self,
+        account: BaseAccount,
+    ) -> Result<BaseAccount, sqlx::error::Error> {
         let created_account: BaseAccount = sqlx::query_as(
             r#"
             INSERT INTO resonanse_users
@@ -98,34 +101,34 @@ impl AccountsRepository {
                 $23, $24
             )
             RETURNING *
-            "#
+            "#,
         )
-            .bind(account.username)
-            .bind(account.user_data.first_name)
-            .bind(account.user_data.last_name)
-            .bind(account.user_data.city)
-            .bind(account.user_data.description)
-            .bind(account.user_data.headline)
-            .bind(account.user_data.goals)
-            .bind(account.user_data.interests)
-            .bind(account.user_data.language)
-            .bind(account.user_data.age)
-            .bind(account.user_data.education)
-            .bind(account.user_data.hobby)
-            .bind(account.user_data.music)
-            .bind(account.user_data.sport)
-            .bind(account.user_data.books)
-            .bind(account.user_data.food)
-            .bind(account.user_data.worldview)
-            .bind(account.contact_data.email)
-            .bind(account.contact_data.phone)
-            .bind(account.contact_data.telegram.tg_username)
-            .bind(account.contact_data.telegram.tg_user_id)
-            .bind(account.contact_data.instagram)
-            .bind(account.auth_data.password_hash)
-            .bind(account.user_type)
-            .fetch_one(&self.db_pool)
-            .await?;
+        .bind(account.username)
+        .bind(account.user_data.first_name)
+        .bind(account.user_data.last_name)
+        .bind(account.user_data.city)
+        .bind(account.user_data.description)
+        .bind(account.user_data.headline)
+        .bind(account.user_data.goals)
+        .bind(account.user_data.interests)
+        .bind(account.user_data.language)
+        .bind(account.user_data.age)
+        .bind(account.user_data.education)
+        .bind(account.user_data.hobby)
+        .bind(account.user_data.music)
+        .bind(account.user_data.sport)
+        .bind(account.user_data.books)
+        .bind(account.user_data.food)
+        .bind(account.user_data.worldview)
+        .bind(account.contact_data.email)
+        .bind(account.contact_data.phone)
+        .bind(account.contact_data.telegram.tg_username)
+        .bind(account.contact_data.telegram.tg_user_id)
+        .bind(account.contact_data.instagram)
+        .bind(account.auth_data.password_hash)
+        .bind(account.user_type)
+        .fetch_one(&self.db_pool)
+        .await?;
 
         debug!("inserted account: {:?}", created_account);
         Ok(created_account)
@@ -137,12 +140,12 @@ impl AccountsRepository {
             UPDATE resonanse_users
             SET city = $1
             WHERE id = $2
-            "#
+            "#,
         )
-            .bind(city)
-            .bind(user_id)
-            .execute(&self.db_pool)
-            .await?;
+        .bind(city)
+        .bind(user_id)
+        .execute(&self.db_pool)
+        .await?;
 
         Ok(())
     }
@@ -153,12 +156,12 @@ impl AccountsRepository {
             UPDATE resonanse_users
             SET description = $1
             WHERE id = $2
-            "#
+            "#,
         )
-            .bind(description)
-            .bind(user_id)
-            .execute(&self.db_pool)
-            .await?;
+        .bind(description)
+        .bind(user_id)
+        .execute(&self.db_pool)
+        .await?;
 
         Ok(())
     }
@@ -182,8 +185,8 @@ impl AccountsRepository {
             select count(*) from user_accounts where description is not null
             "#,
         )
-            .fetch_one(&self.db_pool)
-            .await?
-            .try_get::<_, usize>(0)
+        .fetch_one(&self.db_pool)
+        .await?
+        .try_get::<_, usize>(0)
     }
 }

@@ -11,10 +11,15 @@ use teloxide::prelude::*;
 use tokio::sync::Mutex;
 
 use dispatch::schema;
+use resonanse_common::repository::{
+    AccountsRepository, EventInteractionRepository, EventsRepository,
+};
 use resonanse_common::RecServiceClient;
-use resonanse_common::repository::{AccountsRepository, EventInteractionRepository, EventsRepository};
 
-use crate::config::{check_all_mandatory_envs_is_ok, CLICKHOUSE_DATABASE, CLICKHOUSE_DB_URL, CLICKHOUSE_PASSWORD, CLICKHOUSE_USERNAME, POSTGRES_DB_URL, RABBITMQ_HOST, RESONANSE_BOT_TOKEN};
+use crate::config::{
+    check_all_mandatory_envs_is_ok, CLICKHOUSE_DATABASE, CLICKHOUSE_DB_URL, CLICKHOUSE_PASSWORD,
+    CLICKHOUSE_USERNAME, POSTGRES_DB_URL, RABBITMQ_HOST, RESONANSE_BOT_TOKEN,
+};
 use crate::management::run_resonanse_management_bot_polling;
 use crate::states::BaseState;
 
@@ -24,13 +29,13 @@ mod data_structs;
 mod data_translators;
 mod dispatch;
 mod errors;
+mod external_api;
 mod handlers;
 mod high_logics;
 mod keyboards;
 mod management;
 mod states;
 mod utils;
-mod external_api;
 
 i18n!("locales", fallback = "ru");
 
@@ -56,8 +61,7 @@ async fn main() {
 
     let conn_url = std::env::var(POSTGRES_DB_URL).unwrap();
     let pool = resonanse_common::PgPool::connect(&conn_url).await.unwrap();
-    let clickhouse_client = clickhouse::Client::default()
-        .with_url(CLICKHOUSE_DB_URL);
+    let clickhouse_client = clickhouse::Client::default().with_url(CLICKHOUSE_DB_URL);
     // .with_user(CLICKHOUSE_USERNAME)
     // .with_password(CLICKHOUSE_PASSWORD)
     // .with_database(CLICKHOUSE_DATABASE);
@@ -69,15 +73,16 @@ async fn main() {
     let accounts_repository = AccountsRepository::new(pool.clone());
     ACCOUNTS_REPOSITORY.set(accounts_repository).unwrap();
 
-    let events_scores_repository = EventInteractionRepository::new(
-        pool.clone(),
-        clickhouse_client,
-    );
-    EVENTS_INTERACTION_REPOSITORY.set(events_scores_repository).unwrap();
+    let events_scores_repository = EventInteractionRepository::new(pool.clone(), clickhouse_client);
+    EVENTS_INTERACTION_REPOSITORY
+        .set(events_scores_repository)
+        .unwrap();
 
     // initialize RPC client
     let rabbitmq_host = std::env::var(RABBITMQ_HOST).unwrap();
-    REC_SERVICE_CLIENT.set(RecServiceClient::new(&rabbitmq_host).await).unwrap();
+    REC_SERVICE_CLIENT
+        .set(RecServiceClient::new(&rabbitmq_host).await)
+        .unwrap();
 
     let resonanse_bot_handle = tokio::spawn(async { run_resonanse_bot_polling().await });
     let _resonanse_management_bot_handle =

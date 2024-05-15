@@ -3,14 +3,14 @@ use std::error::Error;
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
 
-use amqprs::{AmqpMessageCount, BasicProperties, Deliver};
-use amqprs::callbacks::{DefaultChannelCallback, DefaultConnectionCallback};
-use amqprs::channel::{BasicConsumeArguments, BasicPublishArguments, Channel, QueueDeclareArguments};
+use amqprs::channel::{
+    BasicConsumeArguments, BasicPublishArguments, Channel, QueueDeclareArguments,
+};
 use amqprs::connection::{Connection, OpenConnectionArguments};
-use amqprs::consumer::{AsyncConsumer, DefaultConsumer};
+use amqprs::BasicProperties;
 use log::debug;
-use serde_json::{json, Value};
-use crate::clients::error::RpcError;
+use serde::Deserialize;
+use serde_json::json;
 
 use crate::clients::response_consumer::ResponseConsumer;
 use crate::RecItem;
@@ -18,10 +18,11 @@ use crate::RecItem;
 const RPC_QUEUE_RECOMMENDATION_BY_USER: &str = "recommendations.requests.by_user";
 const RPC_QUEUE_SET_USER_DESCRIPTION: &str = "resonanse_api.requests.set_user_description";
 
-
 pub struct RecServiceClient {
-    connection: Arc<Mutex<Connection>>,
-    channel: Arc<Mutex<Channel>>,
+    // connection: Arc<Mutex<Connection>>,
+    // channel: Arc<Mutex<Channel>>,
+    connection: Connection,
+    channel: Channel,
 }
 
 impl Debug for RecServiceClient {
@@ -29,7 +30,6 @@ impl Debug for RecServiceClient {
         write!(f, "RecServiceClient")
     }
 }
-
 
 impl RecServiceClient {
     pub async fn new(host: &str) -> Self {
@@ -44,21 +44,33 @@ impl RecServiceClient {
             RPC_QUEUE_RECOMMENDATION_BY_USER,
             RPC_QUEUE_SET_USER_DESCRIPTION,
         ] {
-            let queue_declare_args = QueueDeclareArguments::new(ms_queue_name);
+            let mut queue_declare_args = QueueDeclareArguments::new(ms_queue_name);
+            queue_declare_args.durable(true);
             channel.queue_declare(queue_declare_args).await.unwrap();
         }
 
+        // RecServiceClient {
+        //     connection: Arc::new(Mutex::new(connection)),
+        //     channel: Arc::new(Mutex::new(channel)),
+        // }
         RecServiceClient {
-            connection: Arc::new(Mutex::new(connection)),
-            channel: Arc::new(Mutex::new(channel)),
+            connection,
+            channel,
         }
     }
 
-    pub async fn rpc_get_recommendation_by_user(&self, user_id: i64) -> Result<Option<Vec<RecItem>>, Box<dyn Error + Send + Sync>> {
+    pub async fn rpc_get_recommendation_by_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Option<Vec<RecItem>>, Box<dyn Error + Send + Sync>> {
         let request = json!({
             "user_id": user_id,
-        }).to_string();
-        let response = match self.rpc_call(RPC_QUEUE_RECOMMENDATION_BY_USER, &request).await? {
+        })
+        .to_string();
+        let response = match self
+            .rpc_call(RPC_QUEUE_RECOMMENDATION_BY_USER, &request)
+            .await?
+        {
             None => return Ok(None),
             Some(v) => v,
         };
@@ -75,24 +87,38 @@ impl RecServiceClient {
         let request = json!({
             "user_id": user_id,
             "description": description,
-        }).to_string();
-        let response = match self.rpc_call(RPC_QUEUE_SET_USER_DESCRIPTION, &request).await? {
+        })
+        .to_string();
+        let response = match self
+            .rpc_call(RPC_QUEUE_SET_USER_DESCRIPTION, &request)
+            .await?
+        {
             None => return Ok(false),
             Some(v) => v,
         };
 
-        let set_description_response: HashMap<String, String> = serde_json::from_slice(&response)?;
+        #[derive(Deserialize, Debug)]
+        struct SetDescriptionResponse {
+            status: bool,
+        }
+
+        let set_description_response: SetDescriptionResponse = serde_json::from_slice(&response)?;
         debug!("set_description_response is {:?}", set_description_response);
-        // todo: is not always true !
-        Ok(true)
+        Ok(set_description_response.status)
     }
 
-    async fn rpc_call(&self, api_queue_name: &str, payload: &str) -> Result<Option<Vec<u8>>, Box<dyn Error + Send + Sync>> {
+    async fn rpc_call(
+        &self,
+        api_queue_name: &str,
+        payload: &str,
+    ) -> Result<Option<Vec<u8>>, Box<dyn Error + Send + Sync>> {
         let corr_id = uuid::Uuid::new_v4().to_string();
 
-        debug!("send rpc request {:?} corr_id {:?}, payload {:?}", api_queue_name, corr_id, payload);
-        let channel = self.channel.lock().unwrap();
-
+        debug!(
+            "send rpc request {:?} corr_id {:?}, payload {:?}",
+            api_queue_name, corr_id, payload
+        );
+        let channel = &self.channel;
 
         // todo: declaring exclusive queue for every rpc call is bad pattern
         let queue_declare_args = QueueDeclareArguments::exclusive_server_named();
@@ -102,10 +128,7 @@ impl RecServiceClient {
         };
 
         // todo: move consumer and response queue to struct level
-        let consume_args = BasicConsumeArguments::new(
-            &exclusive_queue,
-            &corr_id,
-        );
+        let consume_args = BasicConsumeArguments::new(&exclusive_queue, &corr_id);
         let consumer = ResponseConsumer::new();
         let _consumer_tag = channel
             .basic_consume(consumer.clone(), consume_args)
@@ -116,16 +139,9 @@ impl RecServiceClient {
             .with_correlation_id(&corr_id)
             .with_reply_to(&exclusive_queue)
             .finish();
-        let pub_args = BasicPublishArguments::new(
-            "",
-            api_queue_name,
-        );
+        let pub_args = BasicPublishArguments::new("", api_queue_name);
         channel
-            .basic_publish(
-                properties,
-                payload.into(),
-                pub_args,
-            )
+            .basic_publish(properties, payload.into(), pub_args)
             .await
             .unwrap();
 

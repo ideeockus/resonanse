@@ -1,23 +1,23 @@
 use std::error::Error;
 
-use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::{Message, ParseMode, ReplyMarkup};
 use teloxide::utils::markdown;
+use teloxide::Bot;
 
-use resonanse_common::EventSubjectFilter;
 use resonanse_common::models::EventSubject;
+use resonanse_common::EventSubjectFilter;
 
-use crate::{EVENTS_REPOSITORY, keyboards};
 use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_events_page, get_inline_kb_set_subject_filter};
 use crate::states::BaseState;
+use crate::{keyboards, EVENTS_REPOSITORY};
 
 pub async fn handle_get_events(
     bot: Bot,
     _dialogue: MyDialogue,
-    (page_size, page_num, events_filter): (i64, i64, EventSubjectFilter),
+    (page_size, page_num, _events_filter): (i64, i64, EventSubjectFilter),
     msg: Message,
 ) -> HandlerResult {
     // handle event command start
@@ -25,11 +25,10 @@ pub async fn handle_get_events(
         if let Some(rest_msg) = msg_text.strip_prefix("/event_") {
             if let Some(event_num) = rest_msg.split(' ').next() {
                 if let Ok(event_num) = event_num.parse::<i64>() {
-                    // let event_global_num = event_num;
                     let events = EVENTS_REPOSITORY
                         .get()
                         .ok_or("Cannot get events repository")?
-                        .get_public_events(page_num, page_size, &events_filter)
+                        .get_public_events(page_num, page_size)
                         .await?;
 
                     if let Some(choosed_event) = events.get(event_num as usize - 1) {
@@ -92,6 +91,7 @@ pub async fn handle_events_filter_callback(
             bot.delete_message(msg.chat.id, msg.id).await?;
 
             let msg_text = get_choose_event_text(page_num, page_size, &events_filter).await?;
+            println!("{:?}", msg_text);
             let mut message = bot.send_message(q.from.id, msg_text);
             message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_events_page()));
             message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -169,12 +169,12 @@ pub async fn handle_page_callback(
 pub async fn get_choose_event_text(
     page_num: i64,
     page_size: i64,
-    events_filter: &EventSubjectFilter,
+    _events_filter: &EventSubjectFilter,
 ) -> Result<String, Box<dyn Error + Send + Sync>> {
     let events = EVENTS_REPOSITORY
         .get()
         .ok_or("Cannot get events repository")?
-        .get_public_events(page_num, page_size, events_filter)
+        .get_public_events(page_num, page_size)
         .await?;
 
     let mut event_i = 0;
@@ -187,14 +187,14 @@ pub async fn get_choose_event_text(
             .map(|event| {
                 event_i += 1;
 
-                let stripped_descr = &event.get_description_up_to(100);
-                let stripped_descr = format!("\n_{}_", markdown::escape(stripped_descr),);
+                // let stripped_descr = &event.get_description_up_to(100);
+                // let stripped_descr = format!("\n_{}_", markdown::escape(stripped_descr),);
 
                 format!(
-                    "/event\\_{}\t*{}*{}\n⏰ {}\n📍 {}",
+                    "/event\\_{}\t{}\n⏰ {}\n📍 {}",
                     event_i,
                     markdown::escape(&event.title),
-                    markdown::escape(&stripped_descr),
+                    // &stripped_descr,
                     markdown::escape(&event.datetime_from.to_string()),
                     markdown::escape(&event.venue.get_name()),
                 )
