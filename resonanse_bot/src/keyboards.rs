@@ -2,7 +2,7 @@ use std::env;
 
 use teloxide::types::{
     InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, WebAppInfo,
-    ReplyMarkup,
+    ReplyMarkup, KeyboardMarkup, KeyboardButton,
 };
 use uuid::Uuid;
 
@@ -216,7 +216,15 @@ pub fn get_make_event_keyboard() -> InlineKeyboardMarkup {
     InlineKeyboardMarkup::new(buttons)
 }
 
-// pub fn make_cities_keyboard(cities: Vec<String>) -> ReplyMarkup {
-//     ReplyMarkup::Keyboard(MArkup)
-// get_unique_cities
-// }
+pub fn make_cities_keyboard(mut cities: Vec<String>) -> ReplyMarkup {
+    cities.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+    let buttons: Vec<Vec<KeyboardButton>> = cities
+        .into_iter()
+        .map(|name| vec![KeyboardButton::new(name)])
+        .collect();
+
+    let keyboard = KeyboardMarkup::new(buttons)
+        .one_time_keyboard(true)
+        .resize_keyboard(true);
+    ReplyMarkup::Keyboard(keyboard)
+}

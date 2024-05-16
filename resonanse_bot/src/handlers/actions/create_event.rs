@@ -581,25 +581,5 @@ pub async fn handle_event_finalisation_callback(
         ),
     )
     .await?;
-    // if filling_event.is_private {
-    //     bot.send_message(
-    //         msg.chat.id,
-    //         format!(
-    //             "Событие создано. Оно будет доступно только по вашей ссылке: {}",
-    //             tg_event_deep_link
-    //         ),
-    //     )
-    //     .await?;
-    // } else {
-    //     bot.send_message(
-    //         msg.chat.id,
-    //         t!(
-    //             "actions.create_event.fill_event.finalize_public",
-    //             event_link = tg_event_deep_link
-    //         ),
-    //     )
-    //     .await?;
-    // }
-
     Ok(())
 }

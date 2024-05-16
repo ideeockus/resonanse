@@ -1,5 +1,5 @@
 pub use clients::RecServiceClient;
-pub use models::{EventSubjectFilter, RecItem, UserInteraction};
+pub use models::{EventSubjectFilter, SimplifiedRecItem, UserInteraction};
 pub use sqlx::PgPool;
 
 pub mod file_storage;

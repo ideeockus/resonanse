@@ -1,18 +1,19 @@
 use std::error::Error;
 
+use teloxide::Bot;
 use teloxide::prelude::*;
 use teloxide::types::{Message, ParseMode, ReplyMarkup};
 use teloxide::utils::markdown;
-use teloxide::Bot;
 
-use resonanse_common::models::EventSubject;
 use resonanse_common::EventSubjectFilter;
+use resonanse_common::models::EventSubject;
 
+use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY, keyboards};
 use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_events_page, get_inline_kb_set_subject_filter};
 use crate::states::BaseState;
-use crate::{keyboards, EVENTS_REPOSITORY};
+use crate::utils::prepare_event_list_view;
 
 pub async fn handle_get_events(
     bot: Bot,
@@ -21,16 +22,23 @@ pub async fn handle_get_events(
     msg: Message,
 ) -> HandlerResult {
     // handle event command start
+    let events_repo = EVENTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get events repository")?;
+    let accounts_repo = ACCOUNTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get accounts repository")?;
+
     if let Some(msg_text) = msg.text() {
         if let Some(rest_msg) = msg_text.strip_prefix("/event_") {
             if let Some(event_num) = rest_msg.split(' ').next() {
                 if let Ok(event_num) = event_num.parse::<i64>() {
-                    let events = EVENTS_REPOSITORY
-                        .get()
-                        .ok_or("Cannot get events repository")?
-                        .get_public_events(page_num, page_size)
-                        .await?;
-
+                    let user_account = accounts_repo.get_user_by_tg_id(msg.chat.id.0).await?;
+                    let events = events_repo.get_public_events_city_insensitive(
+                        user_account.user_data.city,
+                        page_num,
+                        page_size,
+                    ).await?;
                     if let Some(choosed_event) = events.get(event_num as usize - 1) {
                         send_event_post(&bot, msg.chat.id, choosed_event.id).await?;
                         return Ok(());
@@ -90,7 +98,13 @@ pub async fn handle_events_filter_callback(
         Some(keyboards::APPLY_EVENT_FILTER_BTN) => {
             bot.delete_message(msg.chat.id, msg.id).await?;
 
-            let msg_text = get_choose_event_text(page_num, page_size, &events_filter).await?;
+            let user_id = q.from.id.0 as i64;
+            let msg_text = get_choose_event_text(
+                user_id,
+                page_num,
+                page_size,
+                &events_filter,
+            ).await?;
             println!("{:?}", msg_text);
             let mut message = bot.send_message(q.from.id, msg_text);
             message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_events_page()));
@@ -157,7 +171,8 @@ pub async fn handle_page_callback(
         })
         .await?;
 
-    let msg_text = get_choose_event_text(page_num, page_size, &events_filter).await?;
+    let user_id = q.from.id.0 as i64;
+    let msg_text = get_choose_event_text(user_id, page_num, page_size, &events_filter).await?;
     let mut message = bot.edit_message_text(msg.chat.id, msg.id, msg_text);
     message.reply_markup = Some(get_inline_kb_events_page());
     message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -167,40 +182,31 @@ pub async fn handle_page_callback(
 }
 
 pub async fn get_choose_event_text(
+    tg_user_id: i64,
     page_num: i64,
     page_size: i64,
     _events_filter: &EventSubjectFilter,
 ) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let events = EVENTS_REPOSITORY
+    let events_repo = EVENTS_REPOSITORY
         .get()
-        .ok_or("Cannot get events repository")?
-        .get_public_events(page_num, page_size)
-        .await?;
+        .ok_or("Cannot get events repository")?;
+    let accounts_repo = ACCOUNTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get accounts repository")?;
 
-    let mut event_i = 0;
+    let user_account = accounts_repo.get_user_by_tg_id(tg_user_id).await?;
+    let events = events_repo
+        .get_public_events_city_insensitive(
+            user_account.user_data.city,
+            page_num,
+            page_size,
+        ).await?;
 
     let msg_text = t!(
         "event_page.page_title",
         page_num = markdown::escape(&page_num.to_string()),
-        page_data = events
-            .iter()
-            .map(|event| {
-                event_i += 1;
+        page_data = prepare_event_list_view(events),
 
-                // let stripped_descr = &event.get_description_up_to(100);
-                // let stripped_descr = format!("\n_{}_", markdown::escape(stripped_descr),);
-
-                format!(
-                    "/event\\_{}\t{}\n⏰ {}\n📍 {}",
-                    event_i,
-                    markdown::escape(&event.title),
-                    // &stripped_descr,
-                    markdown::escape(&event.datetime_from.to_string()),
-                    markdown::escape(&event.venue.get_name()),
-                )
-            })
-            .collect::<Vec<String>>()
-            .join("\n\n")
     );
 
     Ok(msg_text)

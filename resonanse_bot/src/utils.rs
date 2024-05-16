@@ -1,6 +1,8 @@
 use std::env;
+use teloxide::utils::markdown;
 
 use uuid::Uuid;
+use resonanse_common::models::{BaseEvent, RecSubsystem};
 
 use crate::config::RESONANSE_BOT_USERNAME;
 
@@ -32,4 +34,54 @@ pub fn build_event_deep_link(event_uuid: Uuid) -> String {
 
 pub fn build_deep_link_with_param(bot_username: &str, param: &str) -> String {
     format!("https://t.me/{}?start={}", bot_username, param)
+}
+
+pub fn prepare_event_list_view(events: Vec<BaseEvent>) -> String {
+    let mut event_i = 0;
+    events
+        .iter()
+        .map(|event| {
+            event_i += 1;
+            format!(
+                "/event\\_{}\t{}\n⏰ {}\n📍 {}",
+                event_i,
+                markdown::escape(&event.title),
+                markdown::escape(&event.datetime_from.to_string()),
+                markdown::escape(&event.venue.get_name()),
+            )
+        })
+        .collect::<Vec<String>>()
+        .join("\n\n")
+}
+
+pub fn prepare_event_list_view_with_marks(
+    events: Vec<BaseEvent>,
+    marks: Vec<String>,
+) -> String {
+    let mut event_i = 0;
+    events
+        .iter()
+        .map(|event| {
+            let mark = marks[event_i].as_str();
+            event_i += 1;
+
+            format!(
+                "{} /event\\_{}\t{}\n⏰ {}\n📍 {}",
+                mark,
+                event_i,
+                markdown::escape(&event.title),
+                markdown::escape(&event.datetime_from.to_string()),
+                markdown::escape(&event.venue.get_name()),
+            )
+        })
+        .collect::<Vec<String>>()
+        .join("\n\n")
+}
+
+pub fn recommendation_subsystem_to_mark(subsystem: &RecSubsystem) -> String {
+    match subsystem {
+        RecSubsystem::Basic => "🔵".to_string(),
+        RecSubsystem::Dynamic => "🟠".to_string(),
+        RecSubsystem::Collaborative => "🟣".to_string(),
+    }
 }

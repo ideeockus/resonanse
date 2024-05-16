@@ -31,23 +31,23 @@ impl EventInteractionRepository {
         event_id: Uuid,
         user_id: i64,
         score: EventScoreType,
-    ) -> Result<EventScore, EventScoreError> {
-        let event_score: EventScore = sqlx::query_as(
-            r#"insert into user_likes
-            (
-            event_id, user_id, event_score
-            )
-            values ($1, $2, $3)
-            on conflict (user_id, event_id) do update
-            set event_score = excluded.event_score
-            returning *
-            "#,
-        )
-        .bind(event_id)
-        .bind(user_id)
-        .bind(score.to_string())
-        .fetch_one(&self.db_pool)
-        .await?;
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // let event_score: EventScore = sqlx::query_as(
+        //     r#"insert into user_likes
+        //     (
+        //     event_id, user_id, event_score
+        //     )
+        //     values ($1, $2, $3)
+        //     on conflict (user_id, event_id) do update
+        //     set event_score = excluded.event_score
+        //     returning *
+        //     "#,
+        // )
+        // .bind(event_id)
+        // .bind(user_id)
+        // .bind(score.to_string())
+        // .fetch_one(&self.db_pool)
+        // .await?;
 
         let mut insert = self.clickhouse_client.insert("users_interactions")?;
         insert
@@ -59,13 +59,13 @@ impl EventInteractionRepository {
             })
             .await?;
 
-        Ok(event_score)
+        Ok(())
     }
 
     pub async fn get_event_scores_by_user(
         &self,
         user_id: i64,
-    ) -> Result<Vec<EventScore>, EventScoreError> {
+    ) -> Result<Vec<EventScore>, Box<dyn std::error::Error + Send + Sync>> {
         let event_scores: Vec<EventScore> = sqlx::query_as(
             r#"
                 SELECT user_id, event_id, event_score
@@ -84,7 +84,7 @@ impl EventInteractionRepository {
         &self,
         user_id: i64,
         event_id: Uuid,
-    ) -> Result<(), EventScoreError> {
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut insert = self.clickhouse_client.insert("users_interactions")?;
         insert
             .write(&UserInteraction {
@@ -98,7 +98,7 @@ impl EventInteractionRepository {
         Ok(())
     }
 
-    async fn count_events_by_type(&self, event_type: &str) -> Result<usize, EventScoreError> {
+    async fn count_events_by_type(&self, event_type: &str) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let today = chrono::offset::Local::now().naive_utc().date();
 
         let result: usize = self.clickhouse_client
@@ -109,15 +109,15 @@ impl EventInteractionRepository {
         Ok(result)
     }
 
-    pub async fn count_clicks_for_today(&self) -> Result<usize, EventScoreError> {
+    pub async fn count_clicks_for_today(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         self.count_events_by_type("click").await
     }
 
-    pub async fn count_likes_for_today(&self) -> Result<usize, EventScoreError> {
+    pub async fn count_likes_for_today(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         self.count_events_by_type("like").await
     }
 
-    pub async fn count_dislikes_for_today(&self) -> Result<usize, EventScoreError> {
+    pub async fn count_dislikes_for_today(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         self.count_events_by_type("dislike").await
     }
 
@@ -130,37 +130,3 @@ impl EventInteractionRepository {
         Ok(result)
     }
 }
-
-pub enum EventScoreError {
-    SqlxError,
-    ClickHouseError,
-}
-
-impl From<sqlx::error::Error> for EventScoreError {
-    fn from(value: sqlx::error::Error) -> Self {
-        Self::SqlxError
-    }
-}
-
-impl From<clickhouse::error::Error> for EventScoreError {
-    fn from(value: clickhouse::error::Error) -> Self {
-        Self::ClickHouseError
-    }
-}
-
-impl Debug for EventScoreError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(self, f)
-    }
-}
-
-impl Display for EventScoreError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            EventScoreError::SqlxError => write!(f, "SqlxError"),
-            EventScoreError::ClickHouseError => write!(f, "ClickHouseError"),
-        }
-    }
-}
-
-impl std::error::Error for EventScoreError {}

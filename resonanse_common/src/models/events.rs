@@ -184,6 +184,12 @@ impl Default for ResonanseEventKind {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct Price {
+    pub price: f32,
+    pub currency: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct BaseEvent {
     pub id: Uuid,
     pub title: String,
@@ -194,8 +200,7 @@ pub struct BaseEvent {
     pub venue: Venue,
     pub image_url: Option<String>,
     pub local_image_path: Option<String>,
-    pub price_price: Option<f32>,
-    pub price_currency: Option<String>,
+    pub price: Option<Price>,
     pub tags: Option<Vec<String>>,
     pub contact: Option<String>,
     pub service_id: String,
@@ -223,18 +228,18 @@ impl BaseEvent {
 
 impl FromRow<'_, PgRow> for BaseEvent {
     fn from_row(row: &PgRow) -> Result<Self, sqlx::error::Error> {
-        // let price_price: Option<f32> = row.try_get("price_price")?;
-        // let price_currency: Option<String> = row.try_get("price_currency")?;
-        //
-        // let price = match (price_price, price_currency) {
-        //     (Some(price), Some(currency)) => {
-        //         Some(crate::models::events::Price {
-        //             price,
-        //             currency,
-        //         })
-        //     },
-        //     _ => None,
-        // };
+        let price_price: Option<f32> = row.try_get("price_price")?;
+        let price_currency: Option<String> = row.try_get("price_currency")?;
+
+        let price = match (price_price, price_currency) {
+            (Some(price), Some(currency)) => {
+                Some(crate::models::events::Price {
+                    price,
+                    currency,
+                })
+            },
+            _ => None,
+        };
 
         Ok(Self {
             id: row.try_get("id")?,
@@ -251,8 +256,7 @@ impl FromRow<'_, PgRow> for BaseEvent {
             },
             image_url: row.try_get("image_url")?,
             local_image_path: row.try_get("local_image_path")?,
-            price_price: row.try_get("price_price")?,
-            price_currency: row.try_get("price_currency")?,
+            price,
             tags: row.try_get("tags")?,
             contact: row.try_get("contact")?,
             service_id: row.try_get("service_id")?,

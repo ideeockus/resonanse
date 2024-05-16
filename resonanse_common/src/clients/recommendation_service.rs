@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Debug, Formatter};
+use std::io;
 use std::sync::{Arc, Mutex};
 
 use amqprs::channel::{
@@ -13,14 +14,12 @@ use serde::Deserialize;
 use serde_json::json;
 
 use crate::clients::response_consumer::ResponseConsumer;
-use crate::RecItem;
+use crate::models::SimplifiedRecItem;
 
 const RPC_QUEUE_RECOMMENDATION_BY_USER: &str = "recommendations.requests.by_user";
 const RPC_QUEUE_SET_USER_DESCRIPTION: &str = "resonanse_api.requests.set_user_description";
 
 pub struct RecServiceClient {
-    // connection: Arc<Mutex<Connection>>,
-    // channel: Arc<Mutex<Channel>>,
     connection: Connection,
     channel: Channel,
 }
@@ -49,10 +48,6 @@ impl RecServiceClient {
             channel.queue_declare(queue_declare_args).await.unwrap();
         }
 
-        // RecServiceClient {
-        //     connection: Arc::new(Mutex::new(connection)),
-        //     channel: Arc::new(Mutex::new(channel)),
-        // }
         RecServiceClient {
             connection,
             channel,
@@ -62,21 +57,17 @@ impl RecServiceClient {
     pub async fn rpc_get_recommendation_by_user(
         &self,
         user_id: i64,
-    ) -> Result<Option<Vec<RecItem>>, Box<dyn Error + Send + Sync>> {
+    ) -> Result<Vec<SimplifiedRecItem>, Box<dyn Error + Send + Sync>> {
         let request = json!({
             "user_id": user_id,
         })
         .to_string();
-        let response = match self
+        let response = self
             .rpc_call(RPC_QUEUE_RECOMMENDATION_BY_USER, &request)
-            .await?
-        {
-            None => return Ok(None),
-            Some(v) => v,
-        };
+            .await?;
 
-        let recommendation_response: Vec<RecItem> = serde_json::from_slice(&response)?;
-        Ok(Some(recommendation_response))
+        let recommendation_response: Vec<SimplifiedRecItem> = serde_json::from_slice(&response)?;
+        Ok(recommendation_response)
     }
 
     pub async fn rpc_set_user_description(
@@ -89,13 +80,9 @@ impl RecServiceClient {
             "description": description,
         })
         .to_string();
-        let response = match self
+        let response = self
             .rpc_call(RPC_QUEUE_SET_USER_DESCRIPTION, &request)
-            .await?
-        {
-            None => return Ok(false),
-            Some(v) => v,
-        };
+            .await?;
 
         #[derive(Deserialize, Debug)]
         struct SetDescriptionResponse {
@@ -111,7 +98,7 @@ impl RecServiceClient {
         &self,
         api_queue_name: &str,
         payload: &str,
-    ) -> Result<Option<Vec<u8>>, Box<dyn Error + Send + Sync>> {
+    ) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
         let corr_id = uuid::Uuid::new_v4().to_string();
 
         debug!(
@@ -123,7 +110,10 @@ impl RecServiceClient {
         // todo: declaring exclusive queue for every rpc call is bad pattern
         let queue_declare_args = QueueDeclareArguments::exclusive_server_named();
         let exclusive_queue = match channel.queue_declare(queue_declare_args).await? {
-            None => return Ok(None),
+            None => return Err(Box::new(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "Cannot declare queue for rpc"
+            ))),
             Some((queue_name, _, _)) => queue_name,
         };
 
@@ -146,6 +136,6 @@ impl RecServiceClient {
             .unwrap();
 
         let response = consumer.await_response(corr_id).await;
-        Ok(Some(response))
+        Ok(response)
     }
 }

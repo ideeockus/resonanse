@@ -105,12 +105,11 @@ impl TryFrom<FillingEvent> for BaseEvent {
             },
             image_url: None,
             local_image_path: value.picture.map(|v| v.to_string()),
-            price_price: None,
-            price_currency: None,
+            price: None,
             tags: None,
             contact: value.contact_info,
-            service_id: "".to_string(),
-            service_type: None,
+            service_id: "resonanse_0".to_string(),  // this is fake service_id
+            service_type: Some("RESONANSE".to_string()),
             service_data: Some(json!({
                 "creator_id": value.creator_id,
                 "creation_time": chrono::offset::Local::now().naive_local(),

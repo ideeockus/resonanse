@@ -24,11 +24,16 @@ pub async fn publish_event<I>(
 where
     BaseEvent: TryFrom<I>,
 {
+    let accounts_repo = ACCOUNTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get accounts repository")?;
+    let events_repo = EVENTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get events repository")?;
+
     // save to db
     let user_account = fill_base_account_from_teloxide_user(creator_tg_user);
-    let account = ACCOUNTS_REPOSITORY
-        .get()
-        .ok_or("Cannot get accounts repository")?
+    let account = accounts_repo
         .create_user_by_tg_user_id(user_account)
         .await?;
 
@@ -43,9 +48,7 @@ where
     };
 
     create_base_event.service_data = Some(json!({"creator_id": account.id}));
-    let created_event = EVENTS_REPOSITORY
-        .get()
-        .ok_or("Cannot get events repository")?
+    let created_event = events_repo
         .create_event(create_base_event.clone())
         .await?;
 

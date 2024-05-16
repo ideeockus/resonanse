@@ -2,8 +2,8 @@ use log::debug;
 use sqlx::{PgPool, Result, Row};
 use uuid::Uuid;
 
-use crate::models::BaseEvent;
 use crate::EventSubjectFilter;
+use crate::models::{BaseEvent, Price};
 
 #[derive(Debug)]
 pub struct EventsRepository {
@@ -16,6 +16,12 @@ impl EventsRepository {
     }
 
     pub async fn create_event(&self, event: BaseEvent) -> Result<BaseEvent, sqlx::error::Error> {
+        let (price_price, price_currency) = match &event.price {
+            None => (None, None),
+            Some(price) => (Some(price.price), Some(price.currency.clone())),
+        };
+        let event_id = Uuid::new_v4();
+
         let created_event: BaseEvent = sqlx::query_as(
             r#"
             INSERT INTO resonanse_events
@@ -31,7 +37,7 @@ impl EventsRepository {
             RETURNING *
             "#
         )
-            .bind(Uuid::new_v4())
+            .bind(event_id)
             .bind(&event.title)
             .bind(&event.description)
             .bind(event.datetime_from)
@@ -43,11 +49,11 @@ impl EventsRepository {
             .bind(&event.venue.latitude)
             .bind(&event.image_url)
             .bind(&event.local_image_path)
-            .bind(&event.price_price)
-            .bind(&event.price_currency)
+            .bind(&price_price)
+            .bind(&price_currency)
             .bind(&event.tags)
             .bind(&event.contact)
-            .bind(&event.service_id)
+            .bind(format!("resonanse_{}", event_id.to_string()))
             .bind(&event.service_type)
             .bind(&event.service_data)
             .fetch_one(&self.db_pool)
@@ -64,8 +70,8 @@ impl EventsRepository {
             order by datetime_from
             "#,
         )
-        .fetch_all(&self.db_pool)
-        .await;
+            .fetch_all(&self.db_pool)
+            .await;
 
         events
     }
@@ -77,9 +83,9 @@ impl EventsRepository {
             where title like $1
             "#,
         )
-        .bind(format!("%{}%", title))
-        .fetch_all(&self.db_pool)
-        .await;
+            .bind(format!("%{}%", title))
+            .fetch_all(&self.db_pool)
+            .await;
 
         events
     }
@@ -136,7 +142,7 @@ impl EventsRepository {
             filter_params_len + 1,
             filter_params_len + 2,
         );
-        debug!("get_public_events builded query: {}", query_str);
+        debug!("get_public_events_with_filters builded query: {}", query_str);
 
         let mut events_query = sqlx::query_as(&query_str);
         for subj_i32 in filters_vec {
@@ -144,6 +150,31 @@ impl EventsRepository {
         }
 
         let events: Result<Vec<BaseEvent>> = events_query
+            .bind(page * page_size)
+            .bind(page_size)
+            .fetch_all(&self.db_pool)
+            .await;
+        events
+    }
+
+    pub async fn get_public_events_for_city(
+        &self,
+        city: String,
+        page: i64,
+        page_size: i64,
+    ) -> Result<Vec<BaseEvent>> {
+        let query_str =
+            r#"select *
+            from resonanse_events
+            WHERE datetime_from >= current_date AND city = $1
+            order by datetime_from
+            offset $2 rows
+            fetch next $3 rows only
+            "#;
+        let mut events_query = sqlx::query_as(&query_str);
+
+        let events: Result<Vec<BaseEvent>> = events_query
+            .bind(city)
             .bind(page * page_size)
             .bind(page_size)
             .fetch_all(&self.db_pool)
@@ -174,6 +205,25 @@ impl EventsRepository {
         events
     }
 
+    pub async fn get_public_events_city_insensitive(
+        &self,
+        city: Option<String>,
+        page_num: i64,
+        page_size: i64,
+    ) -> Result<Vec<BaseEvent>> {
+        match city {
+            None => {
+                self.get_public_events(page_num, page_size)
+                    .await
+            }
+            Some(city) => {
+                self
+                    .get_public_events_for_city(city, page_num, page_size)
+                    .await
+            }
+        }
+    }
+
     pub async fn get_event_by_uuid(&self, uuid: Uuid) -> Result<BaseEvent> {
         let event: Result<BaseEvent> = sqlx::query_as(
             r#"select *
@@ -181,9 +231,23 @@ impl EventsRepository {
             where id=$1
             "#,
         )
-        .bind(uuid)
-        .fetch_one(&self.db_pool)
-        .await;
+            .bind(uuid)
+            .fetch_one(&self.db_pool)
+            .await;
+
+        event
+    }
+
+    pub async fn get_events_by_ids(&self, events_ids: Vec<Uuid>) -> Result<Vec<BaseEvent>> {
+        let event: Result<Vec<BaseEvent>> = sqlx::query_as(
+            r#"select *
+            from resonanse_events
+            where id = ANY($1)
+            "#,
+        )
+            .bind(events_ids)
+            .fetch_all(&self.db_pool)
+            .await;
 
         event
     }
@@ -194,6 +258,10 @@ impl EventsRepository {
         _deleted_by_id: i64,
     ) -> Result<(), sqlx::error::Error> {
         let deleting_event = self.get_event_by_uuid(event_uuid).await?;
+        let (price_price, price_currency) = match &deleting_event.price {
+            None => (None, None),
+            Some(price) => (Some(price.price), Some(price.currency.clone())),
+        };
 
         let _deleted_event: BaseEvent = sqlx::query_as(
             r#"
@@ -222,8 +290,8 @@ impl EventsRepository {
             .bind(&deleting_event.venue.longitude)
             .bind(&deleting_event.image_url)
             .bind(&deleting_event.local_image_path)
-            .bind(&deleting_event.price_price)
-            .bind(&deleting_event.price_currency)
+            .bind(&price_price)
+            .bind(&price_currency)
             .bind(&deleting_event.tags)
             .bind(&deleting_event.contact)
             .bind(&deleting_event.service_id)
@@ -238,9 +306,9 @@ impl EventsRepository {
             WHERE id = $1
             "#,
         )
-        .bind(event_uuid)
-        .execute(&self.db_pool)
-        .await?;
+            .bind(event_uuid)
+            .execute(&self.db_pool)
+            .await?;
 
         debug!("delete_events result {:?}", result);
         Ok(())
@@ -253,10 +321,10 @@ impl EventsRepository {
             values ($1, $2)
             "#,
         )
-        .bind(post_id)
-        .bind(event_id)
-        .execute(&self.db_pool)
-        .await?;
+            .bind(post_id)
+            .bind(event_id)
+            .execute(&self.db_pool)
+            .await?;
         debug!("event_tg_table result {:?}", result);
 
         Ok(())
@@ -268,9 +336,9 @@ impl EventsRepository {
             from resonanse_events
             "#,
         )
-        .fetch_one(&self.db_pool)
-        .await?
-        .try_get::<_, usize>(0)
+            .fetch_one(&self.db_pool)
+            .await?
+            .try_get::<_, usize>(0)
     }
 
     pub async fn get_unique_cities(&self) -> Result<Vec<String>> {

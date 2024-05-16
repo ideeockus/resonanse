@@ -6,6 +6,7 @@ use teloxide::types::{ParseMode, ReplyMarkup};
 use teloxide::utils::command::parse_command;
 use teloxide::Bot;
 use uuid::Uuid;
+use tokio::time::{sleep, Duration};
 
 use resonanse_common::EventSubjectFilter;
 
@@ -14,9 +15,9 @@ use crate::data_structs::FillingEvent;
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
-use crate::keyboards::{get_inline_kb_run_web_app, get_inline_kb_set_subject_filter};
+use crate::keyboards::{get_inline_kb_run_web_app, get_inline_kb_set_subject_filter, make_cities_keyboard};
 use crate::states::{BaseState, CreateEventState};
-use crate::{keyboards, ACCOUNTS_REPOSITORY};
+use crate::{keyboards, ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY};
 
 pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
     if let Some(command_text) = msg.text() {
@@ -45,6 +46,7 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
             .await?;
     }
 
+    sleep(Duration::from_millis(1000)).await;
     let mut message = bot.send_message(msg.chat.id, t!("onboarding.instruction"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
@@ -93,9 +95,7 @@ pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) ->
     const DEFAULT_PAGE_SIZE: i64 = 10;
 
     let (page, page_size) = (0i64, DEFAULT_PAGE_SIZE);
-
     let events_filter = EventSubjectFilter::new();
-
     dialogue
         .update(BaseState::GetEventList {
             page_size,
@@ -117,8 +117,16 @@ pub async fn get_events_command(bot: Bot, dialogue: MyDialogue, msg: Message) ->
 pub async fn set_user_city_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     dialogue.update(BaseState::SetCity).await?;
 
+    let events_repo = EVENTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get events repository")?;
+    let available_cities = events_repo.get_unique_cities().await?;
+
+    let cities_kb = make_cities_keyboard(available_cities);
+
     let mut message = bot.send_message(msg.chat.id, t!("actions.set_city.prompt"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
+    message.reply_markup = Some(cities_kb);
     message.await?;
 
     Ok(())

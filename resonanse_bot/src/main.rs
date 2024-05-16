@@ -20,6 +20,7 @@ use crate::config::{
     check_all_mandatory_envs_is_ok, CLICKHOUSE_DATABASE, CLICKHOUSE_DB_URL, CLICKHOUSE_PASSWORD,
     CLICKHOUSE_USERNAME, POSTGRES_DB_URL, RABBITMQ_HOST, RESONANSE_BOT_TOKEN,
 };
+use crate::handlers::MyErrorHandler;
 use crate::management::run_resonanse_management_bot_polling;
 use crate::states::BaseState;
 
@@ -97,9 +98,12 @@ pub async fn run_resonanse_bot_polling() {
     let resonanse_bot_token = std::env::var(RESONANSE_BOT_TOKEN).unwrap();
     let bot = Bot::new(resonanse_bot_token);
 
+    let error_handler = Arc::new(MyErrorHandler);
+
     let update_handler = schema();
     let mut dispatcher = Dispatcher::builder(bot, update_handler)
         .dependencies(dptree::deps![InMemStorage::<BaseState>::new()])
+        .error_handler(error_handler)
         .enable_ctrlc_handler()
         .build();
 
