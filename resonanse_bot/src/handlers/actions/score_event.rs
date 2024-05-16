@@ -4,7 +4,7 @@ use teloxide::Bot;
 use uuid::Uuid;
 
 use resonanse_common::models::EventScoreType;
-use resonanse_common::repository::{AccountsRepository, EventInteractionRepository};
+use resonanse_common::repository::AccountsRepository;
 
 use crate::config::POSTGRES_DB_URL;
 use crate::handlers::HandlerResult;

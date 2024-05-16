@@ -38,7 +38,7 @@ impl FillingEvent {
             location_title: None,
             picture: None,
             contact_info: None,
-            creator_id: 0,
+            creator_id,
         }
     }
 
@@ -108,7 +108,7 @@ impl TryFrom<FillingEvent> for BaseEvent {
             price: None,
             tags: None,
             contact: value.contact_info,
-            service_id: "resonanse_0".to_string(),  // this is fake service_id
+            service_id: "resonanse_0".to_string(), // this is fake service_id
             service_type: Some("RESONANSE".to_string()),
             service_data: Some(json!({
                 "creator_id": value.creator_id,

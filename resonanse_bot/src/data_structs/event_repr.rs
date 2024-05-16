@@ -5,7 +5,6 @@ use teloxide::types::{ChatId, InputFile, ParseMode, ReplyMarkup};
 use teloxide::utils::markdown;
 use teloxide::Bot;
 
-use resonanse_common::file_storage::get_event_image_path_by_uuid;
 use resonanse_common::models::BaseEvent;
 
 use crate::config::DEFAULT_DATETIME_FORMAT;

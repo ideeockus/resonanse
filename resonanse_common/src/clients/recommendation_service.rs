@@ -1,8 +1,6 @@
-use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Debug, Formatter};
 use std::io;
-use std::sync::{Arc, Mutex};
 
 use amqprs::channel::{
     BasicConsumeArguments, BasicPublishArguments, Channel, QueueDeclareArguments,
@@ -20,7 +18,7 @@ const RPC_QUEUE_RECOMMENDATION_BY_USER: &str = "recommendations.requests.by_user
 const RPC_QUEUE_SET_USER_DESCRIPTION: &str = "resonanse_api.requests.set_user_description";
 
 pub struct RecServiceClient {
-    connection: Connection,
+    _connection: Connection,
     channel: Channel,
 }
 
@@ -49,7 +47,7 @@ impl RecServiceClient {
         }
 
         RecServiceClient {
-            connection,
+            _connection: connection,
             channel,
         }
     }
@@ -110,10 +108,12 @@ impl RecServiceClient {
         // todo: declaring exclusive queue for every rpc call is bad pattern
         let queue_declare_args = QueueDeclareArguments::exclusive_server_named();
         let exclusive_queue = match channel.queue_declare(queue_declare_args).await? {
-            None => return Err(Box::new(io::Error::new(
-                io::ErrorKind::Interrupted,
-                "Cannot declare queue for rpc"
-            ))),
+            None => {
+                return Err(Box::new(io::Error::new(
+                    io::ErrorKind::Interrupted,
+                    "Cannot declare queue for rpc",
+                )))
+            }
             Some((queue_name, _, _)) => queue_name,
         };
 

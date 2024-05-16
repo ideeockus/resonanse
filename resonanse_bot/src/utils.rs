@@ -1,8 +1,8 @@
 use std::env;
 use teloxide::utils::markdown;
 
-use uuid::Uuid;
 use resonanse_common::models::{BaseEvent, RecSubsystem};
+use uuid::Uuid;
 
 use crate::config::RESONANSE_BOT_USERNAME;
 
@@ -54,10 +54,7 @@ pub fn prepare_event_list_view(events: Vec<BaseEvent>) -> String {
         .join("\n\n")
 }
 
-pub fn prepare_event_list_view_with_marks(
-    events: Vec<BaseEvent>,
-    marks: Vec<String>,
-) -> String {
+pub fn prepare_event_list_view_with_marks(events: Vec<BaseEvent>, marks: Vec<String>) -> String {
     let mut event_i = 0;
     events
         .iter()

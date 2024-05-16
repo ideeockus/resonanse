@@ -45,7 +45,7 @@ impl AsyncConsumer for ResponseConsumer {
         basic_properties: BasicProperties,
         content: Vec<u8>,
     ) {
-        let corr_id = basic_properties.correlation_id().clone();
+        let corr_id = basic_properties.correlation_id();
         let response = content.clone();
 
         if let Some(corr_id) = corr_id {

@@ -1,8 +1,8 @@
 use std::env;
 
 use teloxide::types::{
-    InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, WebAppInfo,
-    ReplyMarkup, KeyboardMarkup, KeyboardButton,
+    InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, KeyboardButton,
+    KeyboardMarkup, ReplyMarkup, WebAppInfo,
 };
 use uuid::Uuid;
 
@@ -217,7 +217,7 @@ pub fn get_make_event_keyboard() -> InlineKeyboardMarkup {
 }
 
 pub fn make_cities_keyboard(mut cities: Vec<String>) -> ReplyMarkup {
-    cities.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+    cities.sort_by_key(|a| a.to_lowercase());
     let buttons: Vec<Vec<KeyboardButton>> = cities
         .into_iter()
         .map(|name| vec![KeyboardButton::new(name)])

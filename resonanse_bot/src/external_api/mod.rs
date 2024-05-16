@@ -1,8 +1,6 @@
 use std::error::Error;
-use std::io;
 use std::path::{Path, PathBuf};
 
-use reqwest;
 use resonanse_common::file_storage::get_event_image_path_by_uuid;
 use resonanse_common::models::BaseEvent;
 use uuid::Uuid;
@@ -15,6 +13,7 @@ async fn download_image(url: &str, path: &Path) -> Result<(), Box<dyn Error>> {
 
     let mut file = OpenOptions::new()
         .create(true)
+        .truncate(true)
         .write(true)
         .open(path)
         .await?;
@@ -39,7 +38,7 @@ pub async fn resolve_event_picture(event: &mut BaseEvent) -> Option<PathBuf> {
     if let Some(image_url) = event.image_url.as_deref() {
         let picture_uuid = Uuid::new_v4();
         let local_path = get_event_image_path_by_uuid(picture_uuid);
-        if let Ok(_) = download_image(image_url, &local_path).await {
+        if download_image(image_url, &local_path).await.is_ok() {
             event.local_image_path = Some(picture_uuid.to_string());
             return Some(local_path);
         }

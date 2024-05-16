@@ -1,4 +1,3 @@
-use crate::models::BaseEvent;
 use serde::Deserialize;
 use uuid::Uuid;
 

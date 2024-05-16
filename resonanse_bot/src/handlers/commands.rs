@@ -5,8 +5,8 @@ use teloxide::prelude::*;
 use teloxide::types::{ParseMode, ReplyMarkup};
 use teloxide::utils::command::parse_command;
 use teloxide::Bot;
-use uuid::Uuid;
 use tokio::time::{sleep, Duration};
+use uuid::Uuid;
 
 use resonanse_common::EventSubjectFilter;
 
@@ -15,7 +15,9 @@ use crate::data_structs::FillingEvent;
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
-use crate::keyboards::{get_inline_kb_run_web_app, get_inline_kb_set_subject_filter, make_cities_keyboard};
+use crate::keyboards::{
+    get_inline_kb_run_web_app, get_inline_kb_set_subject_filter, make_cities_keyboard,
+};
 use crate::states::{BaseState, CreateEventState};
 use crate::{keyboards, ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY};
 

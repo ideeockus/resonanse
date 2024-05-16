@@ -215,7 +215,7 @@ impl BaseEvent {
         // format!("{}...", &description[0..n])
 
         let mut stripped_description = String::new();
-        for (i, ch) in  description.chars().enumerate() {
+        for (i, ch) in description.chars().enumerate() {
             stripped_description.push(ch);
             if i >= n {
                 break;
@@ -232,12 +232,7 @@ impl FromRow<'_, PgRow> for BaseEvent {
         let price_currency: Option<String> = row.try_get("price_currency")?;
 
         let price = match (price_price, price_currency) {
-            (Some(price), Some(currency)) => {
-                Some(crate::models::events::Price {
-                    price,
-                    currency,
-                })
-            },
+            (Some(price), Some(currency)) => Some(crate::models::events::Price { price, currency }),
             _ => None,
         };
 

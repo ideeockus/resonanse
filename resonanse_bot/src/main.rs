@@ -8,7 +8,6 @@ use log::{info, LevelFilter};
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dptree;
 use teloxide::prelude::*;
-use tokio::sync::Mutex;
 
 use dispatch::schema;
 use resonanse_common::repository::{
@@ -17,8 +16,8 @@ use resonanse_common::repository::{
 use resonanse_common::RecServiceClient;
 
 use crate::config::{
-    check_all_mandatory_envs_is_ok, CLICKHOUSE_DATABASE, CLICKHOUSE_DB_URL, CLICKHOUSE_PASSWORD,
-    CLICKHOUSE_USERNAME, POSTGRES_DB_URL, RABBITMQ_HOST, RESONANSE_BOT_TOKEN,
+    check_all_mandatory_envs_is_ok, CLICKHOUSE_DB_URL, POSTGRES_DB_URL, RABBITMQ_HOST,
+    RESONANSE_BOT_TOKEN,
 };
 use crate::handlers::MyErrorHandler;
 use crate::management::run_resonanse_management_bot_polling;

@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
+#[allow(clippy::enum_variant_names)]
 pub enum RpcError {
     SqlxError,
     AmqprsError,
@@ -8,19 +9,19 @@ pub enum RpcError {
 }
 
 impl From<sqlx::error::Error> for RpcError {
-    fn from(value: sqlx::error::Error) -> Self {
+    fn from(_value: sqlx::error::Error) -> Self {
         Self::SqlxError
     }
 }
 
 impl From<amqprs::error::Error> for RpcError {
-    fn from(value: amqprs::error::Error) -> Self {
+    fn from(_value: amqprs::error::Error) -> Self {
         Self::AmqprsError
     }
 }
 
 impl From<serde_json::Error> for RpcError {
-    fn from(value: serde_json::Error) -> Self {
+    fn from(_value: serde_json::Error) -> Self {
         Self::SerdeJsonError
     }
 }

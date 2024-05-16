@@ -6,9 +6,8 @@ use futures::FutureExt;
 use teloxide::error_handlers::ErrorHandler;
 use teloxide::prelude::*;
 use teloxide::types::CallbackQuery;
-use teloxide::types::Update;
 
-use crate::config::{ERROR_CHANNEL_ID, FEEDBACK_CHANNEL_ID};
+use crate::config::ERROR_CHANNEL_ID;
 use crate::handlers::HandlerResult;
 use crate::MANAGER_BOT;
 
@@ -46,7 +45,10 @@ pub async fn log_callback_handler(q: CallbackQuery) -> HandlerResult {
 pub struct MyErrorHandler;
 
 impl ErrorHandler<Box<dyn std::error::Error + Send + Sync>> for MyErrorHandler {
-    fn handle_error(self: Arc<Self>, error: Box<dyn std::error::Error + Send + Sync>) -> BoxFuture<'static, ()> {
+    fn handle_error(
+        self: Arc<Self>,
+        error: Box<dyn std::error::Error + Send + Sync>,
+    ) -> BoxFuture<'static, ()> {
         async move {
             log::error!("Error handling update: {}", error);
 
@@ -67,6 +69,7 @@ impl ErrorHandler<Box<dyn std::error::Error + Send + Sync>> for MyErrorHandler {
                     }
                 }
             }
-        }.boxed()
+        }
+        .boxed()
     }
 }

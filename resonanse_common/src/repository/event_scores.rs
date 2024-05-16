@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Formatter};
 
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -98,7 +98,10 @@ impl EventInteractionRepository {
         Ok(())
     }
 
-    async fn count_events_by_type(&self, event_type: &str) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    async fn count_events_by_type(
+        &self,
+        event_type: &str,
+    ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let today = chrono::offset::Local::now().naive_utc().date();
 
         let result: usize = self.clickhouse_client
@@ -109,15 +112,21 @@ impl EventInteractionRepository {
         Ok(result)
     }
 
-    pub async fn count_clicks_for_today(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn count_clicks_for_today(
+        &self,
+    ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         self.count_events_by_type("click").await
     }
 
-    pub async fn count_likes_for_today(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn count_likes_for_today(
+        &self,
+    ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         self.count_events_by_type("like").await
     }
 
-    pub async fn count_dislikes_for_today(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn count_dislikes_for_today(
+        &self,
+    ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         self.count_events_by_type("dislike").await
     }
 

@@ -48,9 +48,7 @@ where
     };
 
     create_base_event.service_data = Some(json!({"creator_id": account.id}));
-    let created_event = events_repo
-        .create_event(create_base_event.clone())
-        .await?;
+    let created_event = events_repo.create_event(create_base_event.clone()).await?;
 
     // post to tg
     if let Ok(tg_channel_to_post) = env::var(POSTS_CHANNEL_ID) {
