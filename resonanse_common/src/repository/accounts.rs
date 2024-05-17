@@ -170,7 +170,7 @@ impl AccountsRepository {
         debug!("count_account");
         sqlx::query(
             r#"
-            select count(*) from user_accounts
+            select count(*) from resonanse_users
             "#,
         )
         .fetch_one(&self.db_pool)
@@ -182,7 +182,7 @@ impl AccountsRepository {
         debug!("count_account");
         sqlx::query(
             r#"
-            select count(*) from user_accounts where description is not null
+            select count(*) from resonanse_users where description is not null
             "#,
         )
         .fetch_one(&self.db_pool)

@@ -1,6 +1,8 @@
+use log::error;
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dispatching::{dialogue, UpdateHandler};
 use teloxide::prelude::*;
+use teloxide::types::Message;
 
 use crate::commands::Command;
 use crate::handlers::*;
@@ -43,6 +45,18 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
                 last_edit_msg_id,
             }]
             .endpoint(handle_create_event_state_message),
+        )
+        .branch(
+            dptree::filter(move |msg: Message| {
+                if let Some(msg_text) = msg.text() {
+                    error!("WTFCK2");
+                    if msg_text.starts_with("/event_") {
+                        return true;
+                    }
+                }
+                false
+            })
+            .endpoint(handle_get_event_by_uuid),
         )
         .branch(dptree::endpoint(invalid_state));
 

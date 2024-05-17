@@ -69,9 +69,11 @@ pub async fn handle_set_description(bot: Bot, dialogue: MyDialogue, msg: Message
     }
 
     // 1. send new description to rpc
-    let rec_service_client = REC_SERVICE_CLIENT
+    let mut rec_service_client = REC_SERVICE_CLIENT
         .get()
-        .ok_or("Cannot get rpc service client")?;
+        .ok_or("Cannot get rpc service client")?
+        .lock()
+        .await;
 
     let msg_text = match msg.text() {
         None => {

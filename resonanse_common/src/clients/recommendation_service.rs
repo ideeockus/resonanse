@@ -18,7 +18,8 @@ const RPC_QUEUE_RECOMMENDATION_BY_USER: &str = "recommendations.requests.by_user
 const RPC_QUEUE_SET_USER_DESCRIPTION: &str = "resonanse_api.requests.set_user_description";
 
 pub struct RecServiceClient {
-    _connection: Connection,
+    host: String,
+    connection: Connection,
     channel: Channel,
 }
 
@@ -47,13 +48,14 @@ impl RecServiceClient {
         }
 
         RecServiceClient {
-            _connection: connection,
+            host: host.to_string(),
+            connection,
             channel,
         }
     }
 
     pub async fn rpc_get_recommendation_by_user(
-        &self,
+        &mut self,
         user_id: i64,
     ) -> Result<Vec<SimplifiedRecItem>, Box<dyn Error + Send + Sync>> {
         let request = json!({
@@ -69,7 +71,7 @@ impl RecServiceClient {
     }
 
     pub async fn rpc_set_user_description(
-        &self,
+        &mut self,
         user_id: i64,
         description: &str,
     ) -> Result<bool, Box<dyn Error + Send + Sync>> {
@@ -93,11 +95,17 @@ impl RecServiceClient {
     }
 
     async fn rpc_call(
-        &self,
+        &mut self,
         api_queue_name: &str,
         payload: &str,
     ) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
         let corr_id = uuid::Uuid::new_v4().to_string();
+
+        if !self.connection.is_open() {
+            let reopenned_client = Self::new(&self.host).await;
+            self.connection = reopenned_client.connection;
+            self.channel = reopenned_client.channel;
+        }
 
         debug!(
             "send rpc request {:?} corr_id {:?}, payload {:?}",

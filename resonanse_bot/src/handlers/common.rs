@@ -12,7 +12,7 @@ pub async fn handle_start_state(bot: Bot, dialogue: MyDialogue, msg: Message) ->
 
     dialogue.update(BaseState::Idle).await?;
 
-    let mut message = bot.send_message(msg.chat.id, t!("hello_msg"));
+    let mut message = bot.send_message(msg.chat.id, t!("help_msg"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     // message.reply_markup = Some(base_keyboard());
     message.await?;

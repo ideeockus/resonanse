@@ -185,7 +185,7 @@ impl Default for ResonanseEventKind {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Price {
-    pub price: f32,
+    pub price: f64,
     pub currency: String,
 }
 
@@ -228,11 +228,11 @@ impl BaseEvent {
 
 impl FromRow<'_, PgRow> for BaseEvent {
     fn from_row(row: &PgRow) -> Result<Self, sqlx::error::Error> {
-        let price_price: Option<f32> = row.try_get("price_price")?;
+        let price_price: Option<f64> = row.try_get("price_price")?;
         let price_currency: Option<String> = row.try_get("price_currency")?;
 
         let price = match (price_price, price_currency) {
-            (Some(price), Some(currency)) => Some(crate::models::events::Price { price, currency }),
+            (Some(price), Some(currency)) => Some(Price { price, currency }),
             _ => None,
         };
 

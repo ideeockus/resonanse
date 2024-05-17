@@ -6,7 +6,7 @@ use uuid::Uuid;
 use resonanse_common::models::EventScoreType;
 use resonanse_common::repository::AccountsRepository;
 
-use crate::config::POSTGRES_DB_URL;
+use crate::config::get_postgres_db_url;
 use crate::handlers::HandlerResult;
 use crate::{keyboards, EVENTS_INTERACTION_REPOSITORY};
 
@@ -26,7 +26,7 @@ pub async fn handle_score_event_callback(bot: Bot, q: CallbackQuery) -> HandlerR
         Some(v) => v,
     };
 
-    let conn_url = std::env::var(POSTGRES_DB_URL).unwrap();
+    let conn_url = get_postgres_db_url();
     let pool = resonanse_common::PgPool::connect(&conn_url).await?;
 
     let events_score_repository = EVENTS_INTERACTION_REPOSITORY

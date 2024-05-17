@@ -21,9 +21,11 @@ pub async fn handle_get_digest_command(
         .ok_or("Cannot get events repository")?;
 
     // 1. send rpc request
-    let rec_service_client = REC_SERVICE_CLIENT
+    let mut rec_service_client = REC_SERVICE_CLIENT
         .get()
-        .ok_or("Cannot get rpc service client")?;
+        .ok_or("Cannot get rpc service client")?
+        .lock()
+        .await;
     let user_id = accounts_repo
         .get_account_id_by_tg_user_id(msg.chat.id.0)
         .await?;

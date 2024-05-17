@@ -63,9 +63,9 @@ pub fn prepare_event_list_view_with_marks(events: Vec<BaseEvent>, marks: Vec<Str
             event_i += 1;
 
             format!(
-                "{} /event\\_{}\t{}\n⏰ {}\n📍 {}",
+                "{} /event\\_{}\n{}\n⏰ {}\n📍 {}",
                 mark,
-                event_i,
+                event.id.as_simple(),
                 markdown::escape(&event.title),
                 markdown::escape(&event.datetime_from.to_string()),
                 markdown::escape(&event.venue.get_name()),
