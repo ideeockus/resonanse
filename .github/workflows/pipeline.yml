@@ -87,7 +87,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/capybanse/resonanse_bot:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/capybanse_resonanse_bot:latest
 
 #  send-deploy-hook:
 #    name: Deploy Hook
