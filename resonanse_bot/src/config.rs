@@ -31,24 +31,24 @@ pub const DONATION_URL: &str = "DONATION_URL";
 pub const WEB_APP_URL: &str = "WEB_APP_URL";
 
 pub fn check_all_mandatory_envs_is_ok() {
-    env::var(RESONANSE_BOT_TOKEN).unwrap();
-    env::var(RESONANSE_MANAGEMENT_BOT_TOKEN).unwrap();
-    env::var(RESONANSE_BOT_USERNAME).unwrap();
-    env::var(FEEDBACK_CHANNEL_ID).unwrap();
-    env::var(ERROR_CHANNEL_ID).unwrap();
-    env::var(POSTS_CHANNEL_ID).unwrap();
+    env::var(RESONANSE_BOT_TOKEN).expect("missed RESONANSE_BOT_TOKEN");
+    env::var(RESONANSE_MANAGEMENT_BOT_TOKEN).expect("missed RESONANSE_MANAGEMENT_BOT_TOKEN");
+    env::var(RESONANSE_BOT_USERNAME).expect("missed RESONANSE_BOT_USERNAME");
+    env::var(FEEDBACK_CHANNEL_ID).expect("missed FEEDBACK_CHANNEL_ID");
+    env::var(ERROR_CHANNEL_ID).expect("missed ERROR_CHANNEL_ID");
+    env::var(POSTS_CHANNEL_ID).expect("missed POSTS_CHANNEL_ID");
 
-    env::var(POSTGRES_USER).unwrap();
-    env::var(POSTGRES_PASSWORD).unwrap();
-    env::var(POSTGRES_DB).unwrap();
+    env::var(POSTGRES_USER).expect("missed POSTGRES_USER");
+    env::var(POSTGRES_PASSWORD).expect("missed POSTGRES_PASSWORD");
+    env::var(POSTGRES_DB).expect("missed POSTGRES_DB");
 
-    env::var(RABBITMQ_HOST).unwrap();
+    env::var(RABBITMQ_HOST).expect("missed RABBITMQ_HOST");
 
-    env::var(CLICKHOUSE_HOST).unwrap();
+    env::var(CLICKHOUSE_HOST).expect("missed CLICKHOUSE_HOST");
 
-    env::var(MANAGER_TG_IDS).unwrap();
+    env::var(MANAGER_TG_IDS).expect("missed MANAGER_TG_IDS");
 
-    env::var(WEB_APP_URL).unwrap();
+    env::var(WEB_APP_URL).expect("missed WEB_APP_URL");
 
     get_postgres_db_url();
 }
