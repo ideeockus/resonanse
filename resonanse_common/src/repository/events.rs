@@ -351,4 +351,24 @@ impl EventsRepository {
 
         Ok(cities)
     }
+
+    pub async fn update_local_image_path(
+        &self,
+        event_id: Uuid,
+        local_image_path: Option<String>,
+    ) -> Result<(), sqlx::error::Error> {
+        sqlx::query(
+            r#"
+                UPDATE resonanse_events
+                SET local_image_path = $1
+                WHERE id = $2
+                "#,
+        )
+        .bind(local_image_path)
+        .bind(event_id)
+        .execute(&self.db_pool)
+        .await?;
+
+        Ok(())
+    }
 }

@@ -1,10 +1,10 @@
-use log::error;
 use teloxide::dispatching::dialogue::InMemStorage;
 use teloxide::dispatching::{dialogue, UpdateHandler};
 use teloxide::prelude::*;
 use teloxide::types::Message;
 
 use crate::commands::Command;
+use crate::data_structs::MyComplexCommand;
 use crate::handlers::*;
 use crate::states::*;
 
@@ -26,6 +26,20 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
     let message_handler = Update::filter_message()
         .map_async(log_msg_handler)
         .branch(command_handler)
+        .branch(
+            // event_{uuid} handler
+            dptree::filter(move |msg: Message| {
+                if let Some(msg_text) = msg.text() {
+                    if let Some(MyComplexCommand::GetEventUuid(_)) =
+                        try_extract_event_id_from_text(msg_text)
+                    {
+                        return true;
+                    }
+                }
+                false
+            })
+            .endpoint(handle_get_event_by_uuid),
+        )
         .branch(case![BaseState::Start].endpoint(handle_start_state))
         .branch(case![BaseState::SendFeedback].endpoint(handle_send_feedback))
         .branch(case![BaseState::SetCity].endpoint(handle_set_city))
@@ -45,18 +59,6 @@ pub fn schema() -> UpdateHandler<Box<dyn std::error::Error + Send + Sync + 'stat
                 last_edit_msg_id,
             }]
             .endpoint(handle_create_event_state_message),
-        )
-        .branch(
-            dptree::filter(move |msg: Message| {
-                if let Some(msg_text) = msg.text() {
-                    error!("WTFCK2");
-                    if msg_text.starts_with("/event_") {
-                        return true;
-                    }
-                }
-                false
-            })
-            .endpoint(handle_get_event_by_uuid),
         )
         .branch(dptree::endpoint(invalid_state));
 

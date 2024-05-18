@@ -1,7 +1,7 @@
 use std::env;
 use std::error::Error;
 
-use log::debug;
+use log::{debug, error};
 use serde_json::json;
 
 use teloxide::prelude::*;
@@ -15,7 +15,7 @@ use crate::data_structs::{prepare_event_msg_with_base_event, EventPostMessageReq
 use crate::data_translators::fill_base_account_from_teloxide_user;
 use crate::errors::BotHandlerError;
 use crate::keyboards::get_inline_kb_event_message;
-use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY, MANAGER_BOT};
+use crate::{ACCOUNTS_REPOSITORY, EVENTS_INTERACTION_REPOSITORY, EVENTS_REPOSITORY, MANAGER_BOT};
 
 pub async fn publish_event<I>(
     new_event: I,
@@ -82,17 +82,34 @@ pub async fn send_event_post(
     chat_id: ChatId,
     event_uuid: Uuid,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let created_event = EVENTS_REPOSITORY
+    let events_repo = EVENTS_REPOSITORY
         .get()
-        .ok_or("Cannot get events repository")?
-        .get_event_by_uuid(event_uuid)
+        .ok_or("Cannot get events repository")?;
+    let accounts_repo = ACCOUNTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get accounts repository")?;
+    let events_interaction_repo = EVENTS_INTERACTION_REPOSITORY
+        .get()
+        .ok_or("Cannot get events interaction repository")?;
+    // save this user click/view of event to db
+    let user_account_id = accounts_repo
+        .get_account_id_by_tg_user_id(chat_id.0)
         .await?;
+    if let Err(err) = events_interaction_repo
+        .add_event_click(user_account_id, event_uuid)
+        .await
+    {
+        error!("Cannot save event click action: {:?}", err)
+    }
+
+    // then send event post to this user
+    let event = events_repo.get_event_by_uuid(event_uuid).await?;
 
     let event_post_message_request = prepare_event_msg_with_base_event(
         bot,
         chat_id,
-        created_event.clone(),
-        construct_created_event_kb(&created_event),
+        event.clone(),
+        construct_created_event_kb(&event),
     )
     .await;
     match event_post_message_request {

@@ -10,6 +10,7 @@ edition = "2021"
 [dependencies]
 sqlx = { version = "0.7", features = ["macros", "postgres", "runtime-tokio", "time", "uuid", "chrono"] }
 chrono = "0.4"
+time = { version = "0.3.30", features = ["serde"] }
 uuid = { version = "1.4", features = ["v4", "serde"] }
 log = "0.4"
 url = "2.4"

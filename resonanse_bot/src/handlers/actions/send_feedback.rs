@@ -10,10 +10,11 @@ use teloxide::Bot;
 use crate::config::FEEDBACK_CHANNEL_ID;
 use crate::handlers::utils::download_file_by_id;
 use crate::handlers::{HandlerResult, MyDialogue};
+use crate::states::BaseState;
 use crate::utils::repr_user_as_str;
 use crate::MANAGER_BOT;
 
-pub async fn handle_send_feedback(bot: Bot, _dialogue: MyDialogue, msg: Message) -> HandlerResult {
+pub async fn handle_send_feedback(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     info!("got feedback {:?}", msg);
 
     let manager_bot = MANAGER_BOT.get().ok_or("Cannot get manager bot")?;
@@ -21,6 +22,7 @@ pub async fn handle_send_feedback(bot: Bot, _dialogue: MyDialogue, msg: Message)
     // todo move all text to locales
     bot.send_message(msg.chat.id, "Спасибо за оставленный фидбек!")
         .await?;
+    dialogue.update(BaseState::Idle).await?;
 
     if let Ok(tg_feedback_chan) = env::var(FEEDBACK_CHANNEL_ID) {
         if let Ok(tg_feedback_chan) = tg_feedback_chan.parse::<i64>() {
@@ -33,7 +35,7 @@ pub async fn handle_send_feedback(bot: Bot, _dialogue: MyDialogue, msg: Message)
                     manager_bot.send_photo(tg_feedback_chan, InputFile::file(local_img_path));
 
                 feedback_msg.caption = Some(format!(
-                    "Feedback from {}:\n\n{}",
+                    "#feedback\nFeedback from {}:\n\n{}",
                     repr_user_as_str(msg.from()),
                     markdown::escape(msg.caption().unwrap_or("")),
                 ));
@@ -45,7 +47,7 @@ pub async fn handle_send_feedback(bot: Bot, _dialogue: MyDialogue, msg: Message)
                 let feedback_msg = manager_bot.send_message(
                     tg_feedback_chan,
                     format!(
-                        "Feedback from {}:\n\n{}",
+                        "#feedback\nFeedback from {}:\n\n{}",
                         repr_user_as_str(msg.from()),
                         markdown::escape(feedback_text),
                     ),

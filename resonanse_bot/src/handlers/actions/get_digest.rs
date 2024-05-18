@@ -1,16 +1,16 @@
-use log::debug;
 use teloxide::prelude::*;
 use teloxide::types::ParseMode::MarkdownV2;
 use teloxide::Bot;
 use uuid::Uuid;
 
 use crate::handlers::{HandlerResult, MyDialogue};
+use crate::states::BaseState;
 use crate::utils::{prepare_event_list_view_with_marks, recommendation_subsystem_to_mark};
 use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY, REC_SERVICE_CLIENT};
 
 pub async fn handle_get_digest_command(
     bot: Bot,
-    _dialogue: MyDialogue,
+    dialogue: MyDialogue,
     msg: Message,
 ) -> HandlerResult {
     let accounts_repo = ACCOUNTS_REPOSITORY
@@ -35,8 +35,6 @@ pub async fn handle_get_digest_command(
         .rpc_get_recommendation_by_user(user_id)
         .await?;
 
-    debug!("recommendation {:?}", recommendation);
-
     // 2. prepare text view
     let events_ids: Vec<Uuid> = recommendation
         .iter()
@@ -51,6 +49,8 @@ pub async fn handle_get_digest_command(
     let recommendation_view = prepare_event_list_view_with_marks(events, marks);
 
     // 3. send to user
+    dialogue.update(BaseState::Idle).await?;
+
     let mut message = bot.send_message(msg.chat.id, recommendation_view);
     message.parse_mode = Some(MarkdownV2);
     message.await?;

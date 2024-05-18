@@ -1,10 +1,10 @@
 use std::fmt::{Debug, Formatter};
 
+use chrono::{NaiveDateTime, NaiveTime};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::models::{EventScore, EventScoreType};
-use crate::UserInteraction;
 
 pub struct EventInteractionRepository {
     db_pool: PgPool,
@@ -49,14 +49,15 @@ impl EventInteractionRepository {
         // .fetch_one(&self.db_pool)
         // .await?;
 
-        let mut insert = self.clickhouse_client.insert("users_interactions")?;
-        insert
-            .write(&UserInteraction {
-                user_id,
-                event_id,
-                interaction_type: score.to_string(),
-                interaction_dt: chrono::offset::Local::now().naive_local(),
-            })
+        let now_timestamp = chrono::offset::Local::now().naive_local();
+        let query = "INSERT INTO users_interactions (user_id, event_id, interaction_type, interaction_dt) VALUES (?, ?, ?, ?)";
+        self.clickhouse_client
+            .query(query)
+            .bind(user_id)
+            .bind(event_id.to_string())
+            .bind(score.to_string())
+            .bind(now_timestamp.format("%Y-%m-%d %H:%M:%S").to_string())
+            .execute()
             .await?;
 
         Ok(())
@@ -85,14 +86,16 @@ impl EventInteractionRepository {
         user_id: i64,
         event_id: Uuid,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let mut insert = self.clickhouse_client.insert("users_interactions")?;
-        insert
-            .write(&UserInteraction {
-                user_id,
-                event_id,
-                interaction_type: "click".to_string(),
-                interaction_dt: chrono::offset::Local::now().naive_local(),
-            })
+        let now_timestamp = chrono::offset::Local::now().naive_local();
+
+        let query = "INSERT INTO users_interactions (user_id, event_id, interaction_type, interaction_dt) VALUES (?, ?, ?, ?)";
+        self.clickhouse_client
+            .query(query)
+            .bind(user_id)
+            .bind(event_id.to_string())
+            .bind("click")
+            .bind(now_timestamp.format("%Y-%m-%d %H:%M:%S").to_string())
+            .execute()
             .await?;
 
         Ok(())
@@ -103,11 +106,12 @@ impl EventInteractionRepository {
         event_type: &str,
     ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let today = chrono::offset::Local::now().naive_utc().date();
+        let today_timestamp = NaiveDateTime::new(today, NaiveTime::default()).timestamp();
 
         let result: usize = self.clickhouse_client
-            .query("SELECT count(*) FROM users_interactions WHERE interaction_type = ? AND toDate(interaction_dt) = toDate(?)")
+            .query("SELECT count(*) FROM users_interactions WHERE interaction_type = ? AND toDate(interaction_dt) >= toDate(?)")
             .bind(event_type)
-            .bind(today)
+            .bind(today_timestamp)
             .fetch_one().await?;
         Ok(result)
     }
@@ -132,9 +136,11 @@ impl EventInteractionRepository {
 
     pub async fn count_recommendations_for_today(&self) -> Result<usize, clickhouse::error::Error> {
         let today = chrono::offset::Local::now().naive_utc().date();
+        let today_timestamp = NaiveDateTime::new(today, NaiveTime::default()).timestamp();
+
         let result: usize = self.clickhouse_client
             .query("SELECT count(*) FROM given_recommendations WHERE toDate(recommendation_dt) = toDate(?)")
-            .bind(today)
+            .bind(today_timestamp)
             .fetch_one().await?;
         Ok(result)
     }

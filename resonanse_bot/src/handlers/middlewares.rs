@@ -63,7 +63,7 @@ impl ErrorHandler<Box<dyn std::error::Error + Send + Sync>> for MyErrorHandler {
                 if let Ok(tg_feedback_chan) = tg_feedback_chan.parse::<i64>() {
                     let tg_feedback_chan = ChatId(tg_feedback_chan);
 
-                    let msg = format!("Error handling update: {}", error);
+                    let msg = format!("#error\nError handling update: {}", error);
                     if let Err(err) = manager_bot.send_message(tg_feedback_chan, msg).send().await {
                         log::error!("Error sending message to feedback channel: {}", err);
                     }

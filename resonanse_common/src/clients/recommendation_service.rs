@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt::{Debug, Formatter};
 use std::io;
+use std::time::Duration;
 
 use amqprs::channel::{
     BasicConsumeArguments, BasicPublishArguments, Channel, QueueDeclareArguments,
@@ -101,7 +102,7 @@ impl RecServiceClient {
     ) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
         let corr_id = uuid::Uuid::new_v4().to_string();
 
-        if !self.connection.is_open() {
+        if !self.connection.is_open() || !self.channel.is_open() {
             let reopenned_client = Self::new(&self.host).await;
             self.connection = reopenned_client.connection;
             self.channel = reopenned_client.channel;
@@ -143,7 +144,8 @@ impl RecServiceClient {
             .await
             .unwrap();
 
-        let response = consumer.await_response(corr_id).await;
+        let response =
+            tokio::time::timeout(Duration::from_secs(60), consumer.await_response(corr_id)).await?;
         Ok(response)
     }
 }

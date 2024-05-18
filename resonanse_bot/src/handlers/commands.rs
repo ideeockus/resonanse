@@ -1,8 +1,9 @@
+use log::warn;
 use std::env;
 use std::str::FromStr;
 
 use teloxide::prelude::*;
-use teloxide::types::{ParseMode, ReplyMarkup};
+use teloxide::types::{InputFile, ParseMode, ReplyMarkup};
 use teloxide::utils::command::parse_command;
 use teloxide::Bot;
 use tokio::time::{sleep, Duration};
@@ -21,7 +22,7 @@ use crate::keyboards::{
 use crate::states::{BaseState, CreateEventState};
 use crate::{keyboards, ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY};
 
-pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
+pub async fn start_command(bot: Bot, dialogue: MyDialogue, msg: Message) -> HandlerResult {
     if let Some(command_text) = msg.text() {
         if let Some((_command, params)) = parse_command(command_text, "") {
             if let Some(first_param) = params.first() {
@@ -38,6 +39,14 @@ pub async fn start_command(bot: Bot, msg: Message) -> HandlerResult {
     let mut message = bot.send_message(msg.chat.id, t!("onboarding.attention_hook"));
     message.parse_mode = Some(ParseMode::MarkdownV2);
     message.await?;
+
+    let stick_id = "CAACAgIAAxkBAAEMJAVmSIATf0ZBYXKBqXshYnGEwkO3PAACakgAAg7CqEmVRu5mxCBGFTUE";
+    let message = bot.send_sticker(msg.chat.id, InputFile::file_id(stick_id));
+    if let Err(err) = message.await {
+        warn!("cannot send sticker with id {}: {:?}", stick_id, err);
+    };
+
+    dialogue.update(BaseState::Idle).await?;
 
     if let Some(user) = msg.from() {
         let new_user_account = fill_base_account_from_teloxide_user(user);

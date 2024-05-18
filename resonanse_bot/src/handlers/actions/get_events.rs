@@ -8,7 +8,8 @@ use teloxide::Bot;
 use resonanse_common::models::EventSubject;
 use resonanse_common::EventSubjectFilter;
 
-use crate::handlers::{HandlerResult, MyDialogue};
+use crate::data_structs::MyComplexCommand;
+use crate::handlers::{try_extract_event_id_from_text, HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_events_page, get_inline_kb_set_subject_filter};
 use crate::states::BaseState;
@@ -30,27 +31,25 @@ pub async fn handle_get_events(
         .ok_or("Cannot get accounts repository")?;
 
     if let Some(msg_text) = msg.text() {
-        if let Some(rest_msg) = msg_text.strip_prefix("/event_") {
-            if let Some(event_num) = rest_msg.split(' ').next() {
-                if let Ok(event_num) = event_num.parse::<i64>() {
-                    let user_account = accounts_repo.get_user_by_tg_id(msg.chat.id.0).await?;
-                    let events = events_repo
-                        .get_public_events_city_insensitive(
-                            user_account.user_data.city,
-                            page_num,
-                            page_size,
-                        )
-                        .await?;
-                    if let Some(choosed_event) = events.get(event_num as usize - 1) {
-                        send_event_post(&bot, msg.chat.id, choosed_event.id).await?;
-                        return Ok(());
-                    }
-                }
+        if let Some(MyComplexCommand::GetEventIntId(event_num)) =
+            try_extract_event_id_from_text(msg_text)
+        {
+            let user_account = accounts_repo.get_user_by_tg_id(msg.chat.id.0).await?;
+            let events = events_repo
+                .get_public_events_city_insensitive(
+                    user_account.user_data.city,
+                    page_num,
+                    page_size,
+                )
+                .await?;
+            if let Some(choosed_event) = events.get(event_num as usize - 1) {
+                send_event_post(&bot, msg.chat.id, choosed_event.id).await?;
+                return Ok(());
             }
         }
     }
-    // handle event command end
 
+    // handle event command end
     bot.send_message(msg.chat.id, "Выбранное событие не найдено")
         .await?;
 
@@ -103,7 +102,6 @@ pub async fn handle_events_filter_callback(
             let user_id = q.from.id.0 as i64;
             let msg_text =
                 get_choose_event_text(user_id, page_num, page_size, &events_filter).await?;
-            println!("{:?}", msg_text);
             let mut message = bot.send_message(q.from.id, msg_text);
             message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_events_page()));
             message.parse_mode = Some(ParseMode::MarkdownV2);
