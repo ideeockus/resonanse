@@ -5,31 +5,26 @@ use sqlx::{Error, FromRow, Row};
 pub struct UserData {
     pub first_name: String,
     pub last_name: String,
-
-    pub city: String,
+    pub city: Option<String>,
+    pub description: Option<String>,
     pub headline: Option<String>,
-    pub about: String, // todo add markdown
-
     pub goals: Option<String>,
     pub interests: Option<String>,
-
     pub language: Option<String>,
     pub age: Option<i16>,
     pub education: Option<String>,
-
     pub hobby: Option<String>,
     pub music: Option<String>,
     pub sport: Option<String>,
     pub books: Option<String>,
     pub food: Option<String>,
     pub worldview: Option<String>,
-    pub alcohol: Option<String>,
 }
 
 #[derive(Debug)]
 pub struct UserTgData {
-    pub username: Option<String>,
-    pub user_id: Option<i64>,
+    pub tg_username: Option<String>,
+    pub tg_user_id: Option<i64>,
 }
 
 #[derive(Debug)]
@@ -49,7 +44,7 @@ pub struct AuthData {
 #[derive(Clone, Copy, Debug, sqlx::Type)]
 pub enum ResoAccountType {
     Standard = 0,
-    Bad = 1, // reduced ?
+    Bad = 1,
     Banned = 2,
     Premium = 3,
 }
@@ -67,40 +62,39 @@ pub struct BaseAccount {
 impl FromRow<'_, PgRow> for BaseAccount {
     fn from_row(row: &PgRow) -> Result<Self, Error> {
         Ok(BaseAccount {
-            id: row.try_get::<_, usize>(0)?,
-            username: row.try_get::<_, usize>(1)?,
+            id: row.try_get("id")?,
+            username: row.try_get("username")?,
             user_data: UserData {
-                first_name: row.try_get::<_, usize>(2)?,
-                last_name: row.try_get::<_, usize>(3)?,
-                city: row.try_get::<_, usize>(4)?,
-                about: row.try_get::<_, usize>(5)?,
-                headline: row.try_get::<_, usize>(6)?,
-                goals: row.try_get::<_, usize>(7)?,
-                interests: row.try_get::<_, usize>(8)?,
-                language: row.try_get::<_, usize>(9)?,
-                age: row.try_get::<_, usize>(10)?,
-                education: row.try_get::<_, usize>(11)?,
-                hobby: row.try_get::<_, usize>(12)?,
-                music: row.try_get::<_, usize>(13)?,
-                sport: row.try_get::<_, usize>(14)?,
-                books: row.try_get::<_, usize>(15)?,
-                food: row.try_get::<_, usize>(16)?,
-                worldview: row.try_get::<_, usize>(17)?,
-                alcohol: row.try_get::<_, usize>(18)?,
+                first_name: row.try_get("first_name")?,
+                last_name: row.try_get("last_name")?,
+                city: row.try_get("city")?,
+                description: row.try_get("description")?,
+                headline: row.try_get("headline")?,
+                goals: row.try_get("goals")?,
+                interests: row.try_get("interests")?,
+                language: row.try_get("language")?,
+                age: row.try_get("age")?,
+                education: row.try_get("education")?,
+                hobby: row.try_get("hobby")?,
+                music: row.try_get("music")?,
+                sport: row.try_get("sport")?,
+                books: row.try_get("books")?,
+                food: row.try_get("food")?,
+                worldview: row.try_get("worldview")?,
             },
             contact_data: UserContactData {
-                email: row.try_get::<_, usize>(19)?,
-                phone: row.try_get::<_, usize>(20)?,
+                email: row.try_get("email")?,
+                phone: row.try_get("phone")?,
                 telegram: UserTgData {
-                    username: row.try_get::<_, usize>(21)?,
-                    user_id: row.try_get::<_, usize>(22)?,
+                    tg_username: row.try_get("tg_username")?,
+                    tg_user_id: row.try_get("tg_user_id")?,
                 },
-                instagram: row.try_get::<_, usize>(23)?,
+                instagram: row.try_get("instagram")?,
             },
             auth_data: AuthData {
-                password_hash: row.try_get::<_, usize>(24)?,
+                password_hash: row.try_get("password_hash")?,
             },
-            user_type: row.try_get::<_, usize>(25)?,
+            user_type: row.try_get("user_type")?,
         })
     }
 }

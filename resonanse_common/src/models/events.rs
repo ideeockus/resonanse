@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use chrono::NaiveDateTime;
 use log::debug;
+use serde::Deserialize;
+use serde_json::Value;
 use sqlx::postgres::PgRow;
 use sqlx::{FromRow, Row};
 use strum_macros;
@@ -22,40 +24,34 @@ impl Default for EventType {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct Location {
-    pub latitude: f64,
-    pub longitude: f64,
+#[derive(Clone, Debug, Deserialize)]
+pub struct Venue {
+    pub title: Option<String>,
+    pub address: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
 }
 
-impl Location {
+impl Venue {
     pub fn from_ll(latitude: f64, longitude: f64) -> Self {
         Self {
-            latitude,
-            longitude,
+            title: None,
+            address: None,
+            latitude: Some(latitude),
+            longitude: Some(longitude),
         }
     }
 
-    pub fn try_from_ll(latitude: Option<f64>, longitude: Option<f64>) -> Option<Self> {
-        let latitude = latitude?;
-        let longitude = longitude?;
-
-        Some(Self {
-            latitude,
-            longitude,
-        })
-    }
-
-    pub fn get_yandex_map_link_to(&self) -> String {
-        format!(
+    pub fn get_yandex_map_link_to(&self) -> Option<String> {
+        Some(format!(
             "https://yandex.ru/maps/?pt={},{}&z=15",
-            self.longitude, self.latitude
-        )
+            self.longitude?, self.latitude?
+        ))
     }
 
     pub fn parse_from_yandex_map_link(link_str: &str) -> Option<Self> {
         let url = url::Url::parse(link_str).ok();
-        Location::parse_from_yandex_map_url(url.as_ref())
+        Venue::parse_from_yandex_map_url(url.as_ref())
     }
 
     pub fn parse_from_yandex_map_url(map_url: Option<&url::Url>) -> Option<Self> {
@@ -67,9 +63,20 @@ impl Location {
         let latitude = split.next().and_then(|s| s.parse::<f64>().ok())?;
 
         Some(Self {
-            latitude,
-            longitude,
+            title: Some(String::new()),
+            address: Some(String::new()),
+            latitude: Some(latitude),
+            longitude: Some(longitude),
         })
+    }
+
+    pub fn get_name(&self) -> String {
+        match (self.title.as_deref(), self.address.as_deref()) {
+            (None, None) => "".to_string(),
+            (None, Some(addr)) => addr.to_string(),
+            (Some(title), None) => title.to_string(),
+            (Some(tittle), Some(addr)) => format!("{}, {}", tittle, addr,),
+        }
     }
 }
 
@@ -106,48 +113,12 @@ pub enum EventSubject {
     Charity = 8,
 }
 
-// impl Display for EventSubject {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         let s = match self {
-//             EventSubject::Business => "Бизнес",
-//             EventSubject::Social => "Знакомства",
-//             EventSubject::Sport => "Спорт",
-//             EventSubject::Charity => "Добро",
-//             EventSubject::Education => "Образование",
-//             EventSubject::Professional => "Профессия",
-//             EventSubject::Entertainments => "Развлечения",
-//             EventSubject::Culture => "Культура",
-//             // EventSubject::Interests => "Интересы",
-//             EventSubject::Other => "Другое",
-//         };
-//         write!(f, "{}", s)
-//     }
-// }
-
 impl From<EventSubject> for String {
     fn from(value: EventSubject) -> Self {
         value.to_string()
     }
 }
 
-// impl From<&str> for EventSubject {
-//     fn from(value: &str) -> Self {
-//         match value {
-//             "Бизнес" => EventSubject::Business,
-//             "Знакомства" => EventSubject::Social,
-//             "Спорт" => EventSubject::Sport,
-//             "Добро" => EventSubject::Charity,
-//             "Образование" => EventSubject::Education,
-//             "Профессия" => EventSubject::Professional,
-//             "Развлечения" => EventSubject::Entertainments,
-//             "Культура" => EventSubject::Culture,
-//             // "Интересы" => EventSubject::Interests,
-//             _ => EventSubject::Other,
-//         }
-//     }
-// }
-
-// pub struct EventSubjectFilter(Vec<(EventSubject, bool)>);
 #[derive(Clone)]
 pub struct EventSubjectFilter(pub HashMap<EventSubject, bool>);
 
@@ -162,7 +133,6 @@ impl EventSubjectFilter {
             (EventSubject::Professional, true),
             (EventSubject::Entertainments, true),
             (EventSubject::Culture, true),
-            // (EventSubject::Interests, true),
             (EventSubject::Other, true),
         ]))
     }
@@ -213,120 +183,80 @@ impl Default for ResonanseEventKind {
     }
 }
 
-// impl MyI18N for ResonanseEventKind {
-//     fn to_text(&self) -> &'static str {
-//         match self {
-//             ResonanseEventKind::Announcement => {}
-//             ResonanseEventKind::UserOffer => {}
-//         }
-//     }
-//
-//     fn from_text(text: &str) -> Self {
-//         todo!()
-//     }
-// }
+#[derive(Clone, Debug, Deserialize)]
+pub struct Price {
+    pub price: f64,
+    pub currency: String,
+}
 
-// const EVENT_KIND_ANNOUNCEMENT: &str = "Announcement";
-// const EVENT_KIND_USER_OFFER: &str = "UserOffer";
-// impl Display for EventSubject {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         let s = match self {
-//             EventSubject::Business => "Бизнес",
-//             EventSubject::Social => "Знакомства",
-//             EventSubject::Sport => "Спорт",
-//             EventSubject::Charity => "Добро",
-//             EventSubject::Education => "Образование",
-//             EventSubject::Professional => "Профессия",
-//             EventSubject::Entertainments => "Развлечения",
-//             EventSubject::Culture => "Культура",
-//             // EventSubject::Interests => "Интересы",
-//             EventSubject::Other => "Другое",
-//         };
-//         write!(f, "{}", s)
-//     }
-// }
-//
-// impl From<&str> for EventSubject {
-//     fn from(value: &str) -> Self {
-//         match value {
-//             "Бизнес" => EventSubject::Business,
-//             "Знакомства" => EventSubject::Social,
-//             "Спорт" => EventSubject::Sport,
-//             "Добро" => EventSubject::Charity,
-//             "Образование" => EventSubject::Education,
-//             "Профессия" => EventSubject::Professional,
-//             "Развлечения" => EventSubject::Entertainments,
-//             "Культура" => EventSubject::Culture,
-//             // "Интересы" => EventSubject::Interests,
-//             _ => EventSubject::Other,
-//         }
-//     }
-// }
-
-// todo translation
-// const EVENT_SUBJECTS: &[&str] = &[
-//     "Бизнес",
-//     "Спорт",
-//     "Благотворительность",
-//     "Развлечения",
-//     "Образование",
-//     "Профессиональное",
-//     "Знакомства",
-//     "Культура",
-//     "Интересы",
-//     "Другое",
-// ];
-
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct BaseEvent {
     pub id: Uuid,
-    pub is_private: bool,
-    pub is_commercial: bool,
-    pub is_online: bool,
-    pub is_paid: bool,
-    pub event_kind: ResonanseEventKind,
     pub title: String,
-    pub description: String,
-    pub brief_description: Option<String>,
-    // markdown (?)
-    pub subject: EventSubject,
+    pub description: Option<String>,
     pub datetime_from: NaiveDateTime,
     pub datetime_to: Option<NaiveDateTime>,
-    // pub timezone: chrono_tz::Tz,
-    pub location: Option<Location>,
-    pub location_title: String,
-    pub creator_id: i64,
-    pub event_type: EventType,
-    pub picture: Option<Uuid>,
-    pub creation_time: NaiveDateTime,
-    pub contact_info: Option<String>,
+    pub city: Option<String>,
+    pub venue: Venue,
+    pub image_url: Option<String>,
+    pub local_image_path: Option<String>,
+    pub price: Option<Price>,
+    pub tags: Option<Vec<String>>,
+    pub contact: Option<String>,
+    pub service_id: String,
+    pub service_type: Option<String>,
+    pub service_data: Option<Value>,
+}
+
+impl BaseEvent {
+    pub fn get_description_up_to(&self, n: usize) -> String {
+        let description = self.description.as_deref().unwrap_or_default();
+        let n = std::cmp::min(n, description.chars().count());
+        // format!("{}...", &description[0..n])
+
+        let mut stripped_description = String::new();
+        for (i, ch) in description.chars().enumerate() {
+            stripped_description.push(ch);
+            if i >= n {
+                break;
+            }
+        }
+
+        stripped_description
+    }
 }
 
 impl FromRow<'_, PgRow> for BaseEvent {
     fn from_row(row: &PgRow) -> Result<Self, sqlx::error::Error> {
+        let price_price: Option<f64> = row.try_get("price_price")?;
+        let price_currency: Option<String> = row.try_get("price_currency")?;
+
+        let price = match (price_price, price_currency) {
+            (Some(price), Some(currency)) => Some(Price { price, currency }),
+            _ => None,
+        };
+
         Ok(Self {
-            id: row.try_get::<_, &str>("id")?,
-            is_private: row.try_get::<_, &str>("is_private")?,
-            is_commercial: row.try_get::<_, &str>("is_commercial")?,
-            is_online: row.try_get::<_, &str>("is_online")?,
-            is_paid: row.try_get::<_, &str>("is_paid")?,
-            event_kind: row.try_get::<_, &str>("event_kind")?,
-            title: row.try_get::<_, &str>("title")?,
-            description: row.try_get::<_, &str>("description")?,
-            brief_description: row.try_get::<_, &str>("brief_description")?,
-            subject: row.try_get::<_, &str>("subject")?,
-            datetime_from: row.try_get::<_, &str>("datetime_from")?,
-            datetime_to: row.try_get::<_, &str>("datetime_to")?,
-            location: Location::try_from_ll(
-                row.try_get::<_, &str>("location_latitude")?,
-                row.try_get::<_, &str>("location_longitude")?,
-            ),
-            location_title: row.try_get::<_, &str>("location_title")?,
-            creator_id: row.try_get::<_, &str>("creator_id")?,
-            event_type: row.try_get::<_, &str>("event_type")?,
-            picture: row.try_get::<_, &str>("picture")?,
-            creation_time: row.try_get::<_, &str>("creation_time")?,
-            contact_info: row.try_get::<_, &str>("contact_info")?,
+            id: row.try_get("id")?,
+            title: row.try_get("title")?,
+            description: row.try_get("description")?,
+            datetime_from: row.try_get("datetime_from")?,
+            datetime_to: row.try_get("datetime_to")?,
+            city: row.try_get("city")?,
+            venue: Venue {
+                title: row.try_get("venue_title")?,
+                address: row.try_get("venue_address")?,
+                latitude: row.try_get("venue_lat")?,
+                longitude: row.try_get("venue_lon")?,
+            },
+            image_url: row.try_get("image_url")?,
+            local_image_path: row.try_get("local_image_path")?,
+            price,
+            tags: row.try_get("tags")?,
+            contact: row.try_get("contact")?,
+            service_id: row.try_get("service_id")?,
+            service_type: row.try_get("service_type")?,
+            service_data: row.try_get("service_data")?,
         })
     }
 }

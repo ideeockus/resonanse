@@ -9,17 +9,24 @@ pub enum Command {
     #[command(description = "Начать")]
     Start,
     #[command(description = "Описание")]
-    About,
+    Help,
+    #[command(description = "Обратная связь")]
+    SendFeedback,
+
     #[command(description = "Создать")]
     CreateEvent,
     #[command(description = "Список")]
     GetEvents,
+
+    #[command(description = "Выбрать город")]
+    City,
+    #[command(description = "Поставить описание пользователя")]
+    SetDescription,
+    #[command(description = "Запрос дайджеста")]
+    GetDigest,
+
     #[command(description = "Запусить WebApp")]
     RunWebApp,
-    #[command(description = "Обратная связь")]
-    SendFeedback,
     #[command(description = "Внести donation")]
     SendDonation,
-    // #[command(description = "Выбор события", parse_with = accept_two_digits)]
-    // Event{event_num: i64},
 }

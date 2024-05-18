@@ -1,31 +1,9 @@
-use std::collections::HashMap;
-
 use log::debug;
-use sqlx::{PgPool, Result};
+use sqlx::{PgPool, Result, Row};
 use uuid::Uuid;
 
-use crate::models::{BaseEvent, EventSubject};
+use crate::models::BaseEvent;
 use crate::EventSubjectFilter;
-
-// #[derive(Clone)]
-// pub struct CreateBaseEvent {
-//     pub is_private: bool,
-//     pub is_commercial: bool,
-//     pub event_kind: ResonanseEventKind,
-//     pub title: String,
-//     pub description: String,
-//     pub brief_description: Option<String>,
-//     pub subject: EventSubject,
-//     pub datetime_from: NaiveDateTime,
-//     pub datetime_to: Option<NaiveDateTime>,
-//     // pub timezone: chrono_tz::Tz,
-//     pub location: Option<Location>,
-//     pub location_title: Option<String>,
-//     pub creator_id: i64,
-//     pub event_type: EventType,
-//     pub picture: Option<Uuid>,
-//     pub contact_info: Option<String>,
-// }
 
 #[derive(Debug)]
 pub struct EventsRepository {
@@ -37,75 +15,52 @@ impl EventsRepository {
         Self { db_pool: pool }
     }
 
-    pub async fn create_event(&self, event: BaseEvent) -> Result<BaseEvent> {
-        // fill all event except id nad creation_time
+    pub async fn create_event(&self, event: BaseEvent) -> Result<BaseEvent, sqlx::error::Error> {
+        let (price_price, price_currency) = match &event.price {
+            None => (None, None),
+            Some(price) => (Some(price.price), Some(price.currency.clone())),
+        };
+        let event_id = Uuid::new_v4();
+
         let created_event: BaseEvent = sqlx::query_as(
-            r#"insert into resonanse_events
+            r#"
+            INSERT INTO resonanse_events
             (
-            id, is_private, is_commercial, is_online, is_paid, event_kind, title, description, brief_description,
-            subject, datetime_from, datetime_to, location_latitude, location_longitude,
-            location_title, creator_id, event_type, picture, contact_info
+                id, title, description, datetime_from, datetime_to, city, venue_title, venue_address,
+                venue_lat, venue_lon, image_url, local_image_path, price_price, price_currency, tags,
+                contact, service_id, service_type, service_data
             )
-            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
-            returning *
-            "#,
+            VALUES
+            (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+            )
+            RETURNING *
+            "#
         )
-            .bind(Uuid::new_v4())
-            .bind(event.is_private)
-            .bind(event.is_commercial)
-            .bind(event.is_online)
-            .bind(event.is_paid)
-            .bind(event.event_kind)
-            .bind(event.title)
-            .bind(event.description)
-            .bind(event.brief_description)
-            .bind(event.subject as i32)
+            .bind(event_id)
+            .bind(&event.title)
+            .bind(&event.description)
             .bind(event.datetime_from)
             .bind(event.datetime_to)
-            .bind(event.location.as_ref().map(|geo| geo.latitude))
-            .bind(event.location.as_ref().map(|geo| geo.longitude))
-            .bind(event.location_title)
-            .bind(event.creator_id)
-            .bind(event.event_type)
-            .bind(event.picture)
-            .bind(event.contact_info)
+            .bind(&event.city)
+            .bind(&event.venue.title)
+            .bind(&event.venue.address)
+            .bind(event.venue.longitude)
+            .bind(event.venue.latitude)
+            .bind(&event.image_url)
+            .bind(&event.local_image_path)
+            .bind(price_price)
+            .bind(&price_currency)
+            .bind(&event.tags)
+            .bind(&event.contact)
+            .bind(format!("resonanse_{}", event_id))
+            .bind(&event.service_type)
+            .bind(&event.service_data)
             .fetch_one(&self.db_pool)
             .await?;
 
         Ok(created_event)
     }
-
-    // pub async fn edit_event(&self, event: CreateBaseEvent, event_uuid: Uuid) -> Result<BaseEvent> {
-    //     let created_event: BaseEvent = sqlx::query_as(
-    //         r#"insert into resonanse_events
-    //         (
-    //         id, is_private, is_commercial, title, description, subject,
-    //         datetime, location_latitude, location_longitude,
-    //         location_title, creator_id, event_type, picture, contact_info
-    //         )
-    //         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-    //         returning *
-    //         "#,
-    //     )
-    //         .bind(Uuid::new_v4())
-    //         .bind(event.is_private)
-    //         .bind(event.is_commercial)
-    //         .bind(event.title)
-    //         .bind(event.description)
-    //         .bind(event.subject as i32)
-    //         .bind(event.datetime)
-    //         .bind(event.location.latitude)
-    //         .bind(event.location.longitude)
-    //         .bind(event.location.title)
-    //         .bind(event.creator_id)
-    //         .bind(event.event_type)
-    //         .bind(event.picture)
-    //         .bind(event.contact_info)
-    //         .fetch_one(&self.db_pool)
-    //         .await?;
-    //
-    //     Ok(created_event)
-    // }
 
     pub async fn get_all_events(&self) -> Result<Vec<BaseEvent>> {
         let events: Result<Vec<BaseEvent>> = sqlx::query_as(
@@ -115,8 +70,8 @@ impl EventsRepository {
             order by datetime_from
             "#,
         )
-            .fetch_all(&self.db_pool)
-            .await;
+        .fetch_all(&self.db_pool)
+        .await;
 
         events
     }
@@ -128,32 +83,32 @@ impl EventsRepository {
             where title like $1
             "#,
         )
-            .bind(format!("%{}%", title))
-            .fetch_all(&self.db_pool)
-            .await;
+        .bind(format!("%{}%", title))
+        .fetch_all(&self.db_pool)
+        .await;
 
         events
     }
 
-    pub async fn get_all_public_events(&self, page: i64, page_size: i64) -> Result<Vec<BaseEvent>> {
-        let events: Result<Vec<BaseEvent>> = sqlx::query_as(
-            r#"select *
-            from resonanse_events
-            where is_private=false and datetime_from >= current_date
-            order by datetime_from
-            offset $1 rows
-            fetch next $2 rows only
-            "#,
-        )
-            .bind(page * page_size)
-            .bind(page_size)
-            .fetch_all(&self.db_pool)
-            .await;
+    // pub async fn get_all_public_events(&self, page: i64, page_size: i64) -> Result<Vec<BaseEvent>> {
+    //     let events: Result<Vec<BaseEvent>> = sqlx::query_as(
+    //         r#"select *
+    //         from resonanse_events
+    //         where is_private=false and datetime_from >= current_date
+    //         order by datetime_from
+    //         offset $1 rows
+    //         fetch next $2 rows only
+    //         "#,
+    //     )
+    //     .bind(page * page_size)
+    //     .bind(page_size)
+    //     .fetch_all(&self.db_pool)
+    //     .await;
+    //
+    //     events
+    // }
 
-        events
-    }
-
-    pub async fn get_public_events(
+    pub async fn get_public_events_with_filters(
         &self,
         page: i64,
         page_size: i64,
@@ -187,7 +142,10 @@ impl EventsRepository {
             filter_params_len + 1,
             filter_params_len + 2,
         );
-        debug!("get_public_events builded query: {}", query_str);
+        debug!(
+            "get_public_events_with_filters builded query: {}",
+            query_str
+        );
 
         let mut events_query = sqlx::query_as(&query_str);
         for subj_i32 in filters_vec {
@@ -202,6 +160,63 @@ impl EventsRepository {
         events
     }
 
+    pub async fn get_public_events_for_city(
+        &self,
+        city: String,
+        page: i64,
+        page_size: i64,
+    ) -> Result<Vec<BaseEvent>> {
+        let query_str = r#"select *
+            from resonanse_events
+            WHERE datetime_from >= current_date AND city = $1
+            order by datetime_from
+            offset $2 rows
+            fetch next $3 rows only
+            "#;
+        let events_query = sqlx::query_as(query_str);
+
+        let events: Result<Vec<BaseEvent>> = events_query
+            .bind(city)
+            .bind(page * page_size)
+            .bind(page_size)
+            .fetch_all(&self.db_pool)
+            .await;
+        events
+    }
+
+    pub async fn get_public_events(&self, page: i64, page_size: i64) -> Result<Vec<BaseEvent>> {
+        let query_str = r#"select *
+            from resonanse_events
+            WHERE datetime_from >= current_date
+            order by datetime_from
+            offset $1 rows
+            fetch next $2 rows only
+            "#;
+        let events_query = sqlx::query_as(query_str);
+
+        let events: Result<Vec<BaseEvent>> = events_query
+            .bind(page * page_size)
+            .bind(page_size)
+            .fetch_all(&self.db_pool)
+            .await;
+        events
+    }
+
+    pub async fn get_public_events_city_insensitive(
+        &self,
+        city: Option<String>,
+        page_num: i64,
+        page_size: i64,
+    ) -> Result<Vec<BaseEvent>> {
+        match city {
+            None => self.get_public_events(page_num, page_size).await,
+            Some(city) => {
+                self.get_public_events_for_city(city, page_num, page_size)
+                    .await
+            }
+        }
+    }
+
     pub async fn get_event_by_uuid(&self, uuid: Uuid) -> Result<BaseEvent> {
         let event: Result<BaseEvent> = sqlx::query_as(
             r#"select *
@@ -209,61 +224,86 @@ impl EventsRepository {
             where id=$1
             "#,
         )
-            .bind(uuid)
-            .fetch_one(&self.db_pool)
-            .await;
+        .bind(uuid)
+        .fetch_one(&self.db_pool)
+        .await;
 
         event
     }
 
-    pub async fn delete_event(&self, event_uuid: Uuid, _deleted_by_id: i64) -> Result<()> {
-        let deleting_event = self.get_event_by_uuid(event_uuid).await?;
-
-        let _deleted_event: BaseEvent = sqlx::query_as(
-            r#"insert into deleted_events
-            (
-            id, is_private, is_commercial, is_online, is_paid, event_kind, title, description, brief_description,
-            subject, datetime_from, datetime_to, location_latitude, location_longitude,
-            location_title, creator_id, event_type, picture, contact_info
-            )
-            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
-            returning *
+    pub async fn get_events_by_ids(&self, events_ids: Vec<Uuid>) -> Result<Vec<BaseEvent>> {
+        let event: Result<Vec<BaseEvent>> = sqlx::query_as(
+            r#"select *
+            from resonanse_events
+            where id = ANY($1)
             "#,
         )
+        .bind(events_ids)
+        .fetch_all(&self.db_pool)
+        .await;
+
+        event
+    }
+
+    pub async fn delete_event(
+        &self,
+        event_uuid: Uuid,
+        _deleted_by_id: i64,
+    ) -> Result<(), sqlx::error::Error> {
+        let deleting_event = self.get_event_by_uuid(event_uuid).await?;
+        let (price_price, price_currency) = match &deleting_event.price {
+            None => (None, None),
+            Some(price) => (Some(price.price), Some(price.currency.clone())),
+        };
+
+        let _deleted_event: BaseEvent = sqlx::query_as(
+            r#"
+            INSERT INTO deleted_events
+            (
+                id, title, description, datetime_from, datetime_to, city, venue_title, venue_address,
+                venue_lat, venue_lon, image_url, local_image_path, price_price, price_currency, tags,
+                contact, service_id, service_type, service_data
+            )
+            VALUES
+            (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+            )
+            RETURNING *
+            "#
+        )
             .bind(deleting_event.id)
-            .bind(deleting_event.is_private)
-            .bind(deleting_event.is_commercial)
-            .bind(deleting_event.is_online)
-            .bind(deleting_event.is_paid)
-            .bind(deleting_event.event_kind)
-            .bind(deleting_event.title)
-            .bind(deleting_event.description)
-            .bind(deleting_event.brief_description)
-            .bind(deleting_event.subject as i32)
+            .bind(&deleting_event.title)
+            .bind(&deleting_event.description)
             .bind(deleting_event.datetime_from)
             .bind(deleting_event.datetime_to)
-            .bind(deleting_event.location.as_ref().map(|geo| geo.latitude))
-            .bind(deleting_event.location.as_ref().map(|geo| geo.longitude))
-            .bind(deleting_event.location_title)
-            .bind(deleting_event.creator_id)
-            .bind(deleting_event.event_type)
-            .bind(deleting_event.picture)
-            .bind(deleting_event.contact_info)
+            .bind(&deleting_event.city)
+            .bind(&deleting_event.venue.title)
+            .bind(&deleting_event.venue.address)
+            .bind(deleting_event.venue.latitude)
+            .bind(deleting_event.venue.longitude)
+            .bind(&deleting_event.image_url)
+            .bind(&deleting_event.local_image_path)
+            .bind(price_price)
+            .bind(&price_currency)
+            .bind(&deleting_event.tags)
+            .bind(&deleting_event.contact)
+            .bind(&deleting_event.service_id)
+            .bind(&deleting_event.service_type)
+            .bind(&deleting_event.service_data)
             .fetch_one(&self.db_pool)
             .await?;
 
         let result = sqlx::query(
             r#"
-            delete from resonanse_events
-            where id=$1
+            DELETE FROM resonanse_events
+            WHERE id = $1
             "#,
         )
-            .bind(event_uuid)
-            .execute(&self.db_pool)
-            .await?;
+        .bind(event_uuid)
+        .execute(&self.db_pool)
+        .await?;
 
         debug!("delete_events result {:?}", result);
-
         Ok(())
     }
 
@@ -274,25 +314,61 @@ impl EventsRepository {
             values ($1, $2)
             "#,
         )
-            .bind(post_id)
-            .bind(event_id)
-            .execute(&self.db_pool)
-            .await?;
+        .bind(post_id)
+        .bind(event_id)
+        .execute(&self.db_pool)
+        .await?;
         debug!("event_tg_table result {:?}", result);
 
         Ok(())
     }
 
-    pub async fn count_events_by_subject(&self) -> Result<HashMap<EventSubject, i64>> {
-        let _result = sqlx::query(
-            r#"select subject, count(*)
+    pub async fn count_events(&self) -> Result<i64> {
+        sqlx::query(
+            r#"select count(*)
             from resonanse_events
-            group by subject
             "#,
         )
-            .fetch_all(&self.db_pool)
-            .await;
+        .fetch_one(&self.db_pool)
+        .await?
+        .try_get::<_, usize>(0)
+    }
 
-        Ok(HashMap::new())
+    pub async fn get_unique_cities(&self) -> Result<Vec<String>> {
+        let rows = sqlx::query(
+            r#"
+        SELECT DISTINCT city
+        FROM resonanse_events
+        "#,
+        )
+        .fetch_all(&self.db_pool)
+        .await?;
+
+        let cities = rows
+            .iter()
+            .map(|row| row.try_get::<String, _>("city"))
+            .collect::<Result<Vec<String>, _>>()?;
+
+        Ok(cities)
+    }
+
+    pub async fn update_local_image_path(
+        &self,
+        event_id: Uuid,
+        local_image_path: Option<String>,
+    ) -> Result<(), sqlx::error::Error> {
+        sqlx::query(
+            r#"
+                UPDATE resonanse_events
+                SET local_image_path = $1
+                WHERE id = $2
+                "#,
+        )
+        .bind(local_image_path)
+        .bind(event_id)
+        .execute(&self.db_pool)
+        .await?;
+
+        Ok(())
     }
 }

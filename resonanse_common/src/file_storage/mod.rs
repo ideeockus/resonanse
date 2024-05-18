@@ -3,7 +3,6 @@ use log::debug;
 use std::env;
 use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
-use uuid::Uuid;
 
 const BASE_STORAGE_DIR_NAME: &str = "resonanse_storage";
 const EVENT_IMAGES_DIR_NAME: &str = "event_images";
@@ -39,9 +38,8 @@ pub fn get_event_images_path() -> PathBuf {
     path
 }
 
-pub fn get_event_image_path_by_uuid(event_uuid: Uuid) -> PathBuf {
+pub fn get_event_image_path_by_uuid(event_uuid: impl ToString) -> PathBuf {
     let event_image_path = get_event_images_path().join(event_uuid.to_string());
     debug!("event_image_path {:?}", event_image_path);
     event_image_path
-    // get_event_images_path().join(get_event_images_path())
 }

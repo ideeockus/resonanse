@@ -10,6 +10,6 @@ pub enum ManagementCommand {
     DeleteEvent,
     #[command(description = "Статистика")]
     GetStatistics,
-    #[command(description = "Статистика")]
+    #[command(description = "Поиск по названию")]
     SearchEventByName(String),
 }

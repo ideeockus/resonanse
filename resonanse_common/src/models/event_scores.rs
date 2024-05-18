@@ -1,5 +1,6 @@
 use sqlx::postgres::PgRow;
 use sqlx::{FromRow, Row};
+use std::fmt::{Display, Formatter};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -8,6 +9,16 @@ pub enum EventScoreType {
     Like = 1,
     Neutral = 0,
     Dislike = -1,
+}
+
+impl Display for EventScoreType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EventScoreType::Like => write!(f, "like"),
+            EventScoreType::Neutral => write!(f, "neutral"),
+            EventScoreType::Dislike => write!(f, "dislike"),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

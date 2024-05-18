@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::config::MANAGER_TG_IDS;
 use crate::management::common::HandlerResult;
-use crate::{ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY};
+use crate::{ACCOUNTS_REPOSITORY, EVENTS_INTERACTION_REPOSITORY, EVENTS_REPOSITORY};
 
 fn get_managers_ids() -> Vec<i64> {
     let managers_ids_str = env::var(MANAGER_TG_IDS).unwrap_or("".to_string());
@@ -26,8 +26,6 @@ fn get_managers_ids() -> Vec<i64> {
 }
 
 pub async fn delete_event_command(bot: Bot, msg: Message) -> HandlerResult {
-    debug!("got delete_event_command {:?}", &msg);
-
     // CHECK FOR MANAGER RIGHTS
     if !get_managers_ids().contains(&msg.chat.id.0) {
         return Ok(());
@@ -74,39 +72,61 @@ pub async fn delete_event_command(bot: Bot, msg: Message) -> HandlerResult {
 }
 
 pub async fn get_stats_command(bot: Bot, msg: Message) -> HandlerResult {
-    debug!("got get_stats_command {:?}", &msg);
-
-    let count_accounts = ACCOUNTS_REPOSITORY
+    let accounts_repo = ACCOUNTS_REPOSITORY
         .get()
-        .ok_or("Cannot get accounts repository")?
-        .count_accounts()
+        .ok_or("Cannot get accounts repository")?;
+    let events_repo = EVENTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get events repository")?;
+    let events_interaction_repo = EVENTS_INTERACTION_REPOSITORY
+        .get()
+        .ok_or("Cannot get events interaction repository")?;
+
+    let count_accounts = accounts_repo.count_accounts().await?;
+    let count_accounts_with_descriptions = accounts_repo.count_accounts_with_descriptions().await?;
+
+    let count_events = events_repo.count_events().await?;
+
+    let count_clicks_for_today = events_interaction_repo.count_clicks_for_today().await?;
+    let count_likes_for_today = events_interaction_repo.count_likes_for_today().await?;
+    let count_dislikes_for_today = events_interaction_repo.count_dislikes_for_today().await?;
+    let count_recommendations_for_today = events_interaction_repo
+        .count_recommendations_for_today()
         .await?;
 
-    // todo
-    let _count_events_by_subject = EVENTS_REPOSITORY
-        .get()
-        .ok_or("Cannot get events repository")?
-        .count_events_by_subject()
-        .await?;
+    let statistics = vec![
+        ("Количество пользователей", count_accounts.to_string()),
+        (
+            "Количество пользователей с описанием",
+            count_accounts_with_descriptions.to_string(),
+        ),
+        ("Количество эвентов в базе", count_events.to_string()),
+        (
+            "Количество кликов за день",
+            count_clicks_for_today.to_string(),
+        ),
+        (
+            "Количество лайков в базе",
+            count_likes_for_today.to_string(),
+        ),
+        (
+            "Количество дислайков в базе",
+            count_dislikes_for_today.to_string(),
+        ),
+        (
+            "Выданных рекомендаций в базе",
+            count_recommendations_for_today.to_string(),
+        ),
+    ];
 
-    // let all_events = events_uuids_map
-    //     .iter()
-    //     .map(|be| {
-    //         format!(
-    //             "*{}* \\- `{}`",
-    //             markdown::escape(&be.title),
-    //             markdown::escape(&be.id.to_string())
-    //         )
-    //     })
-    //     .collect::<Vec<String>>()
-    //     .join("\n");
+    let mut statistics_message = String::new();
+    for (stat_name, stat_value) in statistics {
+        statistics_message.push_str(&format!("{}: {}\n", stat_name, stat_value,))
+    }
 
     let mut message = bot.send_message(
         msg.chat.id,
-        format!(
-            "\\[пока статистика только такая\\]\nКоличество пользователей: {}\n\n",
-            count_accounts,
-        ),
+        format!("\\[Статистика\\]\n: {}\n\n", statistics_message,),
     );
 
     message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -120,8 +140,6 @@ pub async fn search_event_command(
     msg: Message,
     searching_event_title: String,
 ) -> HandlerResult {
-    debug!("got search_event_command {:?}", &msg);
-
     // CHECK FOR MANAGER RIGHTS
     if !get_managers_ids().contains(&msg.chat.id.0) {
         return Ok(());

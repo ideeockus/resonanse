@@ -1,7 +1,5 @@
 use std::error::Error;
 
-use log::debug;
-
 use teloxide::prelude::*;
 use teloxide::types::{Message, ParseMode, ReplyMarkup};
 use teloxide::utils::markdown;
@@ -10,40 +8,48 @@ use teloxide::Bot;
 use resonanse_common::models::EventSubject;
 use resonanse_common::EventSubjectFilter;
 
-use crate::handlers::{HandlerResult, MyDialogue};
+use crate::data_structs::MyComplexCommand;
+use crate::handlers::{try_extract_event_id_from_text, HandlerResult, MyDialogue};
 use crate::high_logics::send_event_post;
 use crate::keyboards::{get_inline_kb_events_page, get_inline_kb_set_subject_filter};
 use crate::states::BaseState;
-use crate::{keyboards, EVENTS_REPOSITORY};
+use crate::utils::prepare_event_list_view;
+use crate::{keyboards, ACCOUNTS_REPOSITORY, EVENTS_REPOSITORY};
 
 pub async fn handle_get_events(
     bot: Bot,
     _dialogue: MyDialogue,
-    (page_size, page_num, events_filter): (i64, i64, EventSubjectFilter),
+    (page_size, page_num, _events_filter): (i64, i64, EventSubjectFilter),
     msg: Message,
 ) -> HandlerResult {
     // handle event command start
-    if let Some(msg_text) = msg.text() {
-        if let Some(rest_msg) = msg_text.strip_prefix("/event_") {
-            if let Some(event_num) = rest_msg.split(' ').next() {
-                if let Ok(event_num) = event_num.parse::<i64>() {
-                    // let event_global_num = event_num;
-                    let events = EVENTS_REPOSITORY
-                        .get()
-                        .ok_or("Cannot get events repository")?
-                        .get_public_events(page_num, page_size, &events_filter)
-                        .await?;
+    let events_repo = EVENTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get events repository")?;
+    let accounts_repo = ACCOUNTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get accounts repository")?;
 
-                    if let Some(choosed_event) = events.get(event_num as usize - 1) {
-                        send_event_post(&bot, msg.chat.id, choosed_event.id).await?;
-                        return Ok(());
-                    }
-                }
+    if let Some(msg_text) = msg.text() {
+        if let Some(MyComplexCommand::GetEventIntId(event_num)) =
+            try_extract_event_id_from_text(msg_text)
+        {
+            let user_account = accounts_repo.get_user_by_tg_id(msg.chat.id.0).await?;
+            let events = events_repo
+                .get_public_events_city_insensitive(
+                    user_account.user_data.city,
+                    page_num,
+                    page_size,
+                )
+                .await?;
+            if let Some(choosed_event) = events.get(event_num as usize - 1) {
+                send_event_post(&bot, msg.chat.id, choosed_event.id).await?;
+                return Ok(());
             }
         }
     }
-    // handle event command end
 
+    // handle event command end
     bot.send_message(msg.chat.id, "Выбранное событие не найдено")
         .await?;
 
@@ -56,7 +62,6 @@ pub async fn handle_get_events_callback(
     (page_size, page_num, events_filter): (i64, i64, EventSubjectFilter),
     q: CallbackQuery,
 ) -> HandlerResult {
-    debug!("got handle_get_events__callback callback");
     bot.answer_callback_query(q.id.clone()).await?;
 
     match q.data.as_deref() {
@@ -81,8 +86,6 @@ pub async fn handle_events_filter_callback(
     (page_size, page_num, mut events_filter): (i64, i64, EventSubjectFilter),
     q: CallbackQuery,
 ) -> HandlerResult {
-    debug!("got handle_events_filter_callback callback");
-
     let msg = match q.message {
         None => {
             bot.send_message(q.from.id, "Unknown message").await?;
@@ -96,7 +99,9 @@ pub async fn handle_events_filter_callback(
         Some(keyboards::APPLY_EVENT_FILTER_BTN) => {
             bot.delete_message(msg.chat.id, msg.id).await?;
 
-            let msg_text = get_choose_event_text(page_num, page_size, &events_filter).await?;
+            let user_id = q.from.id.0 as i64;
+            let msg_text =
+                get_choose_event_text(user_id, page_num, page_size, &events_filter).await?;
             let mut message = bot.send_message(q.from.id, msg_text);
             message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_events_page()));
             message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -134,7 +139,6 @@ pub async fn handle_page_callback(
     (page_size, page_num, events_filter): (i64, i64, EventSubjectFilter),
     q: CallbackQuery,
 ) -> HandlerResult {
-    debug!("got handle_page_callback callback");
     let page_num = page_num as u32;
 
     let msg = match q.message {
@@ -163,7 +167,8 @@ pub async fn handle_page_callback(
         })
         .await?;
 
-    let msg_text = get_choose_event_text(page_num, page_size, &events_filter).await?;
+    let user_id = q.from.id.0 as i64;
+    let msg_text = get_choose_event_text(user_id, page_num, page_size, &events_filter).await?;
     let mut message = bot.edit_message_text(msg.chat.id, msg.id, msg_text);
     message.reply_markup = Some(get_inline_kb_events_page());
     message.parse_mode = Some(ParseMode::MarkdownV2);
@@ -173,43 +178,27 @@ pub async fn handle_page_callback(
 }
 
 pub async fn get_choose_event_text(
+    tg_user_id: i64,
     page_num: i64,
     page_size: i64,
-    events_filter: &EventSubjectFilter,
+    _events_filter: &EventSubjectFilter,
 ) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let events = EVENTS_REPOSITORY
+    let events_repo = EVENTS_REPOSITORY
         .get()
-        .ok_or("Cannot get events repository")?
-        .get_public_events(page_num, page_size, events_filter)
-        .await?;
+        .ok_or("Cannot get events repository")?;
+    let accounts_repo = ACCOUNTS_REPOSITORY
+        .get()
+        .ok_or("Cannot get accounts repository")?;
 
-    let mut event_i = 0;
+    let user_account = accounts_repo.get_user_by_tg_id(tg_user_id).await?;
+    let events = events_repo
+        .get_public_events_city_insensitive(user_account.user_data.city, page_num, page_size)
+        .await?;
 
     let msg_text = t!(
         "event_page.page_title",
         page_num = markdown::escape(&page_num.to_string()),
-        page_data = events
-            .iter()
-            .map(|event| {
-                event_i += 1;
-
-                debug!("event.brief_description {:?}", event.brief_description);
-                let event_brief_description_text = match event.brief_description.as_deref() {
-                    Some(brief_desc) => format!("\n_{}_", markdown::escape(brief_desc),),
-                    None => String::new(),
-                };
-
-                format!(
-                    "/event\\_{}\t*{}*{}\n⏰ {}\n📍 {}",
-                    event_i,
-                    markdown::escape(&event.title),
-                    markdown::escape(&event_brief_description_text),
-                    markdown::escape(&event.datetime_from.to_string()),
-                    markdown::escape(&event.location_title),
-                )
-            })
-            .collect::<Vec<String>>()
-            .join("\n\n")
+        page_data = prepare_event_list_view(events),
     );
 
     Ok(msg_text)

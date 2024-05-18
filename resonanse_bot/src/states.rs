@@ -2,6 +2,7 @@ use crate::data_structs::FillingEvent;
 use resonanse_common::EventSubjectFilter;
 use teloxide::types::MessageId;
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Default)]
 pub enum BaseState {
     #[default]
@@ -17,6 +18,8 @@ pub enum BaseState {
         page_num: i64,
         events_filter: EventSubjectFilter,
     },
+    SetCity,
+    SetDescription,
     SendFeedback,
 }
 

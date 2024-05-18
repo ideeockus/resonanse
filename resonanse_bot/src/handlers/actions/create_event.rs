@@ -14,7 +14,7 @@ use teloxide::Bot;
 use uuid::Uuid;
 
 use resonanse_common::file_storage::get_event_image_path_by_uuid;
-use resonanse_common::models::{BaseEvent, EventSubject, Location, ResonanseEventKind};
+use resonanse_common::models::{BaseEvent, EventSubject, ResonanseEventKind, Venue};
 
 use crate::config::DEFAULT_DATETIME_FORMAT;
 use crate::data_structs::{
@@ -25,7 +25,6 @@ use crate::handlers::utils::download_file_by_id;
 use crate::handlers::{HandlerResult, MyDialogue};
 use crate::high_logics::publish_event;
 use crate::keyboards;
-use crate::keyboards::{get_inline_kb_choose_event_kind, get_make_event_keyboard};
 use crate::states::{BaseState, CreateEventState};
 use crate::utils::build_event_deep_link;
 
@@ -41,7 +40,6 @@ const CONTACT_LIMIT: RangeInclusive<usize> = 3..=40;
 macro_rules! reject_user_answer {
     ($bot: ident, $chat_id: expr, $text:expr) => {
         $bot.send_message($chat_id, $text).await?;
-        // debug!("rejected user ({}) answer: {}", repr_user_as_str($msg.from()), $text);
         return Err(Box::new(BotHandlerError::UserInputRejected));
     };
 }
@@ -145,21 +143,16 @@ pub async fn handle_fill_event_field_callback(
         Some(keyboards::FILL_EVENT_KIND_BTN_ID) => (
             CreateEventState::EventKind,
             t!("actions.create_event.fill_event.event_kind"),
-            Some(get_inline_kb_choose_event_kind()),
+            Some(keyboards::get_inline_kb_choose_event_kind()),
         ),
         Some(keyboards::FILL_EVENT_FINALIZE_BTN_ID) => {
-            return handle_event_finalisation_callback(bot, dialogue, filling_event, q).await
+            return handle_event_finalisation_callback(bot, dialogue, filling_event, q).await;
         }
-        // CreateEventState::Finalisation,
-        // t!("actions.create_event.fill_event.finalize"),
-        // None,
         _ => {
             warn!(
                 "handle_fill_event_field_callback unknown callback data: {:?}",
                 q.data
             );
-            // bot.send_message(q.from.id, "unknown create event handler")
-            //     .await?;
             return Err(Box::new(BotHandlerError::UnknownHandler));
         }
     };
@@ -181,7 +174,6 @@ pub async fn handle_fill_event_field_callback(
     } else {
         let mut message = bot.send_message(q.from.id, msg_text);
         message.parse_mode = Some(MarkdownV2);
-        // message.reply_markup = reply_markup;
         message.await?;
     }
 
@@ -206,7 +198,6 @@ pub async fn handle_create_event_state_message(
             return Ok(());
         }
         CreateEventState::EventTitle => handle_event_name(&bot, msg, &mut filling_event).await?,
-        // CreateEventState::Publicity => (),
         CreateEventState::Description => {
             handle_event_description(&bot, msg, &mut filling_event).await?
         }
@@ -220,12 +211,10 @@ pub async fn handle_create_event_state_message(
         CreateEventState::PlaceTitle => {
             handle_event_place_title(&bot, msg, &mut filling_event).await?
         }
-        // CreateEventState::Subject => handle_event_subject,
         CreateEventState::Picture => handle_event_picture(&bot, msg, &mut filling_event).await?,
         CreateEventState::ContactInfo => {
             handle_event_contact(&bot, msg, &mut filling_event).await?
         }
-        // CreateEventState::Finalisation => handle_event_finalisation(bot, dialogue, msg, filling_event).await,
         _ => {
             warn!(
                 "Unhandled handle_create_event_state: {:?}",
@@ -240,8 +229,6 @@ pub async fn handle_create_event_state_message(
     update_filling_message(&bot, dialogue, filling_event, chat_id, last_edit_msg_id).await?;
 
     Ok(())
-
-    // handler(bot, dialogue, msg, filling_event)
 }
 
 pub async fn handle_create_event_state_callback(
@@ -279,26 +266,9 @@ pub async fn handle_create_event_state_callback(
     }
 
     match create_event_state {
-        // CreateEventState::Idle => {
-        //     return handle_fill_event_field_callback(bot, dialogue, filling_event, q).await;
-        // }
-        // CreateEventState::Name => handle_event_name,
-        // CreateEventState::Publicity => (),
-        // CreateEventState::Description => handle_event_description,,
-        // CreateEventState::Datetime => handle_event_datetime,
-        // CreateEventState::Geo => handle_event_geo,
         CreateEventState::Subject => handle_event_subject(&bot, &mut filling_event, q).await?,
-        // CreateEventState::Picture => handle_event_picture,
-        // CreateEventState::Finalisation => {
-        //     handle_event_finalisation_callback(bot, dialogue, filling_event, q).await
-        // }
         CreateEventState::EventKind => handle_event_kind(&bot, &mut filling_event, q).await?,
         _ => {
-            // return handle_fill_event_field_callback(
-            //     bot, dialogue, filling_event,
-            //     last_edit_msg_id,
-            //     q,
-            // ).await;
             warn!(
                 "Unhandled handle_create_event_state_callback: {:?}",
                 create_event_state
@@ -310,14 +280,6 @@ pub async fn handle_create_event_state_callback(
     }
 
     update_filling_message(&bot, dialogue, filling_event, chat_id, last_edit_msg_id).await?;
-
-    // dialogue
-    //     .update(BaseState::CreateEvent {
-    //         state: CreateEventState::Idle,
-    //         filling_event,
-    //         last_edit_msg_id,
-    //     })
-    //     .await?;
     Ok(())
 }
 
@@ -337,7 +299,8 @@ pub async fn update_filling_message(
                 Some(ReplyMarkup::InlineKeyboard(
                     keyboards::get_make_event_keyboard(),
                 )),
-            );
+            )
+            .await;
 
             match event_message {
                 EventPostMessageRequest::WithPoster(req) => req.await?,
@@ -348,7 +311,9 @@ pub async fn update_filling_message(
             let missed_data_hint = filling_event.get_missed_data_hint();
             let mut message = bot.send_message(chat_id, missed_data_hint);
             message.parse_mode = Some(ParseMode::MarkdownV2);
-            message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_make_event_keyboard()));
+            message.reply_markup = Some(ReplyMarkup::InlineKeyboard(
+                keyboards::get_make_event_keyboard(),
+            ));
             message.await?
         }
     };
@@ -387,20 +352,11 @@ pub async fn handle_event_name(
         Some(v) => check_msg_size!(bot, msg.chat.id, TITLE_LIMIT, v).replace('\n', " "),
     };
     filling_event.title = Some(event_name.to_string());
-
-    // dialogue
-    //     .update(BaseState::CreateEvent {
-    //         state: CreateEventState::Idle,
-    //         filling_event,
-    //     })
-    //     .await?;
-
     Ok(())
 }
 
 pub async fn handle_event_description(
     bot: &Bot,
-    // dialogue: MyDialogue,
     msg: Message,
     filling_event: &mut FillingEvent,
 ) -> HandlerResult {
@@ -412,45 +368,17 @@ pub async fn handle_event_description(
     };
 
     filling_event.description = Some(event_description.to_string());
-
-    // dialogue
-    //     .update(BaseState::CreateEvent {
-    //         state: CreateEventState::Idle,
-    //         filling_event,
-    //     })
-    //     .await?;
-
-    // let current_date = chrono::offset::Local::now()
-    //     .format(&markdown::escape(DEFAULT_DATETIME_FORMAT))
-    //     .to_string();
-    // let mut message = bot.send_message(
-    //     msg.chat.id,
-    //     format!(
-    //         "Введите дату и время в формате дд\\.мм\\.гггг чч:мм\\. Например: `{}`",
-    //         current_date
-    //     ),
-    // );
-    // message.parse_mode = Some(ParseMode::MarkdownV2);
-    // message.await?;
-
     Ok(())
 }
 
 pub async fn handle_event_datetime(
     bot: &Bot,
-    // dialogue: MyDialogue,
     msg: Message,
-    // mut filling_event: FillingEvent,
     filling_dt: &mut Option<NaiveDateTime>,
 ) -> HandlerResult {
     let event_dt = match msg.text() {
         None => {
             reject_user_answer!(bot, msg.chat.id, "No datetime provided");
-            // bot.send_message(
-            //     msg.chat.id,
-            //     "No datetime provided",
-            // ).await?;
-            // return Ok(());
         }
         Some(v) => v,
     };
@@ -476,7 +404,6 @@ pub async fn handle_event_datetime(
 
 pub async fn handle_event_geo(
     bot: &Bot,
-    // dialogue: MyDialogue,
     msg: Message,
     filling_event: &mut FillingEvent,
 ) -> HandlerResult {
@@ -485,20 +412,22 @@ pub async fn handle_event_geo(
         Common(MessageCommon {
             media_kind: MediaKind::Location(MediaLocation { location, .. }),
             ..
-        }) => Location::from_ll(location.latitude, location.longitude),
+        }) => Venue::from_ll(location.latitude, location.longitude),
         Common(MessageCommon {
             media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
             ..
-        }) => Location {
-            latitude: venue.location.latitude,
-            longitude: venue.location.longitude,
+        }) => Venue {
+            title: filling_event.location_title.clone(),
+            address: None,
+            latitude: Some(venue.location.latitude),
+            longitude: Some(venue.location.longitude),
         },
         Common(MessageCommon {
             media_kind: MediaKind::Text(media_text),
             ..
         }) => {
             let plain_text = media_text.text;
-            match Location::parse_from_yandex_map_link(&plain_text) {
+            match Venue::parse_from_yandex_map_link(&plain_text) {
                 Some(loc) => loc,
                 None => {
                     reject_user_answer!(bot, msg.chat.id, "Место не распознано");
@@ -531,53 +460,9 @@ pub async fn handle_event_place_title(
 
     Ok(())
 }
-//
-// pub async fn handle_event_place_title(
-//     bot: Bot,
-//     // dialogue: MyDialogue,
-//     msg: Message,
-//     filling_event: &mut FillingEvent,
-// ) -> HandlerResult {
-//     debug!("provided msg: {:?}", msg);
-//     let location = match msg.kind {
-//         Common(MessageCommon {
-//             media_kind: MediaKind::Location(MediaLocation { location, .. }),
-//             ..
-//         }) => Location::from_ll(location.latitude, location.longitude),
-//         Common(MessageCommon {
-//             media_kind: MediaKind::Venue(MediaVenue { venue, .. }),
-//             ..
-//         }) => {
-//             filling_event.location_title = Some(venue.title);
-//             Location {
-//                 latitude: venue.location.latitude,
-//                 longitude: venue.location.longitude,
-//             }
-//         }
-//         _ => {
-//             reject_user_answer!(bot, msg.chat.id, "No location provided");
-//         }
-//     };
-//
-//     filling_event.geo_position = Some(location);
-//
-//     // dialogue
-//     //     .update(BaseState::CreateEvent {
-//     //         state: CreateEventState::Subject,
-//     //         filling_event,
-//     //     })
-//     //     .await?;
-//     //
-//     // let mut message = bot.send_message(msg.chat.id, "Выберите тематику");
-//     // message.reply_markup = Some(get_inline_kb_choose_subject());
-//     // message.await?;
-//
-//     Ok(())
-// }
 
 pub async fn handle_event_subject(
     bot: &Bot,
-    // dialogue: MyDialogue,
     filling_event: &mut FillingEvent,
     q: CallbackQuery,
 ) -> HandlerResult {
@@ -595,25 +480,11 @@ pub async fn handle_event_subject(
         bot.delete_message(q.from.id, msg.id).await?;
     }
 
-    // dialogue
-    //     .update(BaseState::CreateEvent {
-    //         state: CreateEventState::Picture,
-    //         filling_event,
-    //     })
-    //     .await?;
-    //
-    // let message = bot.send_message(
-    //     q.from.id,
-    //     "Осталось пара шагов. Добавьте изображение или постер",
-    // );
-    // message.await?;
-
     Ok(())
 }
 
 pub async fn handle_event_kind(
     bot: &Bot,
-    // dialogue: MyDialogue,
     filling_event: &mut FillingEvent,
     q: CallbackQuery,
 ) -> HandlerResult {
@@ -636,7 +507,6 @@ pub async fn handle_event_kind(
 
 pub async fn handle_event_picture(
     bot: &Bot,
-    // dialogue: MyDialogue,
     msg: Message,
     filling_event: &mut FillingEvent,
 ) -> HandlerResult {
@@ -653,26 +523,11 @@ pub async fn handle_event_picture(
     download_file_by_id(bot, &event_photo_file_id, &local_file_path).await?;
 
     filling_event.picture = Some(local_file_uuid);
-
-    // dialogue
-    //     .update(BaseState::CreateEvent {
-    //         state: CreateEventState::ContactInfo,
-    //         filling_event: filling_event.clone(),
-    //     })
-    //     .await?;
-    //
-    // let message = bot.send_message(
-    //     msg.chat.id,
-    //     "Укажите контакт для связи. Например, юзернейм (как @resonanse_app)",
-    // );
-    // message.await?;
-
     Ok(())
 }
 
 pub async fn handle_event_contact(
     bot: &Bot,
-    // dialogue: MyDialogue,
     msg: Message,
     filling_event: &mut FillingEvent,
 ) -> HandlerResult {
@@ -684,31 +539,6 @@ pub async fn handle_event_contact(
     };
 
     filling_event.contact_info = Some(contact_info);
-
-    // dialogue
-    //     .update(BaseState::CreateEvent {
-    //         state: CreateEventState::Finalisation,
-    //         filling_event: filling_event.clone(),
-    //     })
-    //     .await?;
-
-    // let local_file_path =
-    //     get_event_image_path_by_uuid(filling_event.picture.ok_or("Picture not set")?);
-    // let mut message = bot.send_photo(msg.chat.id, InputFile::file(local_file_path));
-    // let event_text_representation = CreateBaseEvent::from(filling_event.clone()).format();
-    // let message_text = format!(
-    //     "Готово, проверьте заполненные данные:\n {}",
-    //     event_text_representation
-    // );
-    // message.caption = Some(message_text);
-    // message.parse_mode = Some(ParseMode::MarkdownV2);
-    // message.reply_markup = Some(ReplyMarkup::InlineKeyboard(get_inline_kb_edit_new_event(
-    //     !filling_event.is_private,
-    //     filling_event
-    //         .geo_position
-    //         .map(|geo| geo.get_yandex_map_link_to()),
-    // )));
-    // message.await?;
 
     Ok(())
 }
@@ -743,25 +573,13 @@ pub async fn handle_event_finalisation_callback(
     dialogue.update(BaseState::Idle).await?;
 
     let tg_event_deep_link = build_event_deep_link(created_event.id);
-    if filling_event.is_private {
-        bot.send_message(
-            msg.chat.id,
-            format!(
-                "Событие создано. Оно будет доступно только по вашей ссылке: {}",
-                tg_event_deep_link
-            ),
-        )
-        .await?;
-    } else {
-        bot.send_message(
-            msg.chat.id,
-            t!(
-                "actions.create_event.fill_event.finalize_public",
-                event_link = tg_event_deep_link
-            ),
-        )
-        .await?;
-    }
-
+    bot.send_message(
+        msg.chat.id,
+        t!(
+            "actions.create_event.fill_event.finalize_public",
+            event_link = tg_event_deep_link
+        ),
+    )
+    .await?;
     Ok(())
 }
